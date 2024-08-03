@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";//importamos dotenv para pode rusar las variables de entorno en nuestro backend
+import UserRouter from './routes/user.routes.js';
 dotenv.config();
 
 
@@ -25,3 +26,5 @@ app.listen(5000, () => {
     console.log("Server is running at port 5000!!!!")
 }
 );
+
+app.use("/api/user", UserRouter)
