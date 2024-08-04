@@ -1,11 +1,20 @@
 import { useState } from "react";
-import { Link, useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { signInStart,signInSuccess,signInFailure } from "../redux/user/userSlice";
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
-  const [error, setError] = useState(null); // eeste etado sera para los errores
-  const [loading, setLoading] = useState(false); // este estado sera pr ala animacion de carga dado que na vez que se enien los datoas no se debe poder volver aa usar el boton de enviar antes de recibir la respuesta 
-  const navigate =useNavigate(); //inicailizamos el navigate para poder eredirecccionar a otras paginas
+  //cambiados por gestion de esatdos e redux
+  //const [error, setError] = useState(null); // eeste etado sera para los errores
+  //const [loading, setLoading] = useState(false); // este estado sera pr ala animacion de carga dado que na vez que se enien los datoas no se debe poder volver aa usar el boton de enviar antes de recibir la respuesta 
+  
+  //gestion de esatdos e redux
+  const{loading,error}= useSelector((state)=>state.user);
+  
+  const navigate = useNavigate(); //inicailizamos el navigate para poder eredirecccionar a otras paginas
+  const dispatch = useDispatch();
+
   const handleChange = (e) => {
     setFormData(//esto se usa `para conservar el estado y poder mantener siempre el usuario , el email y la contraseña 
       {
@@ -18,7 +27,8 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault(); //esta funcion nos permitira que una vez que se envien los datos en el form no se refrescque la pagina 
     try {
-      setLoading(true);// una vez que hayamos detecado que se envia una respuesta setteamos el laoding a true 
+      //setLoading(true);// una vez que hayamos detecado que se envia una respuesta setteamos el laoding a true //cambiado por estado en redux
+      dispatch(signInStart());
       const res = await fetch('/api/auth/signin',
         {
           method: 'POST',
@@ -29,18 +39,15 @@ export default function SignIn() {
         });
       const data = await res.json();
       if (data.success === false) {
-        setLoading(false);
-        setError(data.message);
+       dispatch(signInFailure(data.message));
         return;
 
       }
-      setLoading(false);
-      setError(null);
+     dispatch(signInSuccess(data));
       navigate('/');//usamos esto apra que una vez que se ha creado el usaurio sin errores navegar ahsta la mpapgina de inicio de sesion
-                            // posiblemente en un futuro lo cambie por navegar directamente dentro del eprfil paara mejorar la experiencia de ususario 
+      // posiblemente en un futuro lo cambie por navegar directamente dentro del eprfil paara mejorar la experiencia de ususario 
     } catch (error) {
-      setLoading(false);
-      setError(error.message);
+     dispatch(signInFailure(error.message))
     }
 
   };

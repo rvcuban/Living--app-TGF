@@ -10,7 +10,7 @@ import SignUp from "./pages/SignUp";
 
 
 export default function App() {
-  return <BrowserRouter>
+  return (<BrowserRouter>
   <Header />
     <Routes>
       <Route path="/home" element={<Home />} />
@@ -22,4 +22,5 @@ export default function App() {
 
     </Routes>
   </BrowserRouter>
+  )
 }
