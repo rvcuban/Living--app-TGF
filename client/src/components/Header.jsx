@@ -1,11 +1,7 @@
 import { FaSearch } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { useSelector } from 'react-redux'
 
 export default function Header() {
-
-    const { currentUser } = useSelector(state => state.user);
-
     return (
 
         //la razon del flex -wrap en el header es para que se vea bien en dispositivos mobiles
@@ -40,15 +36,10 @@ export default function Header() {
                     <Link to='/about'>
                         <li className="hidden sm:inline text-slate-700 hover:underline">About</li>
                     </Link>
-                    <Link to='/profile'>
-                        {currentUser ? (
-                            <img className='rounded-full h-7 w-7 object-cover' src={currentUser.avatar} alt="profile"  />
-                        ) : <li className=" text-slate-700 hover:underline">Sing In</li>
 
-                        }
+                    <Link to='/sing-in'>
+                        <li className=" text-slate-700 hover:underline">Sing In</li>
                     </Link>
-
-
                 </ul>
             </div>
 
