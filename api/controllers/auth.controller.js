@@ -1,7 +1,7 @@
 import bcryptjs from 'bcryptjs';
 import User from '../models/user.model.js';
 import { errorHandle } from '../utils/error.js';
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 
 export const signup = async (req, res, next) => {
 
@@ -28,7 +28,7 @@ export const signin = async (req, res, next) => {
         const validPassword = bcryptjs.compareSync(password, ValidUser.password);
         if (!validPassword) return next(errorHandle(401, 'Wrong credentials!'));
 
-        const token = jwt.sign({ id: ValidUser.$getAllSubdocs_id }, process.env.JWT_SECRET) // aqui utilizamos una variable de entorno que servira para hashear y encriptar el id de usuario en el token
+        const token = jwt.sign({ id: ValidUser._id }, process.env.JWT_SECRET); // aqui utilizamos una variable de entorno que servira para hashear y encriptar el id de usuario en el token
         const { password: pass, ...rest } = ValidUser._doc //aqui creamo una variable que separa la contraseña del resto para poder enviarle un json al user 
         // de que todo esta correcto pero sin enviar la contrraseña aunque este encryptada 
 
