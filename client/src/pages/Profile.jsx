@@ -20,7 +20,7 @@ import { Link } from 'react-router-dom';
 
 export default function Profile() {
   const fileRef = useRef(null);
-  const { currentUser ,loading,error} = useSelector((state) => state.user);
+  const { currentUser, loading, error } = useSelector((state) => state.user);
   const [file, setFile] = useState(undefined);
   const [filePerc, setFilePerc] = useState(0);//iniciamos un estado para la barra de porcentaje cuando queremos subir una foto 
   const [fileUploadError, setFileUploadError] = useState(false); //control de errores para cuano subimos la foto
@@ -60,7 +60,7 @@ export default function Profile() {
       }
     );
   };
-  
+
   //basado en el id del input extraemos los cambios y los guardamos en el formData
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -109,6 +109,21 @@ export default function Profile() {
   };
 
 
+  const handleSignOut = async () => {
+    try {
+      dispatch(signOutUserStart());
+      const res = await fetch('/api/auth/signout');
+      const data = await res.json();
+      if (data.success === false) {
+        dispatch(deleteUserFailure(data.message));
+        return;
+      }
+      dispatch(deleteUserSuccess(data));
+    } catch (error) {
+      dispatch(deleteUserFailure(data.message));
+    }
+  };
+
 
 
   return (
@@ -122,7 +137,7 @@ export default function Profile() {
           hidden
           accept='image/*'
         />
-        <img onClick={() => fileRef.current.click()}  src={formData.avatar || currentUser.avatar} alt="profile"
+        <img onClick={() => fileRef.current.click()} src={formData.avatar || currentUser.avatar} alt="profile"
           className='rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2' />
 
         <p className='text-sm self-center'>
@@ -141,21 +156,21 @@ export default function Profile() {
 
 
 
-        <input type="text" placeholder='username' defaultValue= {currentUser.username} id='username' className='border p-3 rounded-lg' onChange={handleChange}/>
-        <input type="email" placeholder='email' defaultValue= {currentUser.email} id='email' className='border p-3 rounded-lg' onChange={handleChange}/>
+        <input type="text" placeholder='username' defaultValue={currentUser.username} id='username' className='border p-3 rounded-lg' onChange={handleChange} />
+        <input type="email" placeholder='email' defaultValue={currentUser.email} id='email' className='border p-3 rounded-lg' onChange={handleChange} />
 
         <input type="password" placeholder='password' id='password' className='border p-3 rounded-lg' />
-        <button disabled = {loading}
+        <button disabled={loading}
           className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
-         {loading? ' Loading...': 'Update'}
+          {loading ? ' Loading...' : 'Update'}
         </button>
       </form>
       <div className='flex justify-between mt-5'>
-        <span onClick = {handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
-        <span className='text-red-700 cursor-pointer'>Sign up</span>
+        <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
+        <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>Sign out</span>
       </div>
-      <p className="text-red-700 mt-5"> {error? error: ''}</p>
-      <p className="text-green-700 mt-5"> {updateSuccess ? 'user update succesfully': ''}</p>
+      <p className="text-red-700 mt-5"> {error ? error : ''}</p>
+      <p className="text-green-700 mt-5"> {updateSuccess ? 'user update succesfully' : ''}</p>
     </div>
   );
 }
