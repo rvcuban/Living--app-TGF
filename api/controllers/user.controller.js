@@ -1,5 +1,6 @@
 import { errorHandle } from "../utils/error.js";
 import User from '../models/user.model.js';
+import Listing from "../models/listing.model.js";
 import bcryptjs from 'bcryptjs';
 
 export const test = (req, res) => {
@@ -56,3 +57,18 @@ export const deleteUser = async (req, res, next) => {
       next(error);
     }
   };
+
+
+ export const getUserListings = async (req,res,next)=>{
+    if (req.user.id === req.params.id) { // si el usuario que hace la peticion es el mismo qu el usuario propietario quien creo la propiedad
+        try {
+          const listings = await Listing.find({ userRef: req.params.id }); //aqui ahcemos una busqueda de las propiedades que tiene el usuario que tiene esa misma user ref 
+          res.status(200).json(listings);
+        } catch (error) {
+          next(error);
+        }
+      } else {
+        return next(errorHandler(401, 'Solo puedes ver tus propiedades!'));
+      }
+
+  }
