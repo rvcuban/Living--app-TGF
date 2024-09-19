@@ -255,7 +255,7 @@ export default function Search() {
               className='text-green-700 hover:underline p-7 text-center w-full'
             >
               Show more
-            </button>
+          </button> 
           )}
         </div>
       </div>
