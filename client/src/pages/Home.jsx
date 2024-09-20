@@ -54,7 +54,7 @@ export default function Home() {
         <div className='text-gray-400 text-xs sm:text-sm'>
           MI app es actualmente el mejor sitio donde buscar tu nuevo hogar
           <br />
-          La manera mas facil y sencilla de encoentrar un sitio donde vivir.
+          La manera mas facil y sencilla de encontrar un sitio donde vivir.
         </div>
 
         <form
