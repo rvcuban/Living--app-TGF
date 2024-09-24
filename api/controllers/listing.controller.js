@@ -116,7 +116,7 @@ export const getListings = async (req, res, next) => {
     const order = req.query.order || 'desc';
 
     const listings = await Listing.find({ //busqueda
-      name: { $regex: searchTerm, $options: 'i' },//regrex es la funcionalidad de buscar patrones en sitios de la base de datos, la opcion i indica que no le des importancia a las mayusculas y minisculas 
+      address: { $regex: searchTerm, $options: 'i' },//regrex es la funcionalidad de buscar patrones en sitios de la base de datos, la opcion i indica que no le des importancia a las mayusculas y minisculas 
       offer,
       furnished,
       parking,

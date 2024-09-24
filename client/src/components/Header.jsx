@@ -1,12 +1,17 @@
 import { FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux'
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import DropDownProfile from "./DropDownProfile";
 
 export default function Header() {
     const { currentUser } = useSelector(state => state.user);
     const [searchTerm, setSearchTerm] = useState('');// me permite esccribir en la barra de search(valor inicial empty string)
+
+    const [openProfile, setOpenProfile] = useState(false);
     const navigate = useNavigate(); //inicilizamos el use-navegador para poder redirigir al usuario
+
+    const dropdownRef = useRef(null); // Usamos useRef para referenciar el contenedor
 
     const handleSubmit = (e) => {
         e.preventDefault();//para cque no se haga refreasha  a la pagina
@@ -19,13 +24,37 @@ export default function Header() {
     }
     //ESTE SIRVE PARA CUANDO CCAMBIE ENTRE URLS SE QUEDA LA BSUQEDA EN LA ABRRA E SEARCH VISIBLE 
     useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const searchTermFromUrl= urlParams.get('searchTerm');
-    if(searchTermFromUrl){ // si existe algun search term en la url seteamos el estado en ese srearchterm from url asi conservamos la bsuqueda de la pagina anterior 
-        setSearchTerm(searchTermFromUrl);
-    }
+        const urlParams = new URLSearchParams(location.search);
+        const searchTermFromUrl = urlParams.get('searchTerm');
+        if (searchTermFromUrl) { // si existe algun search term en la url seteamos el estado en ese srearchterm from url asi conservamos la bsuqueda de la pagina anterior 
+            setSearchTerm(searchTermFromUrl);
+        }
 
-    },[location.search])
+    }, [location.search])
+
+
+    const handleProfileClick = (e) => {
+        setOpenProfile(prev => !prev);
+    };
+
+
+    // Cerrar el menú al hacer clic fuera de él
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dropdownRef.current &&
+                !event.composedPath().includes(dropdownRef.current)
+            ) {
+                setOpenProfile(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [openProfile]);
+
+
 
 
     return (
@@ -67,13 +96,30 @@ export default function Header() {
                     <Link to='/about'>
                         <li className="hidden sm:inline text-slate-700 hover:underline">About</li>
                     </Link>
-                    <Link to='/profile'>
-                        {currentUser ? (
-                            <img className='rounded-full h-7 w-7 object-cover' src={currentUser.avatar} alt="profile" />
-                        ) : <li className=" text-slate-700 hover:underline">Sing In</li>}
 
 
-                    </Link>
+                    <li className='relative' ref={dropdownRef}>
+
+                        <Link>
+                            {currentUser ? (
+                                <img
+                                    className='rounded-full h-7 w-7 object-cover'
+                                    src={currentUser.avatar} alt="profile"
+                                    onClick={handleProfileClick} />
+
+
+
+                            ) : <li className=" text-slate-700 hover:underline">Sing In</li>
+                            }
+
+
+                        </Link>
+                        {openProfile && <DropDownProfile />}
+                    </li>
+
+
+
+
                 </ul>
             </div>
 
