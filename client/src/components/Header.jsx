@@ -6,7 +6,7 @@ import DropDownProfile from "./DropDownProfile";
 import logo from '../assets/logo.jpg'
 
 
-  
+
 
 export default function Header() {
     const { currentUser } = useSelector(state => state.user);
@@ -108,31 +108,31 @@ export default function Header() {
                     </Link>
 
 
+
+
                     <li className='relative' ref={dropdownRef}>
 
-                        <Link>
-                            {currentUser ? (
-                                <img
-                                    className='rounded-full h-7 w-7 object-cover'
-                                    src={currentUser.avatar} alt="profile"
-                                    onClick={handleProfileClick} />
+                        {currentUser ? (
+                            <img
+                                className='rounded-full h-7 w-7 object-cover'
+                                src={currentUser.avatar} alt="profile"
+                                onClick={handleProfileClick} />
 
 
-
-
-                            ) : <li className=" text-slate-700 hover:underline">Sing In</li>
+                        ) : <Link to='/sign-in' className="text-slate-700 hover:underline">
+                        Sign In
+                    </Link>
                             }
-                      
-                        </Link>
-                        {openProfile && <DropDownProfile />}
-                    </li>
+
+                    {openProfile && <DropDownProfile />}
+                </li>
 
 
 
 
-                </ul>
-            </div>
+            </ul>
+        </div>
 
-        </header>
+        </header >
     )
 }
