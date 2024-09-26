@@ -3,6 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux'
 import { useEffect, useState, useRef } from "react";
 import DropDownProfile from "./DropDownProfile";
+import logo from '../assets/logo.jpg'
+
+
+  
 
 export default function Header() {
     const { currentUser } = useSelector(state => state.user);
@@ -66,16 +70,17 @@ export default function Header() {
         //debop recordar que las clases que estoy utilizandoson de tailwind css para luego poder remodelarlo a mi gusto mas tarde 
         //fasearch de la biblioteca fa de react icons me permite importar iconos y cambair su color  y demas 
         //con la funcion link de router react doom vamos a poder ir de una pagina a otra sin tener que refrescar 
-        <header className='bg-slate-200 shadow-md'>
+        <header className='bg-slate-50 shadow-md'>
             <div className='flex justify-between items-center max-w-6xl mx-auto p-3'>
                 <Link to='/'>
 
                     <h1 className='font-bold text-sm sm:text-xl flex flex-wrap'>
+                        <img src={logo} alt='Logo' className=' hidden md:block cursor-pointer h-8 w-8 mr-2' />
                         <span className='text-black'>Top</span>
                         <span className='text-red-700'>Secret</span>
                     </h1>
                 </Link>
-                <form onSubmit={handleSubmit} className='bg-slate-100 p-3 rounded-lg flex items-center' >
+                <form onSubmit={handleSubmit} className='bg-slate-100  p-3 rounded-lg flex items-center' >
                     <input
                         type="text"
                         placeholder='Search...'
@@ -98,6 +103,11 @@ export default function Header() {
                     </Link>
 
 
+                    <Link to='/'>
+                        <li className="hidden sm:inline text-slate-700 hover:underline">Añade tu propiedad</li>
+                    </Link>
+
+
                     <li className='relative' ref={dropdownRef}>
 
                         <Link>
@@ -109,10 +119,10 @@ export default function Header() {
 
 
 
+
                             ) : <li className=" text-slate-700 hover:underline">Sing In</li>
                             }
-
-
+                      
                         </Link>
                         {openProfile && <DropDownProfile />}
                     </li>

@@ -14,8 +14,7 @@ import {
 } from '../redux/user/userSlice';
 
 import { Link } from 'react-router-dom';
-
-
+import UserInfo from "../components/UserInfo";
 
 
 export default function Profile() {
@@ -163,7 +162,7 @@ export default function Profile() {
     }
   };
 
- 
+
   return (
     <div className='p-3 max-w-lg mx-auto'>
       <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
@@ -175,8 +174,43 @@ export default function Profile() {
           hidden
           accept='image/*'
         />
-        <img onClick={() => fileRef.current.click()} src={formData.avatar || currentUser.avatar} alt="profile"
-          className='rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2' />
+
+
+        <div className="flex  items-center w-6/12 max-md:ml-0 max-md:w-full">
+          <img onClick={() => fileRef.current.click()}
+            src={formData.avatar || currentUser.avatar}
+            alt="profile"
+            className='object-cover rounded-full w-20 h-20 cursor-pointer'
+          />
+          <UserInfo currentUser={currentUser} className="ml-4" />
+        </div>
+
+        
+
+
+
+
+
+        <div className="flex flex-col mt-2.5 ml-4 font-semibold w-[79px] max-md:ml-2.5">
+          <h3 className="self-start text-xs text-zinc-600">Your details</h3>
+          <div className="flex gap-3 mt-5 whitespace-nowrap">
+            <img
+              loading="lazy"
+              src="https://cdn.builder.io/api/v1/image/assets/TEMP/2799c3c893b29f4bec26365cdfd2923656f7373cf4981e3438036ae5cc777458?placeholderIfAbsent=true&apiKey=75a06edce8de4127b1443d78918d0955"
+              alt="Email icon"
+              className="object-contain shrink-0 rounded-sm aspect-square w-[29px]"
+            />
+            <div className="flex flex-col flex-1 self-start">
+              <label htmlFor="userEmail" className="self-start text-xs text-zinc-500">Email</label>
+              <p id="userEmail" className="mt-2.5 text-xs text-gray-400">{currentUser.email}</p>
+            </div>
+          </div>
+        </div>
+
+
+
+
+
 
         <p className='text-sm self-center'>
           {fileUploadError ? (
