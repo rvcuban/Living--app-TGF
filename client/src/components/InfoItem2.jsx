@@ -12,4 +12,4 @@ function InfoItem({ icon, title, content }) {
   );
 }
 
-export default InfoItem;
+export default InfoItem;  
