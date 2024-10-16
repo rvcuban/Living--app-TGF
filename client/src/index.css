@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-    background-color: rgb(241, 245, 241);
+    background-color: var(--background); /* Usa la variable definida en @layer base */
 }
 
 .dropDownProfile {
@@ -13,19 +13,33 @@ body {
     width: 120px;
     padding: 15px;
     border-radius: 8px;
-    background-color: bg-slate-200;
+    background-color: var(--background); /* Usa la variable personalizada */
     border: 1px solid gray;
 }
 
-.dropDownProfile ::before {
+.dropDownProfile::before {
     content: '';
     position: absolute;
     top: -0.7rem;
     right: 1.1rem;
     width: 20px;
-    height: 20px ;
+    height: 20px;
     transform: rotate(45deg);
-    background-color: bg-slate-200;
+    background-color: var(--background); /* Usa la variable personalizada */
     border-left: 1px solid gray;
     border-top: 1px solid gray;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+    /* Definir las demás variables */
+  }
+  
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    /* Otros estilos para modo oscuro */
+  }
 }
