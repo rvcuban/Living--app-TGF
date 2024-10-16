@@ -1,5 +1,7 @@
 import React from "react";
 
+
+//aqui tengo el nombre y la ciudad a la que pertenece
 function UserInfo({ currentUser ,className}) {
   if (!currentUser) {
     return <div>Cargando información del usuario...</div>;

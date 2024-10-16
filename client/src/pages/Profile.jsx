@@ -15,6 +15,18 @@ import {
 
 import { Link } from 'react-router-dom';
 import UserInfo from "../components/UserInfo";
+import ProfileInfo from "../components/Profileinfo";
+
+import EmailIcon from '../assets/Email.png'; //icono usado en el email 
+import SideBarMenu from "../components/SideBarMenu";
+
+
+
+
+
+
+
+
 
 
 export default function Profile() {
@@ -28,9 +40,27 @@ export default function Profile() {
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]); //aqui guardamos la infomacion recogida sobre las propiedades del usuerio
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [activeSection, setActiveSection] = useState(''); // Estado para la sección activa
+
   const dispatch = useDispatch();
 
   console.log(formData);
+
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+
+
+
+
+
+
 
 
   useEffect(() => {
@@ -162,143 +192,126 @@ export default function Profile() {
     }
   };
 
+  const renderContent = () => {
+    switch (activeSection) {
+        case 'Mi Perfil':
+          //  return <Profile/>;
+        case 'Búsquedas Guardadas':
+           // return <SettingsContent />;
+        case 'Aplicaciones':
+            //return <NotificationsContent />;
+        case 'Pagos':
+           // return <HelpContent />;
+        default:
+           // return <Profile/>;
+    }
+};
+
 
   return (
-    <div className='p-3 max-w-lg mx-auto'>
-      <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
-      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-        <input
-          onChange={(e) => setFile(e.target.files[0])}
-          type="file"
-          ref={fileRef}
-          hidden
-          accept='image/*'
-        />
+    <div className={`flex ${isMobile ? 'flex-col' : 'h-screen'} justify-center`}>
+      {/* Sidebar para dispositivos móviles (pantalla completa) */}
+      {isMobile ? (
+        <SideBarMenu setActiveSection={setActiveSection} currentUser={currentUser} />
+      ) : (
+        // Sidebar en pantallas grandes
+        <SideBarMenu setActiveSection={setActiveSection} currentUser={currentUser} />
+      )}
 
-
-        <div className="flex  items-center w-6/12 max-md:ml-0 max-md:w-full">
-          <img onClick={() => fileRef.current.click()}
-            src={formData.avatar || currentUser.avatar}
-            alt="profile"
-            className='object-cover rounded-full w-20 h-20 cursor-pointer'
+      {/* Contenido principal */}
+      <div className={`${isMobile ? (activeSection ? 'block' : 'hidden') : 'flex-grow p-5'} w-9/12 mt-16 mr-80 bg-white shadow-lg rounded-lg overflow-y-auto min-h-screen sm:min-h-[calc(100vh-64px)]  `}>
+        <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
+        <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
+          <input
+            onChange={(e) => setFile(e.target.files[0])}
+            type="file"
+            ref={fileRef}
+            hidden
+            accept='image/*'
           />
-          <UserInfo currentUser={currentUser} className="ml-4" />
-        </div>
 
-        
-
-
-
-
-
-        <div className="flex flex-col mt-2.5 ml-4 font-semibold w-[79px] max-md:ml-2.5">
-          <h3 className="self-start text-xs text-zinc-600">Your details</h3>
-          <div className="flex gap-3 mt-5 whitespace-nowrap">
-            <img
-              loading="lazy"
-              src="https://cdn.builder.io/api/v1/image/assets/TEMP/2799c3c893b29f4bec26365cdfd2923656f7373cf4981e3438036ae5cc777458?placeholderIfAbsent=true&apiKey=75a06edce8de4127b1443d78918d0955"
-              alt="Email icon"
-              className="object-contain shrink-0 rounded-sm aspect-square w-[29px]"
+          <div className="flex justify-center">
+            <img onClick={() => fileRef.current.click()}
+              src={formData.avatar || currentUser.avatar}
+              alt="profile"
+              className='object-cover rounded-full w-20 h-20 cursor-pointer '
             />
-            <div className="flex flex-col flex-1 self-start">
-              <label htmlFor="userEmail" className="self-start text-xs text-zinc-500">Email</label>
-              <p id="userEmail" className="mt-2.5 text-xs text-gray-400">{currentUser.email}</p>
-            </div>
+
           </div>
-        </div>
 
-
-
-
-
-
-        <p className='text-sm self-center'>
-          {fileUploadError ? (
-            <span className='text-red-700'>
-              Error Image upload (image must be less than 2 mb)
-            </span>
-          ) : filePerc > 0 && filePerc < 100 ? (
-            <span className='text-slate-700'>{`Uploading ${filePerc}%`}</span>
-          ) : filePerc === 100 ? (
-            <span className='text-green-700'>Image successfully uploaded!</span>
-          ) : (
-            ''
-          )}
-        </p>
-
-
-
-        <input type="text" placeholder='username' defaultValue={currentUser.username} id='username' className='border p-3 rounded-lg' onChange={handleChange} />
-        <input type="email" placeholder='email' defaultValue={currentUser.email} id='email' className='border p-3 rounded-lg' onChange={handleChange} />
-
-        <input type="password" placeholder='password' onChange={handleChange} id='password' className='border p-3 rounded-lg' />
-        <button disabled={loading}
-          className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
-          {loading ? ' Loading...' : 'Update'}
-        </button>
-
-
-        <Link
-          className='bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95'
-          to={'/create-listing'}
-        >
-          Create Listing
-        </Link>
-
-
-
-
-
-      </form>
-      <div className='flex justify-between mt-5'>
-        <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
-        <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>Sign out</span>
-      </div>
-      <p className="text-red-700 mt-5"> {error ? error : ''}</p>
-      <p className="text-green-700 mt-5"> {updateSuccess ? 'user update succesfully' : ''}</p>
-      <button onClick={handleShowListings} className=" text-green-700 w-full">Mostrar mis propiedades</button>
-      <p className='text-red-700 mt-5'>
-        {showListingsError ? 'Error showing listings' : ''}
-      </p>
-      {userListings && userListings.length > 0 && (
-        <div className='flex flex-col gap-4'>
-          <h1 className='text-center mt-7 text-2xl font-semibold'>
-            Your Listings
-          </h1>
-          {userListings.map((listing) => (
-            <div
-              key={listing._id}
-              className='border rounded-lg p-3 flex justify-between items-center gap-4'
-            >
-              <Link to={`/listing/${listing._id}`}>
-                <img
-                  src={listing.imageUrls[0]}
-                  alt='listing cover'
-                  className='h-16 w-16 object-contain'
-                />
-              </Link>
-              <Link
-                className='text-slate-700 font-semibold  hover:underline truncate flex-1'
-                to={`/listing/${listing._id}`}
-              >
-                <p>{listing.name}</p>
-              </Link>
-
-              <div className='flex flex-col item-center'>
-                <button
-                  onClick={() => handleListingDelete(listing._id)}
-                  className='text-red-700 uppercase'
-                >
-                  Delete
-                </button>
-                <Link to={`/update-listing/${listing._id}`}>
-                  <button className='text-green-700 uppercase'>Edit</button>
-                </Link>
+          <div className="flex flex-col mt-2.5 ml-4 font-semibold">
+            <h3 className="self-start text-xs text-zinc-600">Your details</h3>
+            <div className="flex gap-3 mt-5">
+              <img
+                loading="lazy"
+                src={EmailIcon}
+                alt="Email icon"
+                className="object-contain rounded-sm w-[29px]"
+              />
+              <div className="flex flex-col">
+                <label htmlFor="userEmail" className="text-xs text-zinc-500">Email</label>
+                <p id="userEmail" className="mt-2.5 text-xs text-gray-400">{currentUser.email}</p>
               </div>
             </div>
-          ))}
+          </div>
+
+          <ProfileInfo currentUser={currentUser} className="ml-4" />
+
+          <input type="text" placeholder='username' defaultValue={currentUser.username} id='username' className='border p-3 rounded-lg' onChange={handleChange} />
+          <input type="email" placeholder='email' defaultValue={currentUser.email} id='email' className='border p-3 rounded-lg' onChange={handleChange} />
+          <input type="password" placeholder='password' onChange={handleChange} id='password' className='border p-3 rounded-lg' />
+
+          <button disabled={loading}
+            className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
+            {loading ? ' Loading...' : 'Update'}
+          </button>
+
+          <Link
+            className='bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95'
+            to={'/create-listing'}
+          >
+            Create Listing
+          </Link>
+        </form>
+
+        <div className='flex justify-between mt-5'>
+          <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
+          <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>Sign out</span>
         </div>
-      )}
+
+        {userListings && userListings.length > 0 && (
+          <div className='flex flex-col gap-4'>
+            <h1 className='text-center mt-7 text-2xl font-semibold'>
+              Your Listings
+            </h1>
+            {userListings.map((listing) => (
+              <div
+                key={listing._id}
+                className='border rounded-lg p-3 flex justify-between items-center gap-4'
+              >
+                <Link to={`/listing/${listing._id}`}>
+                  <img
+                    src={listing.imageUrls[0]}
+                    alt='listing cover'
+                    className='h-16 w-16 object-contain'
+                  />
+                </Link>
+                <Link className='text-slate-700 font-semibold hover:underline truncate flex-1' to={`/listing/${listing._id}`}>
+                  <p>{listing.name}</p>
+                </Link>
+                <div className='flex flex-col'>
+                  <button onClick={() => handleListingDelete(listing._id)} className='text-red-700 uppercase'>Delete</button>
+                  <Link to={`/update-listing/${listing._id}`}>
+                    <button className='text-green-700 uppercase'>Edit</button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
+
 }
