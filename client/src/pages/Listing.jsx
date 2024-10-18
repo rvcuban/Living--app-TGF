@@ -5,7 +5,10 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import SwiperCore from 'swiper';
 import { useSelector } from 'react-redux'; // eto apra tener los datos del usuario y armar la funcionalidad de contactar propietario
 import { Navigation } from 'swiper/modules';
+
 import 'swiper/css/bundle';
+
+
 
 
 import {
@@ -16,6 +19,8 @@ import {
     FaMapMarkerAlt,
     FaParking,
     FaShare,
+    FaArrowLeft,
+    FaArrowRight
 } from 'react-icons/fa';
 import Contact from '../components/Contact';
 
@@ -56,6 +61,22 @@ export default function Listing() {
         fetchListing();
 
     }, [params.listingId])
+
+
+    //para que las fotos y ell slider se vean bien:
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currentImage, setCurrentImage] = useState(0);
+
+    const openModal = (index) => {
+        setCurrentImage(index);
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
+
     return (
         <main>
             {loading && <p className='text-center my-7 text-2xl'>Loading...</p>}
@@ -67,10 +88,11 @@ export default function Listing() {
                     <div>
                         <div className='grid grid-cols-2 gap-4 h-[358px]'>
                             {/* Columna izquierda con una imagen más grande */}
-                            <div className='col-span-1 h-full'>
+                            <div className='col-span-1 h-full h-[300px] lg:h-[400px]'>
                                 <SwiperSlide key={listing.imageUrls[0]}>
                                     <div
                                         className='h-full w-full'
+                                        onClick={() => openModal(0)}
                                         style={{
                                             background: `url(${listing.imageUrls[0]}) center no-repeat`,
                                             backgroundSize: 'cover',
@@ -84,7 +106,8 @@ export default function Listing() {
                                 {listing.imageUrls.slice(1, 3).map((url, index) => (
                                     <SwiperSlide key={url} className='h-full'>
                                         <div
-                                            className='h-full w-full'
+                                            className='h-full w-full cursor-pointer'
+                                            onClick={() => openModal(index + 1)}
                                             style={{
                                                 background: `url(${url}) center no-repeat`,
                                                 backgroundSize: 'cover',
@@ -179,6 +202,42 @@ export default function Listing() {
                             </div>
 
                         </div>
+
+                        {/* Modal de imágenes a pantalla completa */}
+                        {isModalOpen && (
+                            <div className='fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center'>
+                                <button
+                                    onClick={closeModal}
+                                    className='absolute top-4 right-4 text-white text-2xl'
+                                >
+                                    &times;
+                                </button>
+                                <img
+                                    src={listing.imageUrls[currentImage]}
+                                    alt='Full screen'
+                                    className='max-w-3xl max-h-[60vh]  object-cover rounded-lg'
+                                />
+                                <div className='absolute bottom-[10%] flex gap-4'>
+                                    <FaArrowLeft
+                                        onClick={() =>
+                                            setCurrentImage(
+                                                currentImage === 0 ? listing.imageUrls.length - 1 : currentImage - 1
+                                            )
+                                        }
+                                        className='text-white text-4xl cursor-pointer hover:scale-110 transition-transform'
+                                    />
+                                    <FaArrowRight
+                                        onClick={() =>
+                                            setCurrentImage(
+                                                currentImage === listing.imageUrls.length - 1 ? 0 : currentImage + 1
+                                            )
+                                        }
+                                        className='text-white text-4xl cursor-pointer hover:scale-110 transition-transform'
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                     {/* Segunda columna: tarjeta de reserva */}
                     <div className="bg-white p-6 shadow-lg rounded-lg">
