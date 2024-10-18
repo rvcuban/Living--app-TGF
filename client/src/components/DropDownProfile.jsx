@@ -15,7 +15,7 @@ export default function DropDownProfile() {
     <div className='absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg'>
     <ul className='flex flex-col gap-1'>
         <li>
-            <Link to='/profilemenu' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'>
+            <Link to='/profile' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'>
                 Perfil
             </Link>
         </li>

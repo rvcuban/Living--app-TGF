@@ -3,6 +3,8 @@ import { useRef, useState, useEffect } from 'react'; // para la imagen
 import { getStorage, ref, getDownloadURL, uploadBytesResumable, } from 'firebase/storage';
 import { app } from '../firebase';
 
+import { Menu, X } from 'lucide-react'; // Importar los íconos de hamburguesa y cerrar
+
 import {
   updateUserStart,
   updateUserSuccess,
@@ -19,6 +21,7 @@ import ProfileInfo from "../components/Profileinfo";
 
 import EmailIcon from '../assets/Email.png'; //icono usado en el email 
 import SideBarMenu from "../components/SideBarMenu";
+import ProfileContent from "../components/ProfileContent";
 
 
 
@@ -41,7 +44,8 @@ export default function Profile() {
   const [userListings, setUserListings] = useState([]); //aqui guardamos la infomacion recogida sobre las propiedades del usuerio
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [activeSection, setActiveSection] = useState(''); // Estado para la sección activa
+  const [activeSection, setActiveSection] = useState('ProfileContent'); // Estado para la sección activa
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Control de apertura del sidebar en móviles
 
   const dispatch = useDispatch();
 
@@ -58,7 +62,9 @@ export default function Profile() {
 
 
 
-
+ const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
 
 
@@ -209,123 +215,52 @@ export default function Profile() {
 
   const renderContent = () => {
     switch (activeSection) {
-        case 'Mi Perfil':
-          //  return <Profile/>;
-        case 'Búsquedas Guardadas':
-           // return <SettingsContent />;
-        case 'Aplicaciones':
-            //return <NotificationsContent />;
-        case 'Pagos':
-           // return <HelpContent />;
-        default:
-           // return <Profile/>;
+      case 'ProfileContent':
+       return <ProfileContent/>;
+      case 'Búsquedas Guardadas':
+      return <SettingsContent/>;
+      case 'Aplicaciones':
+      //return <NotificationsContent />;
+      case 'Pagos':
+      // return <HelpContent />;
+      default:
+      // return <Profile/>;
     }
-};
+  };
+
+ 
 
 
   return (
-    <div className={`flex ${isMobile ? 'flex-col' : 'h-screen'} justify-center`}>
-      {/* Sidebar para dispositivos móviles (pantalla completa) */}
-      {isMobile ? (
-        <SideBarMenu setActiveSection={setActiveSection} currentUser={currentUser} />
-      ) : (
-        // Sidebar en pantallas grandes
-        <SideBarMenu setActiveSection={setActiveSection} currentUser={currentUser} />
-      )}
+    <div className={`flex ${isMobile ? 'flex-col' : 'h-screen'}`}>
+    {/* Botón de menú hamburguesa en móviles */}
+    {isMobile && (
+      <button
+        onClick={toggleSidebar}
+        className="p-3 fixed top-4 left-4 z-50 bg-gray-800 text-white rounded-md"
+      >
+        {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+    )}
+
+    {/* Sidebar para pantallas grandes o móviles cuando está abierto */}
+    {!isMobile || isSidebarOpen ? (
+      <SideBarMenu
+        setActiveSection={setActiveSection}
+        currentUser={currentUser}
+        toggleSidebar={toggleSidebar}
+      />
+    ) : null}
 
       {/* Contenido principal */}
-      <div className={`${isMobile ? (activeSection ? 'block' : 'hidden') : 'flex-grow p-5'} w-9/12 mt-16 mr-80 bg-white shadow-lg rounded-lg overflow-y-auto min-h-screen sm:min-h-[calc(100vh-64px)]  `}>
-        <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
-        <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-          <input
-            onChange={(e) => setFile(e.target.files[0])}
-            type="file"
-            ref={fileRef}
-            hidden
-            accept='image/*'
-          />
+      <div
+        className={`${isMobile ? 'block w-full p-5' : 'flex-grow p-5 w-full lg:w-9/12'}  w-9/12 mt-16 mr-80 bg-white shadow-lg rounded-lg overflow-y-auto min-h-screen`}
+      >
 
-          <div className="flex justify-center">
-            <img onClick={() => fileRef.current.click()}
-              src={formData.avatar || currentUser.avatar}
-              alt="profile"
-              className='object-cover rounded-full w-20 h-20 cursor-pointer '
-            />
+        {renderContent()}
 
-          </div>
-
-          <div className="flex flex-col mt-2.5 ml-4 font-semibold">
-            <h3 className="self-start text-xs text-zinc-600">Your details</h3>
-            <div className="flex gap-3 mt-5">
-              <img
-                loading="lazy"
-                src={EmailIcon}
-                alt="Email icon"
-                className="object-contain rounded-sm w-[29px]"
-              />
-              <div className="flex flex-col">
-                <label htmlFor="userEmail" className="text-xs text-zinc-500">Email</label>
-                <p id="userEmail" className="mt-2.5 text-xs text-gray-400">{currentUser.email}</p>
-              </div>
-            </div>
-          </div>
-
-          <ProfileInfo currentUser={currentUser} className="ml-4" />
-
-          <input type="text" placeholder='username' defaultValue={currentUser.username} id='username' className='border p-3 rounded-lg' onChange={handleChange} />
-          <input type="email" placeholder='email' defaultValue={currentUser.email} id='email' className='border p-3 rounded-lg' onChange={handleChange} />
-          <input type="password" placeholder='password' onChange={handleChange} id='password' className='border p-3 rounded-lg' />
-
-          <button disabled={loading}
-            className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
-            {loading ? ' Loading...' : 'Update'}
-          </button>
-
-          <Link
-            className='bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95'
-            to={'/create-listing'}
-          >
-            Create Listing
-          </Link>
-        </form>
-
-        <div className='flex justify-between mt-5'>
-          <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
-          <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>Sign out</span>
-        </div>
-
-        {userListings && userListings.length > 0 && (
-          <div className='flex flex-col gap-4'>
-            <h1 className='text-center mt-7 text-2xl font-semibold'>
-              Your Listings
-            </h1>
-            {userListings.map((listing) => (
-              <div
-                key={listing._id}
-                className='border rounded-lg p-3 flex justify-between items-center gap-4'
-              >
-                <Link to={`/listing/${listing._id}`}>
-                  <img
-                    src={listing.imageUrls[0]}
-                    alt='listing cover'
-                    className='h-16 w-16 object-contain'
-                  />
-                </Link>
-                <Link className='text-slate-700 font-semibold hover:underline truncate flex-1' to={`/listing/${listing._id}`}>
-                  <p>{listing.name}</p>
-                </Link>
-                <div className='flex flex-col'>
-                  <button onClick={() => handleListingDelete(listing._id)} className='text-red-700 uppercase'>Delete</button>
-                  <Link to={`/update-listing/${listing._id}`}>
-                    <button className='text-green-700 uppercase'>Edit</button>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
-
+      
     </div>
   );
 

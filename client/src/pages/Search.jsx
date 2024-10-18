@@ -17,6 +17,12 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [listings, setListings] = useState([]);
   const [showMore, setShowMore] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // Detectar si es móvil
+  const [showFilters, setShowFilters] = useState(false); // Controlar la visibilidad de los filtros en móviles
+
+
+
+
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -65,6 +71,14 @@ export default function Search() {
 
     fetchListings();
   }, [location.search]);
+
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
 
   const handleChange = (e) => {
     if (
@@ -129,6 +143,20 @@ export default function Search() {
   };
   return (
     <div className='flex flex-col md:flex-row'>
+
+      {/* Mostrar botón de "Filtros" en móviles */}
+      {isMobile && (
+        <button
+          className="p-3 bg-slate-700 text-white rounded-lg my-4"
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          {showFilters ? 'Cerrar filtros' : 'Mostrar filtros'}
+        </button>
+      )}
+
+
+    {(showFilters || !isMobile) && (
+
       <div className='p-7  border-b-2 md:border-r-2 md:min-h-screen'>
         <form onSubmit={handleSubmit} className='flex flex-col gap-8'>
           <div className='flex items-center gap-2'>
@@ -229,6 +257,7 @@ export default function Search() {
           </button>
         </form>
       </div>
+       )}
       <div className='flex-1'>
         <h1 className='text-3xl font-semibold border-b p-3 text-slate-700 mt-5'>
           Listing results:
@@ -255,7 +284,7 @@ export default function Search() {
               className='text-green-700 hover:underline p-7 text-center w-full'
             >
               Show more
-          </button> 
+            </button>
           )}
         </div>
       </div>
