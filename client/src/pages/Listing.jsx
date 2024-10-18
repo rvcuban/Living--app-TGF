@@ -63,94 +63,156 @@ export default function Listing() {
                 <p className='text-center my-7 text-2xl'>Something went wrong!</p>
             )}
             {listing && !loading && !error && (
-                <div>
-                    <Swiper navigation>
-                        {listing.imageUrls.map((url) => (
-                            <SwiperSlide key={url}>
-                                <div
-                                    className='h-[550px]'
-                                    style={{
-                                        background: `url(${url}) center no-repeat`,
-                                        backgroundSize: 'cover',
+                <div className='max-w-[1720px] mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                    <div>
+                        <div className='grid grid-cols-2 gap-4 h-[358px]'>
+                            {/* Columna izquierda con una imagen más grande */}
+                            <div className='col-span-1 h-full'>
+                                <SwiperSlide key={listing.imageUrls[0]}>
+                                    <div
+                                        className='h-full w-full'
+                                        style={{
+                                            background: `url(${listing.imageUrls[0]}) center no-repeat`,
+                                            backgroundSize: 'cover',
+                                        }}
+                                    ></div>
+                                </SwiperSlide>
+                            </div>
+
+                            {/* Columna derecha con dos imágenes más pequeñas */}
+                            <div className='col-span-1 grid grid-rows-2 gap-4'>
+                                {listing.imageUrls.slice(1, 3).map((url, index) => (
+                                    <SwiperSlide key={url} className='h-full'>
+                                        <div
+                                            className='h-full w-full'
+                                            style={{
+                                                background: `url(${url}) center no-repeat`,
+                                                backgroundSize: 'cover',
+                                            }}
+                                        ></div>
+                                    </SwiperSlide>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className='relative mt-4'>
+                            <div className='absolute top-[-10%] right-0 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer'>
+                                <FaShare
+                                    className='text-slate-500'
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        setCopied(true);
+                                        setTimeout(() => {
+                                            setCopied(false);
+                                        }, 2000);
                                     }}
-                                ></div>
-                            </SwiperSlide>
-                        ))}
-                    </Swiper>
-                    <div className='fixed top-[13%] right-[3%] z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer'>
-                        <FaShare
-                            className='text-slate-500'
-                            onClick={() => {
-                                navigator.clipboard.writeText(window.location.href);
-                                setCopied(true);
-                                setTimeout(() => {
-                                    setCopied(false);
-                                }, 2000);
-                            }}
-                        />
-                    </div>
-                    {copied && (
-                        <p className='fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2'>
-                            Link copied!
-                        </p>
-                    )}
-                    <div className='flex flex-col max-w-4xl mx-auto p-3 my-7 gap-4'>
-                        <p className='text-2xl font-semibold'>
-                            {listing.name} - ${' '}
-                            {listing.offer
-                                ? listing.discountPrice.toLocaleString('en-US')
-                                : listing.regularPrice.toLocaleString('en-US')}
-                            {listing.type === 'rent' && ' / month'}
-                        </p>
-                        <p className='flex items-center mt-6 gap-2 text-slate-600  text-sm'>
-                            <FaMapMarkerAlt className='text-green-700' />
-                            {listing.address}
-                        </p>
-                        <div className='flex gap-4'>
-                            <p className='bg-red-900 w-full max-w-[200px] text-white text-center p-1 rounded-md'>
-                                {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
-                            </p>
-                            {listing.offer && (
-                                <p className='bg-green-900 w-full max-w-[200px] text-white text-center p-1 rounded-md'>
-                                    ${+listing.regularPrice - +listing.discountPrice} OFF
+                                />
+                            </div>
+                            {copied && (
+                                <p className='fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2'>
+                                    Link copied!
                                 </p>
                             )}
                         </div>
-                        <p className='text-slate-800'>
-                            <span className='font-semibold text-black'>Description - </span>
-                            {listing.description}
-                        </p>
-                        <ul className='text-green-900 font-semibold text-sm flex flex-wrap items-center gap-4 sm:gap-6'>
-                            <li className='flex items-center gap-1 whitespace-nowrap '>
-                                <FaBed className='text-lg' />
-                                {listing.bedrooms > 1
-                                    ? `${listing.bedrooms} beds `
-                                    : `${listing.bedrooms} bed `}
-                            </li>
-                            <li className='flex items-center gap-1 whitespace-nowrap '>
-                                <FaBath className='text-lg' />
-                                {listing.bathrooms > 1
-                                    ? `${listing.bathrooms} baths `
-                                    : `${listing.bathrooms} bath `}
-                            </li>
-                            <li className='flex items-center gap-1 whitespace-nowrap '>
-                                <FaParking className='text-lg' />
-                                {listing.parking ? 'Parking spot' : 'No Parking'}
-                            </li>
-                            <li className='flex items-center gap-1 whitespace-nowrap '>
-                                <FaChair className='text-lg' />
-                                {listing.furnished ? 'Furnished' : 'Unfurnished'}
-                            </li>
-                        </ul>
+                        <div className='bg-white p-6 shadow-lg rounded-lg mt-6'>
+                            <p className='text-3xl font-bold mb-4'>
+                                {listing.name} - ${' '}
+                                {listing.offer
+                                    ? listing.discountPrice.toLocaleString('en-US')
+                                    : listing.regularPrice.toLocaleString('en-US')}
+                                {listing.type === 'rent' && ' / month'}
+                            </p>
+                            <p className='flex items-center mt-6 gap-2 text-slate-600  text-sm'>
+                                <FaMapMarkerAlt className='text-green-700' />
+                                {listing.address}
+                            </p>
+                            <div className='flex gap-4  mb-4'>
+                                <p className='bg-red-900 text-white text-center p-2 rounded-md'>
+                                    {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
+                                </p>
+                                {listing.offer && (
+                                    <p className='bg-green-900 text-white text-center p-2 rounded-md'>
+                                        ${+listing.regularPrice - +listing.discountPrice} OFF
+                                    </p>
+                                )}
+                            </div>
+                            <p className='text-slate-800 leading-relaxed'>
+                                <span className='font-semibold'>Description - </span>
+                                {listing.description}
+                            </p>
+                            <ul className='text-green-900 font-semibold text-sm flex flex-wrap gap-4 mt-6'>
+                                <li className='flex items-center gap-1 whitespace-nowrap '>
+                                    <FaBed className='text-lg' />
+                                    {listing.bedrooms > 1
+                                        ? `${listing.bedrooms} beds `
+                                        : `${listing.bedrooms} bed `}
+                                </li>
+                                <li className='flex items-center gap-1 whitespace-nowrap '>
+                                    <FaBath className='text-lg' />
+                                    {listing.bathrooms > 1
+                                        ? `${listing.bathrooms} baths `
+                                        : `${listing.bathrooms} bath `}
+                                </li>
+                                <li className='flex items-center gap-1 whitespace-nowrap '>
+                                    <FaParking className='text-lg' />
+                                    {listing.parking ? 'Parking spot' : 'No Parking'}
+                                </li>
+                                <li className='flex items-center gap-1 whitespace-nowrap '>
+                                    <FaChair className='text-lg' />
+                                    {listing.furnished ? 'Furnished' : 'Unfurnished'}
+                                </li>
+                            </ul>
+
+                            {/* Nuevo recuadro para mejorar la confiabilidad*/}
+                            <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
+                                <h4 className="text-xl font-semibold">Trusted and Verified</h4>
+                                <p className="mt-4 text-gray-600">
+                                    We ensure that all our listings are verified and meet our high-quality standards.
+                                    Feel confident in booking this property with us, knowing that it's been reviewed
+                                    by professionals and is ready for you.
+                                </p>
+                                <ul className="mt-4 space-y-2 text-gray-800">
+                                    <li>✔ 100% verified listings</li>
+                                    <li>✔ Professional customer support</li>
+                                    <li>✔ Secure transactions</li>
+                                </ul>
+                            </div>
+
+                        </div>
+                    </div>
+                    {/* Segunda columna: tarjeta de reserva */}
+                    <div className="bg-white p-6 shadow-lg rounded-lg">
+                        <h3 className="text-3xl font-bold text-center">Book Now</h3>
+                        <form className="mt-6 flex flex-col gap-4">
+                            <div>
+                                <label htmlFor="checkIn" className="text-lg font-semibold">Check-in Date</label>
+                                <input type="date" id="checkIn" className="w-full mt-2 p-3 border border-gray-300 rounded-lg" />
+                            </div>
+                            <div>
+                                <label htmlFor="checkOut" className="text-lg font-semibold">Check-out Date</label>
+                                <input type="date" id="checkOut" className="w-full mt-2 p-3 border border-gray-300 rounded-lg" />
+                            </div>
+                            <button className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-500">Reserve Now</button>
+                        </form>
                         {currentUser && listing.userRef !== currentUser._id && !contact && (
-                            <button onClick={() => setContact(true)} className='bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 p-3'>
+                            <button onClick={() => setContact(true)} className='bg-slate-700 text-white rounded-lg uppercase hover:opacity-95  p-3 mt-6'>
                                 Contact landlord
                             </button>
                         )}
                         {contact && <Contact listing={listing} />}
+
+
+                        <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
+                            <h4 className="text-xl font-semibold">Additional Info</h4>
+                            <p className="mt-4 text-gray-600">
+                                Some additional information about the property or booking options can be displayed here.
+                            </p>
+                        </div>
+
                     </div>
-                </div>
-            )}
-        </main>
+                </div >
+            )
+            }
+        </main >
     );
 }
