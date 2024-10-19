@@ -54,6 +54,15 @@ const listingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+    // Podrías también incluir el número total de reseñas si deseas:
+    reviewCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
