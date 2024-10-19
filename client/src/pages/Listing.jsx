@@ -31,6 +31,7 @@ import {
     FaArrowRight
 } from 'react-icons/fa';
 import Contact from '../components/Contact';
+import PropertyMap from '../components/PropertyMap';
 
 
 export default function Listing() {
@@ -83,6 +84,33 @@ export default function Listing() {
     const closeModal = () => {
         setIsModalOpen(false);
     };
+
+    const provisionalProperties = [
+        {
+            id: 1,
+            name: 'Cozy Apartment',
+            location: { lat: 40.73061, lng: -73.935242 }, // Ubicación (coordenadas)
+            averageRating: 4.5, // Rating para la vista de estrellas
+            neighbours: ['John (Carpenter)', 'Emily (Teacher)'], // Información para la vista de vecinos
+            utilities: ['Supermarket', 'Carpenter', 'Pharmacy'], // Utilidades cercanas
+        },
+        {
+            id: 2,
+            name: 'Modern Loft',
+            location: { lat: 40.73061, lng: -73.935742 },
+            averageRating: 3.8,
+            neighbours: ['Lucas (Plumber)', 'Sophie (Designer)'],
+            utilities: ['Grocery Store', 'Plumber', 'Hospital'],
+        },
+        {
+            id: 3,
+            name: 'Luxury Condo',
+            location: { lat: 40.73261, lng: -73.933242 },
+            averageRating: 4.9,
+            neighbours: ['Anna (Lawyer)', 'Michael (Engineer)'],
+            utilities: ['Bakery', 'Lawyer', 'Gym'],
+        },
+    ];
 
 
     return (
@@ -254,8 +282,8 @@ export default function Listing() {
                                                 <FaStar
                                                     key={index}
                                                     className={`text-lg ${index < Math.round(listing.averageRating)
-                                                            ? "text-yellow-500"
-                                                            : "text-gray-300"
+                                                        ? "text-yellow-500"
+                                                        : "text-gray-300"
                                                         }`}
                                                 />
                                             ))}
@@ -288,12 +316,16 @@ export default function Listing() {
                             ) : (
                                 <p className="text-gray-600 mt-4">No reviews yet.</p>
                             )}
-
-
-
-
-
-
+                            {/* Mapa */}
+                            <div className='mt-8'>
+                                <h3 className='text-xl font-semibold mb-4'>Explore the Neighborhood</h3>
+                                {listing && listing.address && (
+                                    <PropertyMap
+                                        properties={provisionalProperties}
+                                        center={listing.address}  // Aquí pasamos la ubicación del listing como centro del mapa
+                                    />
+                                )}
+                            </div>
                         </div>
 
                         {/* Modal de imágenes a pantalla completa */}
