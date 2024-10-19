@@ -70,7 +70,7 @@ export default function Header() {
         //debop recordar que las clases que estoy utilizandoson de tailwind css para luego poder remodelarlo a mi gusto mas tarde 
         //fasearch de la biblioteca fa de react icons me permite importar iconos y cambair su color  y demas 
         //con la funcion link de router react doom vamos a poder ir de una pagina a otra sin tener que refrescar 
-        <header className='bg-slate-50 shadow-md'>
+        <header className='bg-slate-50 shadow-md relative z-50'>
             <div className='flex justify-between items-center max-w-6xl mx-auto p-3'>
                 <Link to='/'>
 
