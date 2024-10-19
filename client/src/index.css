@@ -44,3 +44,24 @@ body {
     /* Otros estilos para modo oscuro */
   }
 }
+
+/*este es el codigo para dejar el boton fijo en dispositovs moviles */
+.fixed-bottom-wrapper {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px;
+  background-color: white;
+  z-index: 3000;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .fixed-bottom-wrapper {
+    display: none; /* Ocultar en pantallas más grandes */
+  }
+}

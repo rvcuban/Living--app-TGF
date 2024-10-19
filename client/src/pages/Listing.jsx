@@ -12,6 +12,14 @@ import 'swiper/css/bundle';
 
 
 import {
+    FaCheckCircle,
+    FaHeadset,
+    FaShieldAlt,
+    FaUserCheck,
+    FaThumbsUp,
+    FaStar,
+    FaUser,
+
     FaBath,
     FaBed,
     FaChair,
@@ -187,19 +195,104 @@ export default function Listing() {
                             </ul>
 
                             {/* Nuevo recuadro para mejorar la confiabilidad*/}
-                            <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
+                            <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-xl">
                                 <h4 className="text-xl font-semibold">Trusted and Verified</h4>
                                 <p className="mt-4 text-gray-600">
                                     We ensure that all our listings are verified and meet our high-quality standards.
                                     Feel confident in booking this property with us, knowing that it's been reviewed
                                     by professionals and is ready for you.
                                 </p>
-                                <ul className="mt-4 space-y-2 text-gray-800">
-                                    <li>✔ 100% verified listings</li>
-                                    <li>✔ Professional customer support</li>
-                                    <li>✔ Secure transactions</li>
+                                <ul className="mt-4 space-y-4 text-gray-800 list-none">
+                                    <li className="flex items-center gap-2">
+                                        <FaCheckCircle className="text-sah-success text-lg" />
+                                        <span className="text-sah-primary font-medium">100% verified listings</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <FaHeadset className="text-sah-success text-lg" />
+                                        <span className="text-sah-primary font-medium">Professional customer support</span>
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <FaShieldAlt className="text-sah-success text-lg" />
+                                        <span className="text-sah-primary font-medium">Secure transactions</span>
+                                    </li>
+                                    {/* Estado dinámico del landlord */}
+                                    {listing.landlordStatus === 'verified' && (
+                                        <li className="flex items-center gap-2">
+                                            <FaUserCheck className="text-sah-success text-lg" />
+                                            <span className="text-sah-primary font-medium">Profile status: Verified landlord</span>
+                                        </li>
+                                    )}
+                                    {listing.landlordStatus === 'trusted' && (
+                                        <li className="flex items-center gap-2">
+                                            <FaThumbsUp className="text-sah-success text-lg" />
+                                            <span className="text-sah-primary font-medium">Profile status: Trusted landlord</span>
+                                        </li>
+                                    )}
+                                    {listing.landlordStatus === 'highly_trusted' && (
+                                        <li className="flex items-center gap-2">
+                                            <FaStar className="text-sah-success text-lg" />
+                                            <span className="text-sah-primary font-medium">Profile status: Highly trusted landlord</span>
+                                        </li>
+                                    )}
+                                    {listing.landlordStatus === 'new' && (
+                                        <li className="flex items-center gap-2">
+                                            <FaUser className="text-sah-warning text-lg" />
+                                            <span className="text-sah-primary font-medium">Profile status: New landlord</span>
+                                        </li>
+                                    )}
                                 </ul>
                             </div>
+
+                            {/* Puntuación media de estrellas */}
+                            {listing.reviews && listing.reviews.length > 0 ? (
+                                <>
+                                    {/* Calcula la media de las estrellas */}
+                                    <div className="flex items-center mt-4 mb-4">
+                                        <p className="text-lg font-medium text-gray-700">Average Rating: </p>
+                                        <div className="flex items-center ml-2">
+                                            {Array.from({ length: 5 }, (_, index) => (
+                                                <FaStar
+                                                    key={index}
+                                                    className={`text-lg ${index < Math.round(listing.averageRating)
+                                                            ? "text-yellow-500"
+                                                            : "text-gray-300"
+                                                        }`}
+                                                />
+                                            ))}
+                                        </div>
+                                        <p className="ml-2 text-sm text-gray-500">({listing.reviews.length} reviews)</p>
+                                    </div>
+
+                                    {/* Lista de reseñas */}
+                                    <ul className="space-y-4">
+                                        {listing.reviews.map((review, index) => (
+                                            <li key={index} className="border-b pb-4">
+                                                <div className="flex justify-between items-center">
+                                                    <p className="text-sah-primary font-semibold">{review.user}</p>
+                                                    <div className="flex items-center">
+                                                        {Array.from({ length: 5 }, (_, i) => (
+                                                            <FaStar
+                                                                key={i}
+                                                                className={`text-sm ${i < review.rating ? "text-yellow-500" : "text-gray-300"
+                                                                    }`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <p className="text-gray-600 mt-2">{review.comment}</p>
+                                                <p className="text-sm text-gray-500 mt-1">{review.date}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            ) : (
+                                <p className="text-gray-600 mt-4">No reviews yet.</p>
+                            )}
+
+
+
+
+
 
                         </div>
 
@@ -240,7 +333,8 @@ export default function Listing() {
 
                     </div>
                     {/* Segunda columna: tarjeta de reserva */}
-                    <div className="bg-white p-6 shadow-lg rounded-lg">
+                    {/* Tarjeta de reserva */}
+                    <div className="bg-white p-6 shadow-lg rounded-lg  relative">
                         <h3 className="text-3xl font-bold text-center">Book Now</h3>
                         <form className="mt-6 flex flex-col gap-4">
                             <div>
@@ -253,12 +347,18 @@ export default function Listing() {
                             </div>
                             <button className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-500">Reserve Now</button>
                         </form>
+
+                        <div className="fixed-bottom-wrapper md:hidden">
+                            <button className="bg-blue-600 text-white py-3 px-6 w-full text-center hover:bg-blue-500">Reserve Now</button>
+                        </div>
+
                         {currentUser && listing.userRef !== currentUser._id && !contact && (
                             <button onClick={() => setContact(true)} className='bg-slate-700 text-white rounded-lg uppercase hover:opacity-95  p-3 mt-6'>
-                                Contact landlord
+                                Contacta al Propietario
                             </button>
                         )}
                         {contact && <Contact listing={listing} />}
+
 
 
                         <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
