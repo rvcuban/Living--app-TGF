@@ -84,9 +84,11 @@ export const getListings = async (req, res, next) => {
   try {
     //aqui limitamos el numero visible a 9 en caso de que no se haga una peticion en concreto a la url
     const limit = parseInt(req.query.limit) || 9;
+
     //indice de apginacion , si no se proporciona empezamos por 0
     const startIndex = parseInt(req.query.startIndex) || 0;
     let offer = req.query.offer;
+    
     if (offer === undefined || offer === 'false') {
       offer = { $in: [false, true] };// aqui indicamos que la busqueda ne la base de datos si offer es false o no esta definido sera de todas, valores true y flase
     }
