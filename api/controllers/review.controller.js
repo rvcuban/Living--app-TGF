@@ -48,7 +48,7 @@ export const createReview = async (req, res, next) => {
 // obtener reseña
 export const getListingReviews = async (req, res, next) => {
   try {
-    const reviews = await Review.find({ listing: req.params.listingId }).populate('user', 'username avatar');
+    const reviews = await Review.find({ listingRef: req.params.listingId }).populate('userRef', 'username avatar');
 
     if (reviews.length === 0) {
       return res.status(200).json({ message: 'No reviews yet.' });

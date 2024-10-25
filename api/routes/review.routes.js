@@ -7,7 +7,7 @@ const router = express.Router();
 
 
 router.post('/createReview', verifyToken, createReview);
-router.get('/:listingId', getListingReviews);
+router.get('/get/:listingId', getListingReviews);
 router.delete('/deleteReview/:id/', verifyToken, deleteReview);
 
 export default router;

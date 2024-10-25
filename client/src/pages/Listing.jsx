@@ -58,6 +58,17 @@ export default function Listing() {
                     return;
                 }
                 setListing(data);
+
+                const reviewsRes = await fetch(`/api/review/get/${params.listingId}`);
+                const reviewsData = await reviewsRes.json();
+
+                // Agregar las reseñas al listado
+                if (reviewsData && !reviewsData.message) {
+                    setListing((prevListing) => ({ ...prevListing, reviews: reviewsData }));
+                }
+
+
+
                 setLoading(false);
                 setError(false);
 
@@ -111,6 +122,15 @@ export default function Listing() {
             utilities: ['Bakery', 'Lawyer', 'Gym'],
         },
     ];
+
+
+    const handleAddReviewClick = () => {
+        if (!currentUser) {
+            navigate('/sign-in'); // Redirigir a la página de inicio de sesión si no está autenticado
+        } else {
+            setShowReviewForm(true); // Mostrar el formulario de reseña si el usuario está autenticado
+        }
+    };
 
 
     return (
@@ -276,7 +296,7 @@ export default function Listing() {
                                 <>
                                     {/* Calcula la media de las estrellas */}
                                     <div className="flex items-center mt-4 mb-4">
-                                        <p className="text-lg font-medium text-gray-700">Average Rating: </p>
+                                        <p className="text-lg font-medium text-gray-700">Puntuacion General de Anteriores Inquilinos: </p>
                                         <div className="flex items-center ml-2">
                                             {Array.from({ length: 5 }, (_, index) => (
                                                 <FaStar
@@ -289,33 +309,65 @@ export default function Listing() {
                                             ))}
                                         </div>
                                         <p className="ml-2 text-sm text-gray-500">({listing.reviews.length} reviews)</p>
+
                                     </div>
+
+
 
                                     {/* Lista de reseñas */}
                                     <ul className="space-y-4">
-                                        {listing.reviews.map((review, index) => (
-                                            <li key={index} className="border-b pb-4">
-                                                <div className="flex justify-between items-center">
-                                                    <p className="text-sah-primary font-semibold">{review.user}</p>
-                                                    <div className="flex items-center">
-                                                        {Array.from({ length: 5 }, (_, i) => (
-                                                            <FaStar
-                                                                key={i}
-                                                                className={`text-sm ${i < review.rating ? "text-yellow-500" : "text-gray-300"
-                                                                    }`}
-                                                            />
-                                                        ))}
+                                        {listing.reviews.map((review) => (
+                                            <li key={review._id} className="border-b pb-4">
+                                                <div className="flex items-start">
+                                                    {review.userRef?.avatar ? (
+                                                        <img
+                                                            src={review.userRef.avatar}
+                                                            alt={`${review.userRef.username || 'Usuario'} avatar`}
+                                                            className="w-10 h-10 rounded-full mr-4"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 bg-gray-200 rounded-full mr-4" />
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between">
+                                                            <p className="font-semibold text-sah-primary">
+                                                                {review.userRef?.username || 'Usuario Anónimo'}
+                                                            </p>
+                                                            <div className="flex items-center">
+                                                                {Array.from({ length: 5 }, (_, i) => (
+                                                                    <FaStar
+                                                                        key={i}
+                                                                        className={`text-sm ${i < review.rating
+                                                                            ? 'text-yellow-500'
+                                                                            : 'text-gray-300'
+                                                                            }`}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-gray-600 mt-2">{review.comment || 'Sin comentario'}</p>
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            {review.createdAt
+                                                                ? new Date(review.createdAt).toLocaleDateString()
+                                                                : 'Fecha no disponible'}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <p className="text-gray-600 mt-2">{review.comment}</p>
-                                                <p className="text-sm text-gray-500 mt-1">{review.date}</p>
                                             </li>
                                         ))}
                                     </ul>
+
                                 </>
                             ) : (
-                                <p className="text-gray-600 mt-4">No reviews yet.</p>
+                                <div>
+                                    <p className="text-gray-600 mt-4">No reviews yet.</p>
+
+                                </div>
                             )}
+
+                            <div>
+                                <button onClick={handleAddReviewClick} className="bg-blue-500 text-white px-4 py-2 rounded mt-4">Add a Review</button>
+                            </div>
                             {/* Mapa */}
                             <div className='mt-8'>
                                 <h3 className='text-xl font-semibold mb-4'>Explore the Neighborhood</h3>
