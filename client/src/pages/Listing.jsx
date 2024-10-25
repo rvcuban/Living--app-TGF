@@ -77,17 +77,6 @@ export default function Listing() {
                     setListing((prevListing) => ({ ...prevListing, reviews: reviewsData }));
                 }
 
-
-                const ownerRes = await fetch(`/api/user/get/${data.userRef}`);
-                const ownerData = await ownerRes.json();
-
-
-
-
-                setOwnerData(ownerData);
-
-
-
                 setLoading(false);
                 setError(false);
 
@@ -100,6 +89,23 @@ export default function Listing() {
         fetchListing();
 
     }, [params.listingId])
+
+
+    useEffect(() => {
+        const fetchOwner = async () => {
+            try {
+                const res = await fetch(`/api/user/${listing.userRef}`);
+                const ownerData = await res.json();
+                setOwnerData(ownerData);
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+            }
+        };
+        if (listing?.userRef) fetchOwner();
+    }, [listing]);
+
+
+
 
 
     //para que las fotos y ell slider se vean bien:
@@ -302,7 +308,7 @@ export default function Listing() {
                                 </p>
                                 {/*informacion del casero*/}
                                 {ownerData && (
-                                    <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-xl flex items-center gap-4">
+                                    <div className="mt-8 rounded-xl flex items-center gap-4">
                                         <img src={ownerData.avatar || 'default-avatar.png'} alt={ownerData.username} className="w-12 h-12 rounded-full" />
                                         <div>
                                             <h4 className="text-lg font-semibold">{ownerData.username}</h4>
