@@ -43,10 +43,15 @@ export default function Listing() {
     const { currentUser } = useSelector((state) => state.user);
     const [copied, setCopied] = useState(false);
     const [contact, setContact] = useState(false);
-    const [showReviewForm,setShowReviewForm]= useState(false);
+    const [showReviewForm, setShowReviewForm] = useState(false);
 
-   
-    
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState('');
+
+
+    const [ownerData, setOwnerData] = useState(null);
+
+
 
     const params = useParams();
     useEffect(() => {
@@ -71,6 +76,15 @@ export default function Listing() {
                 if (reviewsData && !reviewsData.message) {
                     setListing((prevListing) => ({ ...prevListing, reviews: reviewsData }));
                 }
+
+
+                const ownerRes = await fetch(`/api/user/get/${data.userRef}`);
+                const ownerData = await ownerRes.json();
+
+
+
+
+                setOwnerData(ownerData);
 
 
 
@@ -136,6 +150,37 @@ export default function Listing() {
             setShowReviewForm(true); // Mostrar el formulario de reseña si el usuario está autenticado
         }
     };
+
+
+    const handleReviewSubmit = async () => {
+        if (rating > 0 && comment.trim() !== '') {
+            try {
+                const response = await fetch('/api/review/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${currentUser.token}`,
+                    },
+                    body: JSON.stringify({ listingId: params.listingId, rating, comment }),
+                });
+
+                const data = await response.json();
+                if (data) {
+                    setShowReviewForm(false);
+                    setListing((prevListing) => ({
+                        ...prevListing,
+                        reviews: [...prevListing.reviews, data],
+                    }));
+                    setRating(0);
+                    setComment('');
+                }
+            } catch (error) {
+                console.error('Error submitting review:', error);
+            }
+        }
+    };
+
+
 
 
     return (
@@ -255,6 +300,23 @@ export default function Listing() {
                                     Feel confident in booking this property with us, knowing that it's been reviewed
                                     by professionals and is ready for you.
                                 </p>
+                                {/*informacion del casero*/}
+                                {ownerData && (
+                                    <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-xl flex items-center gap-4">
+                                        <img src={ownerData.avatar || 'default-avatar.png'} alt={ownerData.username} className="w-12 h-12 rounded-full" />
+                                        <div>
+                                            <h4 className="text-lg font-semibold">{ownerData.username}</h4>
+                                            <button
+                                                onClick={() => navigate(`/user/${ownerData._id}`)}
+                                                className="text-blue-500 text-sm underline"
+                                            >
+                                                View Profile
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+
                                 <ul className="mt-4 space-y-4 text-gray-800 list-none">
                                     <li className="flex items-center gap-2">
                                         <FaCheckCircle className="text-sah-success text-lg" />
@@ -373,6 +435,61 @@ export default function Listing() {
                             <div>
                                 <button onClick={handleAddReviewClick} className="bg-blue-500 text-white px-4 py-2 rounded mt-4">Add a Review</button>
                             </div>
+
+                            {/* Modal para añadir reseña */}
+                            {showReviewForm && (
+                                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                    <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md">
+                                        <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
+                                        <div className="flex items-center mb-4">
+                                            {currentUser?.avatar && (
+                                                <img
+                                                    src={currentUser.avatar}
+                                                    alt={`${currentUser.username} avatar`}
+                                                    className="w-10 h-10 rounded-full mr-3 "
+                                                />
+                                            )}
+                                            <span className="mr-3">Rating:</span>
+                                            {Array.from({ length: 5 }, (_, index) => (
+                                                <FaStar
+                                                    key={index}
+                                                    onClick={() => setRating(index + 1)}
+                                                    className={`text-2xl cursor-pointer ${index < rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                                                />
+                                            ))}
+
+                                        </div>
+                                        <textarea
+                                            placeholder="Add your comment here"
+                                            value={comment}
+                                            onChange={(e) => setComment(e.target.value)}
+                                            className="border rounded p-2 mb-4 w-full"
+                                        />
+                                        <div className="flex justify-end">
+                                            <button
+                                                onClick={() => setShowReviewForm(false)}
+                                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={handleReviewSubmit}
+                                                className="bg-blue-500 text-white px-4 py-2 rounded"
+                                            >
+                                                Submit
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+
+
+
+
+
+
+
                             {/* Mapa */}
                             <div className='mt-8'>
                                 <h3 className='text-xl font-semibold mb-4'>Explore the Neighborhood</h3>
@@ -419,6 +536,8 @@ export default function Listing() {
                                 </div>
                             </div>
                         )}
+
+
 
                     </div>
                     {/* Segunda columna: tarjeta de reserva */}
