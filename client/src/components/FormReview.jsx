@@ -3,7 +3,7 @@ const [rating, setRating] = useState(0);
 const [comment, setComment] = useState("");
 
 const handleReviewSubmit = async () => {
-    const res = await fetch(`/api/review`, {
+    const res = await fetch(`/api/review/createReview`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

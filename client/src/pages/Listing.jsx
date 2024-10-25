@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 //he importado y añadido esta ibreria de swiper para anvegar entre las imagenes de las casas,pd.lo escribo por que leugo se me olvidara pra que utilizo esta ibreria 
 import { Swiper, SwiperSlide } from 'swiper/react';
 import SwiperCore from 'swiper';
@@ -36,12 +36,17 @@ import PropertyMap from '../components/PropertyMap';
 
 export default function Listing() {
     SwiperCore.use([Navigation]);
+    const navigate = useNavigate();
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const { currentUser } = useSelector((state) => state.user);
     const [copied, setCopied] = useState(false);
     const [contact, setContact] = useState(false);
+    const [showReviewForm,setShowReviewForm]= useState(false);
+
+   
+    
 
     const params = useParams();
     useEffect(() => {
