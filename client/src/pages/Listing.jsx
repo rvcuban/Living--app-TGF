@@ -126,28 +126,11 @@ export default function Listing() {
     const provisionalProperties = [
         {
             id: 1,
-            name: 'Cozy Apartment',
-            location: { lat: 40.73061, lng: -73.935242 }, // Ubicación (coordenadas)
-            averageRating: 4.5, // Rating para la vista de estrellas
-            neighbours: ['John (Carpenter)', 'Emily (Teacher)'], // Información para la vista de vecinos
-            utilities: ['Supermarket', 'Carpenter', 'Pharmacy'], // Utilidades cercanas
+            name: 'Nearby Apartment',
+            location: { lat: 40.73061, lng: -73.935242 },
+            iconUrl: 'https://example.com/star-icon.png',
         },
-        {
-            id: 2,
-            name: 'Modern Loft',
-            location: { lat: 40.73061, lng: -73.935742 },
-            averageRating: 3.8,
-            neighbours: ['Lucas (Plumber)', 'Sophie (Designer)'],
-            utilities: ['Grocery Store', 'Plumber', 'Hospital'],
-        },
-        {
-            id: 3,
-            name: 'Luxury Condo',
-            location: { lat: 40.73261, lng: -73.933242 },
-            averageRating: 4.9,
-            neighbours: ['Anna (Lawyer)', 'Michael (Engineer)'],
-            utilities: ['Bakery', 'Lawyer', 'Gym'],
-        },
+        // Añade más propiedades si es necesario
     ];
 
 
@@ -320,6 +303,7 @@ export default function Listing() {
                             <div className="mt-6 bg-white border border-gray-300 p-6 shadow-lg rounded-xl">
                                 <h4 className="text-2xl font-bold text-sah-primary mb-4">Propietario</h4>
                                 <div className="flex-1">
+                                {ownerData ? (
                                     <div className=" rounded-xl flex items-center gap-4">
                                         {ownerData && ownerData.avatar ? (
                                             <img
@@ -364,6 +348,9 @@ export default function Listing() {
                                             </button>
                                         </div>
                                     </div>
+                                    ) : (
+                                        <p>Cargando información del propietario...</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -556,14 +543,11 @@ export default function Listing() {
 
 
                             {/* Mapa */}
-                            <div className='mt-8'>
-                                <h3 className='text-xl font-semibold mb-4'>Explore the Neighborhood</h3>
-                                {listing && listing.address && (
-                                    <PropertyMap
-                                        properties={provisionalProperties}
-                                        center={listing.address}  // Aquí pasamos la ubicación del listing como centro del mapa
-                                    />
-                                )}
+                            <div className="mt-8">
+                                <h3 className="text-xl font-semibold mb-4">Explore the Neighborhood</h3>
+                                <PropertyMap
+                                    listingAddress={listing.address} // Dirección de la propiedad
+                                />
                             </div>
                         </div>
 
