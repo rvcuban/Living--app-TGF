@@ -11,6 +11,7 @@ export default function PropertyMap({ properties, listingAddress }) {
   const [markers, setMarkers] = useState([]);
   const [center, setCenter] = useState(null); // Estado para el centro del mapa (lat/lng)
   const [loading, setLoading] = useState(true);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   // Función para convertir una dirección en coordenadas
   const geocodeAddress = async (address) => {
@@ -29,7 +30,7 @@ export default function PropertyMap({ properties, listingAddress }) {
 
   useEffect(() => {
     // Convertir la dirección del listing a coordenadas
-    if (listingAddress && window.google) {
+    if (listingAddress && isScriptLoaded) {
       geocodeAddress(listingAddress)
         .then((coords) => {
           setCenter(coords);
@@ -40,7 +41,7 @@ export default function PropertyMap({ properties, listingAddress }) {
           setLoading(false);
         });
     }
-  }, [listingAddress]);
+  }, [listingAddress, isScriptLoaded]);
 
   useEffect(() => {
     // Configurar marcadores según la vista seleccionada
@@ -112,7 +113,10 @@ export default function PropertyMap({ properties, listingAddress }) {
       {loading ? (
         <p>Loading map...</p>
       ) : (
-        <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+        <LoadScript
+          googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+          onLoad={() => setIsScriptLoaded(true)}
+        >
           {center && (
             <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={13}>
               {markers.map((marker, index) => (
