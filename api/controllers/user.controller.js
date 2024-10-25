@@ -10,8 +10,7 @@ export const test = (req, res) => {
 }
 
 export const updateUser = async (req, res, next) => {
-  console.log(req.user.id);
-  console.log(req.params.id);
+
   if (req.user.id !== req.params.id) {// comparamos si la cookie del usuario obtenida tiene el mismo id del usaurio que esta requieriendo la actualizacion
     return next(errorHandle(401, 'You can only update your own account!'));//si no s asi mandamos un error 
 

@@ -12,7 +12,7 @@ export const verifyToken = (req, res, next) => {
     if (err) return next(errorHandle(403, 'Forbidden'));
 
     req.user = user; // hacemos esto para ahora en el nect enviar el suaurio a la siguiente aprte para verificarlo dado que el token es correcto
-    console.log(req.user.id) 
+   
     next();
   });
 };

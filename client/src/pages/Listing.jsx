@@ -51,6 +51,8 @@ export default function Listing() {
 
     const [ownerData, setOwnerData] = useState(null);
 
+    const [isExpanded, setIsExpanded] = useState(false);
+
 
 
     const params = useParams();
@@ -186,8 +188,10 @@ export default function Listing() {
         }
     };
 
-
-
+    //leer mas o leer menos estadp para la descripcion
+    const toggleDescription = () => {
+        setIsExpanded(!isExpanded);
+    };
 
     return (
         <main>
@@ -250,53 +254,118 @@ export default function Listing() {
                             )}
                         </div>
                         <div className='bg-white p-6 shadow-lg rounded-lg mt-6'>
-                            <p className='text-3xl font-bold mb-4'>
-                                {listing.name} - ${' '}
-                                {listing.offer
-                                    ? listing.discountPrice.toLocaleString('en-US')
-                                    : listing.regularPrice.toLocaleString('en-US')}
-                                {listing.type === 'rent' && ' / month'}
+                            <p className='text-4xl font-bold mb-4 text-sah-primary'>
+                                {listing.name}
+                                <span className="text-3xl text-sah-medium ml-2">
+                                    - ${listing.offer
+                                        ? listing.discountPrice.toLocaleString('en-US')
+                                        : listing.regularPrice.toLocaleString('en-US')}
+                                    {listing.type === 'rent' && ' / month'}
+                                </span>
                             </p>
-                            <p className='flex items-center mt-6 gap-2 text-slate-600  text-sm'>
-                                <FaMapMarkerAlt className='text-green-700' />
+
+                            <p className='flex items-center mt-4 gap-2 text-sah-medium text-lg'>
+                                <FaMapMarkerAlt className='text-sah-success' />
                                 {listing.address}
                             </p>
-                            <div className='flex gap-4  mb-4'>
-                                <p className='bg-red-900 text-white text-center p-2 rounded-md'>
+
+                            <div className='flex gap-4 my-4'>
+                                <p className='bg-sah-danger text-white font-semibold px-4 py-2 rounded-md'>
                                     {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
                                 </p>
                                 {listing.offer && (
-                                    <p className='bg-green-900 text-white text-center p-2 rounded-md'>
-                                        ${+listing.regularPrice - +listing.discountPrice} OFF
+                                    <p className='bg-sah-success text-white font-semibold px-4 py-2 rounded-md'>
+                                        Save ${+listing.regularPrice - +listing.discountPrice}
                                     </p>
                                 )}
                             </div>
-                            <p className='text-slate-800 leading-relaxed'>
-                                <span className='font-semibold'>Description - </span>
-                                {listing.description}
+
+                            <p className='text-sah-dark leading-relaxed mt-6 text-lg'>
+                                <span className='font-semibold'>Description:</span>{' '}
+                                {isExpanded
+                                    ? listing.description
+                                    : `${listing.description.slice(0, 100)}...`}
+                                <button
+                                    onClick={toggleDescription}
+                                    className='text-sah-primary ml-2 underline hover:text-sah-primary-light'
+                                >
+                                    {isExpanded ? 'Leer menos' : 'Leer más'}
+                                </button>
                             </p>
-                            <ul className='text-green-900 font-semibold text-sm flex flex-wrap gap-4 mt-6'>
-                                <li className='flex items-center gap-1 whitespace-nowrap '>
-                                    <FaBed className='text-lg' />
+
+                            <ul className='text-sah-primary font-semibold text-lg flex flex-wrap gap-6 mt-6'>
+                                <li className='flex items-center gap-1 whitespace-nowrap'>
+                                    <FaBed className='text-2xl' />
                                     {listing.bedrooms > 1
-                                        ? `${listing.bedrooms} beds `
-                                        : `${listing.bedrooms} bed `}
+                                        ? `${listing.bedrooms} Beds`
+                                        : `${listing.bedrooms} Bed`}
                                 </li>
-                                <li className='flex items-center gap-1 whitespace-nowrap '>
-                                    <FaBath className='text-lg' />
+                                <li className='flex items-center gap-1 whitespace-nowrap'>
+                                    <FaBath className='text-2xl' />
                                     {listing.bathrooms > 1
-                                        ? `${listing.bathrooms} baths `
-                                        : `${listing.bathrooms} bath `}
+                                        ? `${listing.bathrooms} Baths`
+                                        : `${listing.bathrooms} Bath`}
                                 </li>
-                                <li className='flex items-center gap-1 whitespace-nowrap '>
-                                    <FaParking className='text-lg' />
-                                    {listing.parking ? 'Parking spot' : 'No Parking'}
+                                <li className='flex items-center gap-1 whitespace-nowrap'>
+                                    <FaParking className='text-2xl' />
+                                    {listing.parking ? 'Parking Available' : 'No Parking'}
                                 </li>
-                                <li className='flex items-center gap-1 whitespace-nowrap '>
-                                    <FaChair className='text-lg' />
+                                <li className='flex items-center gap-1 whitespace-nowrap'>
+                                    <FaChair className='text-2xl' />
                                     {listing.furnished ? 'Furnished' : 'Unfurnished'}
                                 </li>
                             </ul>
+
+
+                            <div className="mt-6 bg-white border border-gray-300 p-6 shadow-lg rounded-xl">
+                                <h4 className="text-2xl font-bold text-sah-primary mb-4">Propietario</h4>
+                                <div className="flex-1">
+                                    <div className=" rounded-xl flex items-center gap-4">
+                                        {ownerData && ownerData.avatar ? (
+                                            <img
+                                                src={ownerData.avatar}
+                                                alt={`${ownerData.username || 'Usuario'} avatar`}
+                                                className="w-20 h-20 rounded-full object-cover border-2 border-sah-primary"
+                                            />
+                                        ) : (
+                                            <div className="w-12 h-12 bg-gray-200 rounded-full" />
+                                        )}
+                                        <div className="flex-1">
+                                            <h5 className="text-xl font-semibold text-sah-interaction">{ownerData.username}</h5>
+                                            <p className="text-gray-600 text-sm">Miembro desde {new Date(ownerData.createdAt).toLocaleDateString()}</p>
+
+                                            {/* Nivel de fiabilidad */}
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <span className="text-sah-success font-medium">Nivel de Fiabilidad:</span>
+                                                <span className="bg-sah-success text-white text-xs px-2 py-1 rounded-md">{ownerData.reliability || 'Estándar'}</span>
+                                            </div>
+
+                                            {/* Calificación general */}
+                                            <div className="mt-2 flex flex-col sm:flex-row items-start sm:items-center gap-1">
+                                                <span className="text-sah-success font-medium">Calificación General:</span>
+                                                <div className="flex items-center ml-0 sm:ml-2">
+                                                    {Array.from({ length: 5 }, (_, index) => (
+                                                        <FaStar
+                                                            key={index}
+                                                            className={`text-sm sm:text-lg ${index < Math.round(ownerData?.averageRating || 0)
+                                                                ? "text-yellow-500"
+                                                                : "text-gray-300"
+                                                                }`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {/* Botón para ver comentarios */}
+                                            <button
+                                                onClick={() => navigate(`/profile/${ownerData._id}/reviews`)}
+                                                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors"
+                                            >
+                                                Ver Opiniones
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Nuevo recuadro para mejorar la confiabilidad*/}
                             <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-xl">
@@ -307,20 +376,7 @@ export default function Listing() {
                                     by professionals and is ready for you.
                                 </p>
                                 {/*informacion del casero*/}
-                                {ownerData && (
-                                    <div className="mt-8 rounded-xl flex items-center gap-4">
-                                        <img src={ownerData.avatar || 'default-avatar.png'} alt={ownerData.username} className="w-12 h-12 rounded-full" />
-                                        <div>
-                                            <h4 className="text-lg font-semibold">{ownerData.username}</h4>
-                                            <button
-                                                onClick={() => navigate(`/user/${ownerData._id}`)}
-                                                className="text-blue-500 text-sm underline"
-                                            >
-                                                View Profile
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
+
 
 
                                 <ul className="mt-4 space-y-4 text-gray-800 list-none">
@@ -367,68 +423,71 @@ export default function Listing() {
                             {/* Puntuación media de estrellas */}
                             {listing.reviews && listing.reviews.length > 0 ? (
                                 <>
-                                    {/* Calcula la media de las estrellas */}
-                                    <div className="flex items-center mt-4 mb-4">
-                                        <p className="text-lg font-medium text-gray-700">Puntuacion General de Anteriores Inquilinos: </p>
-                                        <div className="flex items-center ml-2">
-                                            {Array.from({ length: 5 }, (_, index) => (
-                                                <FaStar
-                                                    key={index}
-                                                    className={`text-lg ${index < Math.round(listing.averageRating)
-                                                        ? "text-yellow-500"
-                                                        : "text-gray-300"
-                                                        }`}
-                                                />
-                                            ))}
-                                        </div>
-                                        <p className="ml-2 text-sm text-gray-500">({listing.reviews.length} reviews)</p>
-
-                                    </div>
-
-
-
-                                    {/* Lista de reseñas */}
-                                    <ul className="space-y-4">
-                                        {listing.reviews.map((review) => (
-                                            <li key={review._id} className="border-b pb-4">
-                                                <div className="flex items-start">
-                                                    {review.userRef?.avatar ? (
-                                                        <img
-                                                            src={review.userRef.avatar}
-                                                            alt={`${review.userRef.username || 'Usuario'} avatar`}
-                                                            className="w-10 h-10 rounded-full mr-4"
+                                    < div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-xl">
+                                        <div className="mt-6 mb-3 border-b border-gray-500 pb-4">
+                                            {/* Calcula la media de las estrellas */}
+                                            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 justify-between">
+                                                <p className="text-lg font-semibold text-sah-dark text-center sm:text-left">Puntuacion General de Anteriores Inquilinos: </p>
+                                                <div className="flex items-center ml-2">
+                                                    {Array.from({ length: 5 }, (_, index) => (
+                                                        <FaStar
+                                                            key={index}
+                                                            className={`text-lg ${index < Math.round(listing.averageRating)
+                                                                ? "text-yellow-500"
+                                                                : "text-gray-300"
+                                                                }`}
                                                         />
-                                                    ) : (
-                                                        <div className="w-10 h-10 bg-gray-200 rounded-full mr-4" />
-                                                    )}
-                                                    <div className="flex-1">
-                                                        <div className="flex justify-between">
-                                                            <p className="font-semibold text-sah-primary">
-                                                                {review.userRef?.username || 'Usuario Anónimo'}
-                                                            </p>
-                                                            <div className="flex items-center">
-                                                                {Array.from({ length: 5 }, (_, i) => (
-                                                                    <FaStar
-                                                                        key={i}
-                                                                        className={`text-sm ${i < review.rating
-                                                                            ? 'text-yellow-500'
-                                                                            : 'text-gray-300'
-                                                                            }`}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-gray-600 mt-2">{review.comment || 'Sin comentario'}</p>
-                                                        <p className="text-sm text-gray-500 mt-1">
-                                                            {review.createdAt
-                                                                ? new Date(review.createdAt).toLocaleDateString()
-                                                                : 'Fecha no disponible'}
-                                                        </p>
-                                                    </div>
+                                                    ))}
                                                 </div>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                                <p className="ml-2 text-sm text-gray-500">({listing.reviews.length} reviews)</p>
+
+                                            </div>
+                                        </div>
+
+
+                                        {/* Lista de reseñas */}
+                                        <ul className="space-y-4">
+                                            {listing.reviews.map((review) => (
+                                                <li key={review._id} className="border-b pb-4">
+                                                    <div className="flex items-start">
+                                                        {review.userRef?.avatar ? (
+                                                            <img
+                                                                src={review.userRef.avatar}
+                                                                alt={`${review.userRef.username || 'Usuario'} avatar`}
+                                                                className="w-10 h-10 rounded-full mr-4"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-10 h-10 bg-gray-200 rounded-full mr-4" />
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between">
+                                                                <p className="font-semibold text-sah-primary">
+                                                                    {review.userRef?.username || 'Usuario Anónimo'}
+                                                                </p>
+                                                                <div className="flex items-center">
+                                                                    {Array.from({ length: 5 }, (_, i) => (
+                                                                        <FaStar
+                                                                            key={i}
+                                                                            className={`text-sm ${i < review.rating
+                                                                                ? 'text-yellow-500'
+                                                                                : 'text-gray-300'
+                                                                                }`}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-gray-600 mt-2">{review.comment || 'Sin comentario'}</p>
+                                                            <p className="text-sm text-gray-500 mt-1">
+                                                                {review.createdAt
+                                                                    ? new Date(review.createdAt).toLocaleDateString()
+                                                                    : 'Fecha no disponible'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
 
                                 </>
                             ) : (

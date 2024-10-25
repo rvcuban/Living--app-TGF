@@ -33,7 +33,7 @@ export default function ListingItem({ listing }) {
               : listing.regularPrice.toLocaleString('en-US')}
             {listing.type === 'rent' && ' / mes'}
           </p>
-          <di  className='text-slate-700 flex gap-4'>
+          <div  className='text-slate-700 flex gap-4'>
             <div className='font-bold text-xs'>
               {listing.bedrooms > 1
                 ? `${listing.bedrooms} beds `
@@ -44,7 +44,7 @@ export default function ListingItem({ listing }) {
                 ? `${listing.bathrooms} baths `
                 : `${listing.bathrooms} bath `}
             </div>
-          </di>
+          </div>
         </div>
       </Link>
     </div>
