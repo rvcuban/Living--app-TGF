@@ -32,6 +32,7 @@ import {
 } from 'react-icons/fa';
 import Contact from '../components/Contact';
 import PropertyMap from '../components/PropertyMap';
+import ReservationCard from '../components/ReservationCar';
 
 
 export default function Listing() {
@@ -176,6 +177,43 @@ export default function Listing() {
         setIsExpanded(!isExpanded);
     };
 
+
+    // Provisional array en Listing.jsx
+    const provisionalResidents = [
+        {
+            id: 1,
+            name: "Critina Vaquerizo",
+            avatar: "https://via.placeholder.com/50",
+            userId: "user1"
+        },
+        {
+            id: 2,
+            name: "Jaime Masa",
+            avatar: "https://via.placeholder.com/50",
+            userId: "user2"
+        },
+
+        {
+            id: 1,
+            name: "Sergio Martin",
+            avatar: "https://via.placeholder.com/50",
+            userId: "user1"
+        },
+        {
+            id: 2,
+            name: "Javier Rodriguez",
+            avatar: "https://via.placeholder.com/50",
+            userId: "user2"
+        },
+        // Añade más residentes según necesites
+    ];
+
+
+
+
+
+
+
     return (
         <main>
             {loading && <p className='text-center my-7 text-2xl'>Loading...</p>}
@@ -303,51 +341,51 @@ export default function Listing() {
                             <div className="mt-6 bg-white border border-gray-300 p-6 shadow-lg rounded-xl">
                                 <h4 className="text-2xl font-bold text-sah-primary mb-4">Propietario</h4>
                                 <div className="flex-1">
-                                {ownerData ? (
-                                    <div className=" rounded-xl flex items-center gap-4">
-                                        {ownerData && ownerData.avatar ? (
-                                            <img
-                                                src={ownerData.avatar}
-                                                alt={`${ownerData.username || 'Usuario'} avatar`}
-                                                className="w-20 h-20 rounded-full object-cover border-2 border-sah-primary"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 bg-gray-200 rounded-full" />
-                                        )}
-                                        <div className="flex-1">
-                                            <h5 className="text-xl font-semibold text-sah-interaction">{ownerData.username}</h5>
-                                            <p className="text-gray-600 text-sm">Miembro desde {new Date(ownerData.createdAt).toLocaleDateString()}</p>
+                                    {ownerData ? (
+                                        <div className=" rounded-xl flex items-center gap-4">
+                                            {ownerData && ownerData.avatar ? (
+                                                <img
+                                                    src={ownerData.avatar}
+                                                    alt={`${ownerData.username || 'Usuario'} avatar`}
+                                                    className="w-20 h-20 rounded-full object-cover border-2 border-sah-primary"
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 bg-gray-200 rounded-full" />
+                                            )}
+                                            <div className="flex-1">
+                                                <h5 className="text-xl font-semibold text-sah-interaction">{ownerData.username}</h5>
+                                                <p className="text-gray-600 text-sm">Miembro desde {new Date(ownerData.createdAt).toLocaleDateString()}</p>
 
-                                            {/* Nivel de fiabilidad */}
-                                            <div className="mt-2 flex items-center gap-2">
-                                                <span className="text-sah-success font-medium">Nivel de Fiabilidad:</span>
-                                                <span className="bg-sah-success text-white text-xs px-2 py-1 rounded-md">{ownerData.reliability || 'Estándar'}</span>
-                                            </div>
-
-                                            {/* Calificación general */}
-                                            <div className="mt-2 flex flex-col sm:flex-row items-start sm:items-center gap-1">
-                                                <span className="text-sah-success font-medium">Calificación General:</span>
-                                                <div className="flex items-center ml-0 sm:ml-2">
-                                                    {Array.from({ length: 5 }, (_, index) => (
-                                                        <FaStar
-                                                            key={index}
-                                                            className={`text-sm sm:text-lg ${index < Math.round(ownerData?.averageRating || 0)
-                                                                ? "text-yellow-500"
-                                                                : "text-gray-300"
-                                                                }`}
-                                                        />
-                                                    ))}
+                                                {/* Nivel de fiabilidad */}
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    <span className="text-sah-success font-medium">Nivel de Fiabilidad:</span>
+                                                    <span className="bg-sah-success text-white text-xs px-2 py-1 rounded-md">{ownerData.reliability || 'Estándar'}</span>
                                                 </div>
+
+                                                {/* Calificación general */}
+                                                <div className="mt-2 flex flex-col sm:flex-row items-start sm:items-center gap-1">
+                                                    <span className="text-sah-success font-medium">Calificación General:</span>
+                                                    <div className="flex items-center ml-0 sm:ml-2">
+                                                        {Array.from({ length: 5 }, (_, index) => (
+                                                            <FaStar
+                                                                key={index}
+                                                                className={`text-sm sm:text-lg ${index < Math.round(ownerData?.averageRating || 0)
+                                                                    ? "text-yellow-500"
+                                                                    : "text-gray-300"
+                                                                    }`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {/* Botón para ver comentarios */}
+                                                <button
+                                                    onClick={() => navigate(`/profile/${ownerData._id}/reviews`)}
+                                                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors"
+                                                >
+                                                    Ver Opiniones
+                                                </button>
                                             </div>
-                                            {/* Botón para ver comentarios */}
-                                            <button
-                                                onClick={() => navigate(`/profile/${ownerData._id}/reviews`)}
-                                                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors"
-                                            >
-                                                Ver Opiniones
-                                            </button>
                                         </div>
-                                    </div>
                                     ) : (
                                         <p>Cargando información del propietario...</p>
                                     )}
@@ -592,37 +630,51 @@ export default function Listing() {
                     {/* Segunda columna: tarjeta de reserva */}
                     {/* Tarjeta de reserva */}
                     <div className="bg-white p-6 shadow-lg rounded-lg  relative">
-                        <h3 className="text-3xl font-bold text-center">Book Now</h3>
-                        <form className="mt-6 flex flex-col gap-4">
-                            <div>
-                                <label htmlFor="checkIn" className="text-lg font-semibold">Check-in Date</label>
-                                <input type="date" id="checkIn" className="w-full mt-2 p-3 border border-gray-300 rounded-lg" />
-                            </div>
-                            <div>
-                                <label htmlFor="checkOut" className="text-lg font-semibold">Check-out Date</label>
-                                <input type="date" id="checkOut" className="w-full mt-2 p-3 border border-gray-300 rounded-lg" />
-                            </div>
-                            <button className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-500">Reserve Now</button>
-                        </form>
-
-                        <div className="fixed-bottom-wrapper md:hidden">
-                            <button className="bg-blue-600 text-white py-3 px-6 w-full text-center hover:bg-blue-500">Reserve Now</button>
+                        <div className='mt-8'>
+                            <ReservationCard listingType={listing.type} regularPrice={listing.regularPrice} />
                         </div>
 
                         {currentUser && listing.userRef !== currentUser._id && !contact && (
-                            <button onClick={() => setContact(true)} className='bg-slate-700 text-white rounded-lg uppercase hover:opacity-95  p-3 mt-6'>
+                            <button onClick={() => setContact(true)} className='bg-orange-500 text-white rounded-lg uppercase hover:opacity-95  p-3 mt-6'>
                                 Contacta al Propietario
                             </button>
                         )}
                         {contact && <Contact listing={listing} />}
 
-
+                     {/* Sección de residentes actuales */}
 
                         <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
                             <h4 className="text-xl font-semibold">Additional Info</h4>
-                            <p className="mt-4 text-gray-600">
-                                Some additional information about the property or booking options can be displayed here.
-                            </p>
+                            <h5 className="text-lg font-medium text-slate-700 mt-4">Quien vive aqui</h5>
+                            <ul className="mt-4 space-y-3">
+                                {provisionalResidents && provisionalResidents.length > 0 ? (
+                                    provisionalResidents.map((resident, index) => (
+                                        <li
+                                            key={resident._id || index} // Clave única para cada elemento
+                                            className="flex items-center p-3 bg-slate-100 rounded-lg shadow-sm border border-sah-light"
+                                        >
+                                            <img
+                                                src={resident.avatar || 'default-avatar.jpg'}
+                                                alt={resident.username || 'Resident'}
+                                                className="w-12 h-12 rounded-full mr-4"
+                                            />
+                                            <div className="flex-1">
+                                                <p className="text-slate-800 font-semibold text-lg">
+                                                    {resident.name}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => navigate(`/profile/${resident._id}`)}
+                                                className="ml-auto px-4 py-2 text-white bg-sah-primary rounded-lg hover:bg-sah-primary-dark"
+                                            >
+                                                View Profile
+                                            </button>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <p className="text-gray-600 mt-2">No current residents listed.</p>
+                                )}
+                            </ul>
                         </div>
 
                     </div>
