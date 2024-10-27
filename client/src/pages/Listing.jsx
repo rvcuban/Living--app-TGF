@@ -645,18 +645,18 @@ export default function Listing() {
 
                         <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
                             <h4 className="text-xl font-semibold">Additional Info</h4>
-                            <h5 className="text-lg font-medium text-slate-700 mt-4">Quien vive aqui</h5>
+                            <h5 className="text-sm font-medium text-slate-700 mt-4">Quien vive aqui</h5>
                             <ul className="mt-4 space-y-3">
                                 {provisionalResidents && provisionalResidents.length > 0 ? (
                                     provisionalResidents.map((resident, index) => (
                                         <li
                                             key={resident._id || index} // Clave única para cada elemento
-                                            className="flex items-center p-3 bg-slate-100 rounded-lg shadow-sm border border-sah-light"
+                                            className="flex items-center p-2 bg-slate-100 rounded-lg shadow-sm border border-sah-light"
                                         >
                                             <img
                                                 src={resident.avatar || 'default-avatar.jpg'}
                                                 alt={resident.username || 'Resident'}
-                                                className="w-12 h-12 rounded-full mr-4"
+                                                className="w-8 h-8 rounded-full mr-4"
                                             />
                                             <div className="flex-1">
                                                 <p className="text-slate-800 font-semibold text-lg">
@@ -665,7 +665,7 @@ export default function Listing() {
                                             </div>
                                             <button
                                                 onClick={() => navigate(`/profile/${resident._id}`)}
-                                                className="ml-auto px-4 py-2 text-white bg-sah-primary rounded-lg hover:bg-sah-primary-dark"
+                                                className="ml-auto px-3 py-1 text-white bg-blue-500 rounded-lg hover:bg-sah-primary-dark transition-colors"
                                             >
                                                 View Profile
                                             </button>
