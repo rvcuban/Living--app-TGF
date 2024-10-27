@@ -23,7 +23,7 @@ import EmailIcon from '../assets/Email.png'; //icono usado en el email
 import SideBarMenu from "../components/SideBarMenu";
 import ProfileContent from "../components/ProfileContent";
 
-
+import RequestContent from "../components/RequestContent";
 
 
 
@@ -220,7 +220,7 @@ export default function Profile() {
       case 'Búsquedas Guardadas':
       return <SettingsContent/>;
       case 'Aplicaciones':
-      //return <NotificationsContent />;
+      return <RequestContent />;
       case 'Pagos':
       // return <HelpContent />;
       default:

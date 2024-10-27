@@ -13,6 +13,7 @@ import UpdateListing from "./pages/UpdateListing";
 import Listing from "./pages/Listing";
 import Search from "./pages/Search";
 import ProfileMenu from "./pages/ProfileMenu";
+import RequestContent from "./components/RequestContent";
 
 
 export default function App() {
@@ -32,6 +33,9 @@ export default function App() {
         <Route path="/profilemenu" element={<ProfileMenu />} />
         <Route path="/create-listing" element={<CreateListing />} />
         <Route path="/update-listing/:listingId" element={<UpdateListing />} />
+
+
+        <Route path="/request" element={<RequestContent />} />
 
       </Route>
 
