@@ -67,11 +67,11 @@ export default function Listing() {
                 const data = await res.json();
                 console.log('Fetched data:', data); // Log para verificar qué datos se obtienen
                 
-                /*if (data.success === false) {
+                if (data.success === false) {
                     setError(true);
                     setLoading(false);
                     return;
-                }*/
+                }
                 setListing(data);
 
                 /*const reviewsRes = await fetch(`/api/review/get/${params.listingId}`);

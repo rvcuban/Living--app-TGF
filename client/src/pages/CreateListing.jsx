@@ -144,9 +144,19 @@ export default function CreateListing() {
             });
             const data = await res.json();
             setLoading(false);
+
             if (data.success === false) {
                 setError(data.message);
             }
+            if (data._id) {
+                navigate(`/listing/${data._id}`);
+            } else {
+                console.error("Error: Listing ID not returned from server.");
+                setError("Error creating listing. Please try again.");
+            }
+
+
+
             navigate(`/listing/${data._id}`);
         } catch (error) {
             setError(error.message);
