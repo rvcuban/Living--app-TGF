@@ -57,6 +57,7 @@ export default function Listing() {
 
 
     const params = useParams();
+    console.log("Listing ID:", params.listingId); // Verifica que `listingId` sea válido
     useEffect(() => {
         const fetchListing = async () => {
 
@@ -65,7 +66,7 @@ export default function Listing() {
                 const res = await fetch(`/api/listing/get/${params.listingId}`);
                 const data = await res.json();
                 console.log('Fetched data:', data); // Log para verificar qué datos se obtienen
-
+                
                 /*if (data.success === false) {
                     setError(true);
                     setLoading(false);
@@ -73,14 +74,14 @@ export default function Listing() {
                 }*/
                 setListing(data);
 
-                const reviewsRes = await fetch(`/api/review/get/${params.listingId}`);
+                /*const reviewsRes = await fetch(`/api/review/get/${params.listingId}`);
                 const reviewsData = await reviewsRes.json();
 
                 // Agregar las reseñas al listado
                 if (reviewsData && !reviewsData.message) {
                     setListing((prevListing) => ({ ...prevListing, reviews: reviewsData }));
                 }
-
+*/
                 setLoading(false);
                 setError(false);
 
@@ -146,7 +147,7 @@ export default function Listing() {
     };
 
 
-    const handleReviewSubmit = async () => {
+    /*const handleReviewSubmit = async () => {
         if (rating > 0 && comment.trim() !== '') {
             try {
                 const response = await fetch('/api/review/', {
@@ -173,7 +174,7 @@ export default function Listing() {
             }
         }
     };
-
+     */
     //leer mas o leer menos estadp para la descripcion
     const toggleDescription = () => {
         setIsExpanded(!isExpanded);
