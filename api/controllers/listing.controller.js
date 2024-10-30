@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 export const createListing = async (req, res, next) => {
   try {
     const listing = await Listing.create(req.body);
-    return res.status(201).json(listing);
+    return res.status(201).json({suceess:true ,listing});
   } catch (error) {
     next(error);
   }

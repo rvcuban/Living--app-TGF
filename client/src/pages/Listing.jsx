@@ -643,7 +643,7 @@ export default function Listing() {
                         )}
                         {contact && <Contact listing={listing} />}
 
-                     {/* Sección de residentes actuales */}
+                        {/* Sección de residentes actuales */}
 
                         <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
                             <h4 className="text-xl font-semibold">Additional Info</h4>

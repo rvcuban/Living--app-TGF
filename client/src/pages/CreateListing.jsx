@@ -144,7 +144,7 @@ export default function CreateListing() {
             });
             const data = await res.json();
             setLoading(false);
-            if (data.success === false) {
+            if (data.success === false || !data.listing) {
                 setError(data.message);
             }
             navigate(`/listing/${data._id}`);
