@@ -84,6 +84,7 @@ export default function Listing() {
                 setError(false);
 
             } catch (error) {
+                console.error('Error inesperado:', error);
                 setError(true);
 
             }
