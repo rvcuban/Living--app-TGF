@@ -65,19 +65,14 @@ const listingSchema = new mongoose.Schema(
     },
 
     // Añadido: campo para almacenar las referencias de las reseñas
-    reviews: [
-      { type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Review' }
-
-    ],
-
+   
 
   },
   { timestamps: true }
 );
 
-// Configura reviews para que por defecto sea un array vacío
-listingSchema.path('reviews').default(() => []);
+
+
 
 const Listing = mongoose.model('Listing', listingSchema);
 
