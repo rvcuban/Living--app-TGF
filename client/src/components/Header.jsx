@@ -106,7 +106,7 @@ export default function Header() {
                     </Link>
 
 
-                    <Link to='/'>
+                    <Link to='/create-listing'>
                         <li className="hidden sm:inline text-slate-700 hover:underline">Añade tu propiedad</li>
                     </Link>
 
