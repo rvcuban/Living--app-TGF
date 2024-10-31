@@ -146,7 +146,7 @@ export default function Listing() {
     };
 
 
-    /*const handleReviewSubmit = async () => {
+    const handleReviewSubmit = async () => {
         if (rating > 0 && comment.trim() !== '') {
             try {
                 const response = await fetch('/api/review/', {
@@ -173,7 +173,7 @@ export default function Listing() {
             }
         }
     };
-     */
+     
     //leer mas o leer menos estadp para la descripcion
     const toggleDescription = () => {
         setIsExpanded(!isExpanded);
