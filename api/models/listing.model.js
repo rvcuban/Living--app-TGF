@@ -65,7 +65,10 @@ const listingSchema = new mongoose.Schema(
     },
 
     // Añadido: campo para almacenar las referencias de las reseñas
-   
+    reviews: [
+      { type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Review' }
+    ],
 
   },
   { timestamps: true }
