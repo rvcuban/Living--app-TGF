@@ -74,14 +74,13 @@ export default function Listing() {
                 }
                 setListing(data);
 
-                /*const reviewsRes = await fetch(`/api/review/get/${params.listingId}`);
+                const reviewsRes = await fetch(`/api/review/get/${params.listingId}`);
                 const reviewsData = await reviewsRes.json();
 
                 // Agregar las reseñas al listado
                 if (reviewsData && !reviewsData.message) {
                     setListing((prevListing) => ({ ...prevListing, reviews: reviewsData }));
                 }
-*/
                 setLoading(false);
                 setError(false);
 
