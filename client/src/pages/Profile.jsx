@@ -254,7 +254,7 @@ export default function Profile() {
 
       {/* Contenido principal */}
       <div
-        className={`${isMobile ? 'block w-full p-5' : 'flex-grow p-5 w-full lg:w-9/12'}  w-9/12 mt-16 mr-80 bg-white shadow-lg rounded-lg overflow-y-auto min-h-screen`}
+        className={`${isMobile ? 'block w-full pl-5 pr-5 pb-5' : 'flex-grow p-5 w-full mt-16 lg:w-9/12'}  w-9/12  mr-80 bg-white shadow-lg rounded-lg overflow-y-auto min-h-screen`}
       >
 
         {renderContent()}

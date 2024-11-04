@@ -221,41 +221,22 @@ function ProfileContent() {
             />
 
           </div>
-
-          <div className="flex flex-col mt-2.5 ml-4 font-semibold">
-            <h3 className="self-start text-xs text-zinc-600">Your details</h3>
-            <div className="flex gap-3 mt-5">
-              <img
-                loading="lazy"
-                src={EmailIcon}
-                alt="Email icon"
-                className="object-contain rounded-sm w-[29px]"
-              />
-              <div className="flex flex-col">
-                <label htmlFor="userEmail" className="text-xs text-zinc-500">Email</label>
-                <p id="userEmail" className="mt-2.5 text-xs text-gray-400">{currentUser.email}</p>
-              </div>
-            </div>
-          </div>
-
-          <ProfileInfo currentUser={currentUser} className="ml-4" />
-
+        {/*
           <input type="text" placeholder='username' defaultValue={currentUser.username} id='username' className='border p-3 rounded-lg' onChange={handleChange} />
           <input type="email" placeholder='email' defaultValue={currentUser.email} id='email' className='border p-3 rounded-lg' onChange={handleChange} />
           <input type="password" placeholder='password' onChange={handleChange} id='password' className='border p-3 rounded-lg' />
-
+        
           <button disabled={loading}
             className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
             {loading ? ' Loading...' : 'Update'}
           </button>
+        */ }
 
-          <Link
-            className='bg-green-700 text-white p-3 rounded-lg uppercase text-center hover:opacity-95'
-            to={'/create-listing'}
-          >
-            Create Listing
-          </Link>
+
+         
         </form>
+
+        <ProfileInfo currentUser={currentUser} className="ml-4" />
 
         <div className='flex justify-between mt-5'>
           <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>

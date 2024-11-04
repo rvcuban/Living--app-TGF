@@ -637,7 +637,7 @@ export default function Listing() {
                         </div>
 
                         {currentUser && listing.userRef !== currentUser._id && !contact && (
-                            <button onClick={() => setContact(true)} className='bg-orange-500 text-white rounded-lg uppercase hover:opacity-95  p-3 mt-6'>
+                            <button onClick={() => setContact(true)} className='bg-orange-500 text-white px-4 py-2 rounded mt-4 uppercase hover:opacity-95  p-3 '>
                                 Contacta al Propietario
                             </button>
                         )}
