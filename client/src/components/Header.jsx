@@ -143,7 +143,7 @@ useEffect(() => {
                   className="text-slate-700 hover:underline focus:outline-none"
                   onClick={handlePropertyClick}
                 >
-                  Añade tu propiedad
+                  Mis propiedades
                 </button>
                 {openPropertyMenu && <DropDownProperty />}
               </li>

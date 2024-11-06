@@ -71,6 +71,10 @@ const listingSchema = new mongoose.Schema(
     ],
 
     residentesActuales: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    isvisible: {
+      type: Boolean,
+      default: true,
+    },
 
   },
   { timestamps: true }

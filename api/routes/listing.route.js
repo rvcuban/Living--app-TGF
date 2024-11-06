@@ -1,5 +1,5 @@
 import express from "express";
-import { createListing, deleteListing ,updateListing, getListing, getListings} from "../controllers/listing.controller.js";
+import { createListing, deleteListing ,updateListing, getListing, getListings, getUserListings} from "../controllers/listing.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
 const router = express.Router();
@@ -12,5 +12,8 @@ router.post('/update/:id', verifyToken, updateListing);
 router.get('/get/:id', getListing);
 
 router.get('/get', getListings);
+//esta la creo para obtener las propiedades de un usuario en especifico
+router.get('/user', verifyToken, getUserListings);
+
 
 export default router;

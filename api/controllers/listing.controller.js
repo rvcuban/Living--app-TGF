@@ -78,6 +78,25 @@ export const getListing = async (req, res, next) => {
   }
 };
 
+//obetenr las rutas de un usuario en especifico 
+export const getUserListings = async (req, res, next) => {
+  try {
+    console.log('req.user:', req.user);
+    const listings = await Listing.find({ userRef: req.user.id }).sort({ createdAt: -1 });
+    res.status(200).json(listings);
+  } catch (error) {
+    console.error('Error en getUserListings:', error);
+    next(error);
+  }
+};
+
+
+
+
+
+
+
+
 //este va a ser parte del algortimo de search y voy a contruir aqui la paginacion y demas
 export const getListings = async (req, res, next) => {
 

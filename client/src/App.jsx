@@ -14,6 +14,7 @@ import Listing from "./pages/Listing";
 import Search from "./pages/Search";
 
 import RequestContent from "./components/RequestContent";
+import MyProperties from "./pages/MyProperties";
 
 
 export default function App() {
@@ -33,6 +34,8 @@ export default function App() {
         
         <Route path="/create-listing" element={<CreateListing />} />
         <Route path="/update-listing/:listingId" element={<UpdateListing />} />
+        <Route path="/my-properties" element={<MyProperties />} />
+
 
 
         <Route path="/request" element={<RequestContent />} />

@@ -7,7 +7,7 @@ export default function DropDownProperty() {
       <ul className='flex flex-col gap-1'>
         <li>
           <Link to='/my-properties' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'>
-            Mis Propiedades
+           Ver mis Propiedades
           </Link>
         </li>
         <li>
