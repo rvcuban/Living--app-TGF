@@ -61,36 +61,47 @@ export default function MyProperties() {
           {properties.map((property) => (
             <li
               key={property._id}
-              className="bg-white shadow-md rounded-lg p-4 flex items-center"
+              className="bg-white shadow-md rounded-lg p-4 flex flex-col sm:flex-row sm:items-center"
             >
-              {/* Imagen de la propiedad */}
-              <img
-                src={property.imageUrls[0]}
-                alt={property.name}
-                className="h-20 w-20 object-cover rounded-md mr-4"
-              />
-              {/* Información de la propiedad */}
-              <div className="flex-1">
-                <h2 className="text-xl font-bold">{property.name}</h2>
-                <p className="text-gray-600">
-                  {property.offer ? property.discountedPrice : property.regularPrice} € /{' '}
-                  {property.type === 'rent' ? 'mes' : 'venta'}
-                </p>
+              {/* Contenedor de imagen e información */}
+              <div className="flex flex-1 items-start">
+                {/* Imagen de la propiedad */}
+                <img
+                  src={property.imageUrls[0]}
+                  alt={property.address}
+                  className="h-20 w-20 object-cover rounded-md mr-4 flex-shrink-0"
+                />
+                {/* Información de la propiedad */}
+                <div className="flex-1 max-w-full">
+                  <h2 className="text-lg font-bold break-words truncate" title={property.name}>
+                    {property.name}
+                  </h2>
+                  <p className="text-gray-600">
+                    {property.offer
+                      ? property.discountedPrice
+                      : property.regularPrice}{' '}
+                    € / {property.type === 'rent' ? 'mes' : 'venta'}
+                  </p>
+                </div>
               </div>
               {/* Botón deslizante */}
-              <div className="flex items-center">
-                <label className="flex items-center cursor-pointer">
+              <div className="flex items-center mt-4 sm:mt-0 sm:ml-4">
+                <label className="flex items-center cursor-pointer mr">
                   <div className="relative">
                     <input
                       type="checkbox"
                       checked={property.visible}
-                      onChange={() => handleToggle(property._id, property.visible)}
+                      onChange={() =>
+                        handleToggle(property._id, property.visible)
+                      }
                       className="sr-only"
                     />
                     <div className="block bg-gray-200 w-14 h-8 rounded-full"></div>
                     <div
                       className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${
-                        property.visible ? 'transform translate-x-full bg-green-500' : ''
+                        property.visible
+                          ? 'transform translate-x-full bg-green-500'
+                          : ''
                       }`}
                     ></div>
                   </div>
@@ -107,4 +118,5 @@ export default function MyProperties() {
       )}
     </div>
   );
+  
 }
