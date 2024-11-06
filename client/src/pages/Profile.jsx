@@ -233,16 +233,7 @@ export default function Profile() {
 
   return (
     <div className={`flex ${isMobile ? 'flex-col' : 'h-screen'}`}>
-    {/* Botón de menú hamburguesa en móviles */}
-    {isMobile && (
-      <button
-        onClick={toggleSidebar}
-        className="p-3 fixed top-4 left-4 z-50 bg-gray-800 text-white rounded-md"
-      >
-        {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
-    )}
-
+  
     {/* Sidebar para pantallas grandes o móviles cuando está abierto */}
     {!isMobile || isSidebarOpen ? (
       <SideBarMenu

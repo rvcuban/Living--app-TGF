@@ -4,7 +4,6 @@ const userSchema = new mongoose.Schema({
 username :{
     type:String,
     require:true,
-    unique:true,
 },
 email :{
     type:String,
@@ -16,6 +15,16 @@ password :{
     require:true,
 
 },
+telefono: { type: String },
+fechaNacimiento: { type: Date },
+direccion: { type: String },
+genero: { type: String, enum: ['masculino', 'femenino', 'otro'] },
+documentos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }],
+favoritos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
+rol: { type: String, enum: ['inquilino', 'propietario'], default: 'inquilino' },
+
+
+
 avatar:{
     type:String,
     default:"https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"

@@ -70,6 +70,8 @@ const listingSchema = new mongoose.Schema(
         ref: 'Review' }
     ],
 
+    residentesActuales: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
   },
   { timestamps: true }
 );

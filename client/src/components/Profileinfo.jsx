@@ -114,7 +114,7 @@ function ProfileInfo({ currentUser, className }) {
 
             {/* Username */}
             <label className="block mb-4">
-                <span className="block text-gray-600 font-semibold">Username</span>
+                <span className="block text-gray-600 font-semibold">Nombre Completo</span>
                 <input
                     type="text"
                     name="username"

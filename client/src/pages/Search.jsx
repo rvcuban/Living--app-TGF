@@ -147,7 +147,7 @@ export default function Search() {
       {/* Mostrar botón de "Filtros" en móviles */}
       {isMobile && (
         <button
-          className="p-3 bg-slate-700 text-white rounded-lg my-4"
+          className=" bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors"
           onClick={() => setShowFilters(!showFilters)}
         >
           {showFilters ? 'Cerrar filtros' : 'Mostrar filtros'}
@@ -252,7 +252,7 @@ export default function Search() {
                 <option value='createdAt_asc'>Oldest</option>
               </select>
             </div>
-            <button className='bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95'>
+            <button className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors uppercase hover:opacity-95'>
               Search
             </button>
           </form>
