@@ -107,7 +107,7 @@ export default function MyProperties() {
                   </div>
                   <span className="ml-3 text-gray-700">
                     {property.visible ? 'Activo' : 'Inactivo'}
-                  </span>
+                  </span> 
                 </label>
               </div>
             </li>
@@ -115,7 +115,7 @@ export default function MyProperties() {
         </ul>
       ) : (
         <p>No tienes propiedades agregadas.</p>
-      )}
+      )} 
     </div>
   );
   

@@ -36,13 +36,19 @@ function ProfileInfo({ currentUser, className }) {
         address: currentUser.address || '',
         username: currentUser.username || '',
         email: currentUser.email || '',
+        passportFront: currentUser.passportFront || '',
+        idBack: currentUser.idBack || '',
+        solvencyDoc: currentUser.solvencyDoc || '',
     });
 
     //subida de  ver numero de ficheros 
-    const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
+    const handleFileChange = (e, documentType) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            setFileName(selectedFile.name);
+            handleUpload(selectedFile, documentType);
+        }
     };
-
 
     const handleUpload = () => {
         if (!file) return;
@@ -76,32 +82,32 @@ function ProfileInfo({ currentUser, className }) {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
-      };
-    
-      //esta funcion es la encargada de mandarle la informacion al backend , e utiliza en el form 
-      const handleSubmit = async (e) => {
+    };
+
+    //esta funcion es la encargada de mandarle la informacion al backend , e utiliza en el form 
+    const handleSubmit = async (e) => {
         e.preventDefault(); // evitamos que se haga refresh de la apgina 
         try {
-          dispatch(updateUserStart());
-          const res = await fetch(`/api/user/update/${currentUser._id}`, { // hacemos el fecth con el id del usuario a actualizar
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),//enviamos el form data por que aqui fue donde guardamos los cambios 
-          });
-          const data = await res.json();
-          if (data.success === false) {
-            dispatch(updateUserFailure(data.message));
-            return;
-          }
-    
-          dispatch(updateUserSuccess(data));
-          setUpdateSuccess(true);
+            dispatch(updateUserStart());
+            const res = await fetch(`/api/user/update/${currentUser._id}`, { // hacemos el fecth con el id del usuario a actualizar
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),//enviamos el form data por que aqui fue donde guardamos los cambios 
+            });
+            const data = await res.json();
+            if (data.success === false) {
+                dispatch(updateUserFailure(data.message));
+                return;
+            }
+
+            dispatch(updateUserSuccess(data));
+            setUpdateSuccess(true);
         } catch (error) {
-          dispatch(updateUserFailure(error.message));
+            dispatch(updateUserFailure(error.message));
         }
-      };
+    };
 
 
 
@@ -109,7 +115,7 @@ function ProfileInfo({ currentUser, className }) {
 
 
     return (
-        <form onSubmit={handleSubmit} className=" rounded-lg">
+        <form onSubmit={handleSubmit} className=" w-full rounded-lg">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Edit Profile</h2>
 
             {/* Username */}
@@ -193,67 +199,79 @@ function ProfileInfo({ currentUser, className }) {
 
             <h2 className="text-2xl font-bold mb-4 text-gray-800">My Documents</h2>
             {/* File Upload */}
-             <div className="mb-4">
-                <label className="block text-gray-600 font-semibold mb-1">Pasaporte o Parte delantera del Carnet de Identidad</label>
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <input
-                        type="file"
-                        onChange={handleFileChange}
-                        className="file:mr-3 file:py-1 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-gray-100 file:text-gray-600 file:cursor-pointer file:font-semibold w-full sm:w-auto"
-                    />
-                    <button
-                        onClick={handleUpload}
-                        disabled={!file || uploading}
-                        className="px-4 py-2 w-full sm:w-auto bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 disabled:bg-gray-300"
-                    >
-                        {uploading ? `Subiendo: ${uploadProgress}%` : 'Subir'}
-                    </button>
-                </div>
-                {uploadError && <div className="text-red-600 font-semibold mt-2">{uploadError}</div>}
+            <div className="mb-4">
+                <label className="block text-gray-600 font-semibold mb-1">
+                    Pasaporte o Parte delantera del Carnet de Identidad
+                </label>
+                <input
+                    type="file"
+                    onChange={(e) => handleFileChange(e, 'passportFront')}
+                    className="border border-gray-300 rounded-md p-2 w-full"
+                />
+                {uploading && (
+                    <div className="text-gray-600 font-medium mt-2">
+                        Subiendo: {uploadProgress}%
+                    </div>
+                )}
+                {formData.passportFront && (
+                    <div className="text-gray-700 font-medium mt-2">
+                        Archivo subido: {fileName}
+                    </div>
+                )}
+                {uploadError && (
+                    <div className="text-red-600 font-semibold mt-2">{uploadError}</div>
+                )}
             </div>
-
-
-           {/* File Upload */}
-           <div className="mb-4">
-                <label className="block text-gray-600 font-semibold mb-1">Parte Trasera de tu Carnet de Identidad</label>
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <input
-                        type="file"
-                        onChange={handleFileChange}
-                        className="file:mr-3 file:py-1 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-gray-100 file:text-gray-600 file:cursor-pointer file:font-semibold w-full sm:w-auto"
-                    />
-                    <button
-                        onClick={handleUpload}
-                        disabled={!file || uploading}
-                        className="px-4 py-2 w-full sm:w-auto bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 disabled:bg-gray-300"
-                    >
-                        {uploading ? `Subiendo: ${uploadProgress}%` : 'Subir'}
-                    </button>
-                </div>
-                {uploadError && <div className="text-red-600 font-semibold mt-2">{uploadError}</div>}
-            </div> 
 
 
             {/* File Upload */}
-           <div className="mb-4">
-                <label className="block text-gray-600 font-semibold mb-1">Documento para demostrar Solvencia(Aval, Nomina, Extracto bancario...)</label>
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <input
-                        type="file"
-                        onChange={handleFileChange}
-                        className="file:mr-3 file:py-1 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-gray-100 file:text-gray-600 file:cursor-pointer file:font-semibold w-full sm:w-auto"
-                    />
-                    <button
-                        onClick={handleUpload}
-                        disabled={!file || uploading}
-                        className="px-4 py-2 w-full sm:w-auto bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 disabled:bg-gray-300"
-                    >
-                        {uploading ? `Subiendo: ${uploadProgress}%` : 'Subir'}
-                    </button>
-                </div>
-                {uploadError && <div className="text-red-600 font-semibold mt-2">{uploadError}</div>}
+            <div className="mb-4">
+                <label className="block text-gray-600 font-semibold mb-1">
+                    Pasaporte o Parte delantera del Carnet de Identidad
+                </label>
+                <input
+                    type="file"
+                    onChange={(e) => handleFileChange(e, 'passportFront')}
+                    className="border border-gray-300 rounded-md p-2 w-full"
+                />
+                {uploading && (
+                    <div className="text-gray-600 font-medium mt-2">
+                        Subiendo: {uploadProgress}%
+                    </div>
+                )}
+                {formData.passportFront && (
+                    <div className="text-gray-700 font-medium mt-2">
+                        Archivo subido: {fileName}
+                    </div>
+                )}
+                {uploadError && (
+                    <div className="text-red-600 font-semibold mt-2">{uploadError}</div>
+                )}
             </div>
 
+            <div className="mb-4">
+                <label className="block text-gray-600 font-semibold mb-1">
+                    Pasaporte o Parte delantera del Carnet de Identidad
+                </label>
+                <input
+                    type="file"
+                    onChange={(e) => handleFileChange(e, 'passportFront')}
+                    className="border border-gray-300 rounded-md p-2 w-full"
+                />
+                {uploading && (
+                    <div className="text-gray-600 font-medium mt-2">
+                        Subiendo: {uploadProgress}%
+                    </div>
+                )}
+                {formData.passportFront && (
+                    <div className="text-gray-700 font-medium mt-2">
+                        Archivo subido: {fileName}
+                    </div>
+                )}
+                {uploadError && (
+                    <div className="text-red-600 font-semibold mt-2">{uploadError}</div>
+                )}
+            </div>
 
             {/* Display Uploaded Documents */}
             <div className="mt-4">
@@ -279,7 +297,7 @@ function ProfileInfo({ currentUser, className }) {
                 )}
             </div>
 
-            
+
 
 
             {/* Submit Button */}

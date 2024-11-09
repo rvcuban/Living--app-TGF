@@ -13,7 +13,7 @@ export default function SideBarMenu({ setActiveSection, currentUser, toggleSideb
   const menuItems = [
     { id: 'ProfileContent',     name: 'Mi Perfil',icon: 'icon-classname' },
     { id: 'Búsquedas Guardadas',name: 'Búsquedas Guardadas' ,icon: 'icon-classname' },
-    { id: 'Aplicaciones',       name: 'Aplicaciones' ,icon: 'icon-classname' },
+    { id: 'Aplicaciones',       name: 'Mis solicitudes' ,icon: 'icon-classname' },
     { id: 'Pagos',              name: 'Pagos',icon: 'icon-classname' },
     { id: 'Tus Reseñas',        name: 'Tus Reseñas' ,icon: 'icon-classname' },
     { id: 'Mis Documentos',     name: 'Mis Documentos' ,icon: 'icon-classname' },

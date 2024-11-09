@@ -185,7 +185,7 @@ useEffect(() => {
                   <Link to='/' onClick={handleMobileMenuToggle}>Home</Link>
                 </li>
                 <li className='text-slate-700 hover:underline py-2'>
-                  <Link to='/about' onClick={handleMobileMenuToggle}>About</Link>
+                  <Link to='/about' onClick={handleMobileMenuToggle}>Gestionar mis inmuebles</Link>
                 </li>
                 <li className='text-slate-700 hover:underline py-2'>
                   <button
@@ -194,7 +194,9 @@ useEffect(() => {
                   >
                     Añade tu propiedad
                   </button>
+                  
                   {openPropertyMenu && <DropDownProperty />}
+                  
                 </li>
                 {currentUser ? (
                   <>

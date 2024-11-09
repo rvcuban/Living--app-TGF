@@ -236,7 +236,7 @@ function ProfileContent() {
          
         </form>
 
-        <ProfileInfo currentUser={currentUser} className="ml-4" />
+        <ProfileInfo currentUser={currentUser} className="w-full" />
 
         <div className='flex justify-between mt-5'>
           <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
