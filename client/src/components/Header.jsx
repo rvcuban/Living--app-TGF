@@ -7,6 +7,8 @@ import DropDownProfile from "./DropDownProfile";
 import DropDownProperty from "./DropDownProperty";
 import logo from '../assets/logo.jpg';
 import { FaSearch } from "react-icons/fa";
+import { useLocation } from "react-router-dom";
+
 
 export default function Header() {
   const { currentUser } = useSelector(state => state.user);
@@ -19,6 +21,14 @@ export default function Header() {
 
   const dropdownRef = useRef(null);
   const propertyMenuRef = useRef(null);
+
+  //use efect par acada vez que se cambie de pagina se cierren los menus
+  const location = useLocation();
+  useEffect(() => {
+    setOpenProfile(false);
+    setOpenPropertyMenu(false);
+    setIsMobileMenuOpen(false);
+  }, [location]);
 
   const handleProfileClick = () => {
     setOpenProfile(prev => !prev);
@@ -37,6 +47,7 @@ export default function Header() {
     setOpenProfile(false);
     setOpenPropertyMenu(false);
   };
+  
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {

@@ -201,7 +201,7 @@ function ProfileInfo({ currentUser, className }) {
             {/* File Upload */}
             <div className="mb-4">
                 <label className="block text-gray-600 font-semibold mb-1">
-                    Pasaporte o Parte delantera del Carnet de Identidad
+                    Documento iDENTIFICATIVO ( DNI y/o Pasaporte)
                 </label>
                 <input
                     type="file"
@@ -223,55 +223,6 @@ function ProfileInfo({ currentUser, className }) {
                 )}
             </div>
 
-
-            {/* File Upload */}
-            <div className="mb-4">
-                <label className="block text-gray-600 font-semibold mb-1">
-                    Pasaporte o Parte delantera del Carnet de Identidad
-                </label>
-                <input
-                    type="file"
-                    onChange={(e) => handleFileChange(e, 'passportFront')}
-                    className="border border-gray-300 rounded-md p-2 w-full"
-                />
-                {uploading && (
-                    <div className="text-gray-600 font-medium mt-2">
-                        Subiendo: {uploadProgress}%
-                    </div>
-                )}
-                {formData.passportFront && (
-                    <div className="text-gray-700 font-medium mt-2">
-                        Archivo subido: {fileName}
-                    </div>
-                )}
-                {uploadError && (
-                    <div className="text-red-600 font-semibold mt-2">{uploadError}</div>
-                )}
-            </div>
-
-            <div className="mb-4">
-                <label className="block text-gray-600 font-semibold mb-1">
-                    Pasaporte o Parte delantera del Carnet de Identidad
-                </label>
-                <input
-                    type="file"
-                    onChange={(e) => handleFileChange(e, 'passportFront')}
-                    className="border border-gray-300 rounded-md p-2 w-full"
-                />
-                {uploading && (
-                    <div className="text-gray-600 font-medium mt-2">
-                        Subiendo: {uploadProgress}%
-                    </div>
-                )}
-                {formData.passportFront && (
-                    <div className="text-gray-700 font-medium mt-2">
-                        Archivo subido: {fileName}
-                    </div>
-                )}
-                {uploadError && (
-                    <div className="text-red-600 font-semibold mt-2">{uploadError}</div>
-                )}
-            </div>
 
             {/* Display Uploaded Documents */}
             <div className="mt-4">

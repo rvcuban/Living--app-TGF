@@ -15,12 +15,13 @@ import {
     signOutUserStart,
 } from '../redux/user/userSlice';
 
-export default function DropDownProfile() {
+export default function DropDownProfile({ onOptionSelect }) {
 
     const dispatch = useDispatch();
     const fileRef = useRef(null);
     const { currentUser, loading, error } = useSelector((state) => state.user);
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [isgOut, setisOut] = useState(false);
 
 
     const handleSignOut = async () => {
@@ -34,7 +35,10 @@ export default function DropDownProfile() {
                 setIsSigningOut(false);
                 return;
             }
+            setIsSigningOut(false);
             dispatch(deleteUserSuccess(data));
+            setIsSigningOut(false);
+            
             navigate('/');
             setTimeout(() => {
                 window.location.reload(false);
@@ -56,12 +60,12 @@ export default function DropDownProfile() {
                     </Link>
                 </li>
                 <li>
-                    <Link to='/saved-searches' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'>
+                    <Link to='/saved-searches' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'  onClick={onOptionSelect}>
                         Búsquedas Guardadas
                     </Link>
                 </li>
                 <li>
-                    <Link to='/my-applications' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'>
+                    <Link to='/my-applications' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'  onClick={onOptionSelect}>
                         Mis Aplicaciones
                     </Link>
                 </li>

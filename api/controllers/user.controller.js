@@ -32,6 +32,12 @@ export const updateUser = async (req, res, next) => {
           email: req.body.email,
           password: req.body.password,
           avatar: req.body.avatar,
+          phone: req.body.phone,
+          dateOfBirth: req.body. dateOfBirth,
+          address: req.body.direccion,
+          gender: req.body.gender,
+          documentos: req.body.documentos,
+          favoritos:req.body.favoritos,
         },
       },
       { new: true }//retorna si si se a hcho el upate con nueva informacion
