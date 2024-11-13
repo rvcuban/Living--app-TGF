@@ -24,6 +24,9 @@ import SideBarMenu from "../components/SideBarMenu";
 import ProfileContent from "../components/ProfileContent";
 
 import RequestContent from "../components/RequestContent";
+import Aplications from "./Aplications";
+import { Routes, Route, Navigate } from 'react-router-dom';
+
 
 
 
@@ -219,8 +222,8 @@ export default function Profile() {
        return <ProfileContent/>;
       case 'Búsquedas Guardadas':
       return <SettingsContent/>;
-      case 'Aplicaciones':
-      return <RequestContent />;
+      case 'Aplications':
+      return <Aplications />;
       case 'Pagos':
       // return <HelpContent />;
       default:
@@ -250,6 +253,17 @@ export default function Profile() {
 
         {renderContent()}
 
+        <Routes>
+         
+          <Route path="profile" element={<ProfileContent />} />
+          <Route path="applications" element={<Aplications />} />
+          
+        </Routes>
+
+      </div>
+
+      <div>
+        
       </div>
       
     </div>

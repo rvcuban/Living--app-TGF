@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
-import InfoItem from './InfoItem2';
-import LanguageSection from './LanguajeSection';
-import AddressSection from './AddressSection';
-import TravelDocuments from './TravelDocuments';
-import TrustedContacts from './TrustedContacts';
-import PersonalPreferences from './PersonalPreferences';
-import ReviewsSection from './ReviewsSections';
-import { Frown } from 'lucide-react';
+
 
 //dependencias para la subida de ficheros a firebase
 import { getStorage, ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { app } from '../firebase';
 
+import { useDispatch } from 'react-redux';
 
-
-
+import {
+    updateUserStart,
+    updateUserSuccess,
+    updateUserFailure,
+  } from '../redux/user/userSlice';
 
 const profileItems = [
     { icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/7630f2d8f2a9edd111ea306d0cbf7026fb36ffacacd3d89489edc7c36f022b2c?placeholderIfAbsent=true&apiKey=75a06edce8de4127b1443d78918d0955", title: "Phone", content: "+1 (123) 456 7890" },
@@ -28,6 +25,11 @@ function ProfileInfo({ currentUser, className }) {
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadError, setUploadError] = useState('');
+
+    const [updateSuccess, setUpdateSuccess] = useState(false);
+    
+
+    const dispatch = useDispatch();
 
     //para traer la informacion del usuario actual
     const [formData, setFormData] = useState({
@@ -82,7 +84,9 @@ function ProfileInfo({ currentUser, className }) {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
+        console.log(e.target.id)
     };
+  
 
     //esta funcion es la encargada de mandarle la informacion al backend , e utiliza en el form 
     const handleSubmit = async (e) => {
@@ -123,7 +127,7 @@ function ProfileInfo({ currentUser, className }) {
                 <span className="block text-gray-600 font-semibold">Nombre Completo</span>
                 <input
                     type="text"
-                    name="username"
+                    id="username"
                     value={formData.username}
                     onChange={handleChange}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -136,7 +140,7 @@ function ProfileInfo({ currentUser, className }) {
                 <span className="block text-gray-600 font-semibold">Email</span>
                 <input
                     type="email"
-                    name="email"
+                    id="email"
                     value={formData.email}
                     readOnly
                     className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm text-gray-500 bg-gray-100 cursor-not-allowed opacity-50 p-2"
@@ -149,7 +153,7 @@ function ProfileInfo({ currentUser, className }) {
                 <span className="block text-gray-600 font-semibold">Phone</span>
                 <input
                     type="tel"
-                    name="phone"
+                    id="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm text-gray-900 focus:border-blue-500 focus:ring focus:ring-blue-200 p-2"
@@ -162,7 +166,7 @@ function ProfileInfo({ currentUser, className }) {
                 <span className="block text-gray-600 font-semibold">Date of Birth</span>
                 <input
                     type="date"
-                    name="dateOfBirth"
+                    id="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full rounded-md border border-gray-300 shadow-sm text-gray-900 focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -174,7 +178,7 @@ function ProfileInfo({ currentUser, className }) {
                 <span className="block text-gray-600 font-semibold">Address</span>
                 <input
                     type="text"
-                    name="address"
+                    id="address"
                     value={formData.address}
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full rounded-md border border-gray-300 shadow-sm text-gray-900 focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -185,15 +189,15 @@ function ProfileInfo({ currentUser, className }) {
             <label className="block mb-4">
                 <span className="block text-gray-600 font-semibold">Gender</span>
                 <select
-                    name="gender"
+                   id="gender"
                     value={formData.gender}
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full rounded-md border border-gray-300 shadow-sm text-gray-900 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200"
                 >
                     <option value="">Select gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="masculino">Male</option>
+                    <option value="femenino">Female</option>
+                    <option value="otro">Other</option>
                 </select>
             </label>
 

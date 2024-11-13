@@ -199,6 +199,9 @@ useEffect(() => {
                   <Link to='/about' onClick={handleMobileMenuToggle}>Gestionar mis inmuebles</Link>
                 </li>
                 <li className='text-slate-700 hover:underline py-2'>
+                  <Link to='/my_aplications' onClick={handleMobileMenuToggle}>Mis Aplicaciones</Link>
+                </li>
+                <li className='text-slate-700 hover:underline py-2'>
                   <button
                     className='focus:outline-none'
                     onClick={handlePropertyClick}

@@ -65,7 +65,7 @@ export default function DropDownProfile({ onOptionSelect }) {
                     </Link>
                 </li>
                 <li>
-                    <Link to='/my-applications' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'  onClick={onOptionSelect}>
+                    <Link to='/my_aplications' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'  onClick={onOptionSelect}>
                         Mis Aplicaciones
                     </Link>
                 </li>

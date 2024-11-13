@@ -5,6 +5,7 @@ import About from "./pages/About";
 import SingIn from "./pages/SignIn";
 import Profile from "./pages/Profile";
 
+
 import Header from "./components/Header";
 import SignUp from "./pages/SignUp";
 import PrivateRoute from "./components/PrivateRoute";
@@ -15,6 +16,11 @@ import Search from "./pages/Search";
 
 import RequestContent from "./components/RequestContent";
 import MyProperties from "./pages/MyProperties";
+import Aplications from "./pages/Aplications";
+import MyApplications from "./pages/MyApplications";
+
+import { ToastContainer } from 'react-toastify'; // Importar ToastContainer
+import 'react-toastify/dist/ReactToastify.css';
 
 
 export default function App() {
@@ -34,8 +40,9 @@ export default function App() {
         
         <Route path="/create-listing" element={<CreateListing />} />
         <Route path="/update-listing/:listingId" element={<UpdateListing />} />
-        <Route path="/my-properties" element={<MyProperties />} />
-
+        <Route path="/my-properties" element={<MyProperties />} /> 
+        <Route path="/aplications" element={<Aplications />} />
+        <Route path="/my_aplications" element={<MyApplications />} />
 
 
         <Route path="/request" element={<RequestContent />} />
@@ -45,6 +52,8 @@ export default function App() {
       <Route path="/" element={<Home />} />
 
     </Routes>
+    <ToastContainer /> {/* Contenedor de notificaciones */}
   </BrowserRouter>
+  
   )
 }

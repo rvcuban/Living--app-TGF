@@ -651,7 +651,7 @@ export default function Listing() {
                     {/* Tarjeta de reserva */}
                     <div className="bg-white p-6 shadow-lg rounded-lg  relative">
                         <div className='mt-8'>
-                            <ReservationCard listingType={listing.type} regularPrice={listing.regularPrice} />
+                            <ReservationCard listingType={listing.type}  listingId={listing._id} regularPrice={listing.regularPrice} />
                         </div>
 
 

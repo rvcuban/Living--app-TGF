@@ -14,10 +14,9 @@ import {
 } from '../redux/user/userSlice';
 
 import { Link } from 'react-router-dom';
-import UserInfo from "../components/UserInfo";
+
 import ProfileInfo from "../components/Profileinfo";
 
-import EmailIcon from '../assets/Email.png'; //icono usado en el email 
 
 
 

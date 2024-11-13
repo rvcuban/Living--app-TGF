@@ -34,7 +34,7 @@ export const updateUser = async (req, res, next) => {
           avatar: req.body.avatar,
           phone: req.body.phone,
           dateOfBirth: req.body. dateOfBirth,
-          address: req.body.direccion,
+          address: req.body.address,
           gender: req.body.gender,
           documentos: req.body.documentos,
           favoritos:req.body.favoritos,

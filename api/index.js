@@ -6,6 +6,7 @@ import authRouter from './routes/auth.route.js';
 import listingRouter from './routes/listing.route.js';
 import cookieParser from "cookie-parser";
 import reviewRouter from './routes/review.routes.js';
+import applicationRouter from './routes/application.route.js';
 
 
 import path from 'path';
@@ -41,6 +42,7 @@ app.use("/api/user", UserRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing',listingRouter);
 app.use('/api/review', reviewRouter);
+app.use('/api/applications', applicationRouter); 
 
 
 app.use(express.static(path.join(__dirname, '/client/dist')));
