@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import SwiperCore from 'swiper';
 import { useSelector } from 'react-redux'; // eto apra tener los datos del usuario y armar la funcionalidad de contactar propietario
 import { Navigation } from 'swiper/modules';
+import MobileReservationFooter from '../components/MobileReservationFooter';
 
 import 'swiper/css/bundle';
 
@@ -58,6 +59,7 @@ export default function Listing() {
 
     const params = useParams();
     console.log("Listing ID:", params.listingId); // Verifica que `listingId` sea válido
+    
     useEffect(() => {
         const fetchListing = async () => {
 
@@ -66,7 +68,7 @@ export default function Listing() {
                 const res = await fetch(`/api/listing/get/${params.listingId}`);
                 const data = await res.json();
                 console.log('Fetched data:', data); // Log para verificar qué datos se obtienen
-                
+
                 if (data.success === false) {
                     setError(true);
                     setLoading(false);
@@ -95,6 +97,7 @@ export default function Listing() {
 
     }, [params.listingId])
 
+    // Verifica que `listingId` sea válido regularPrice
 
     useEffect(() => {
         const fetchOwner = async () => {
@@ -173,7 +176,7 @@ export default function Listing() {
             }
         }
     };
-     
+
     //leer mas o leer menos estadp para la descripcion
     const toggleDescription = () => {
         setIsExpanded(!isExpanded);
@@ -210,8 +213,16 @@ export default function Listing() {
         // Añade más residentes según necesites
     ];
 
-
-
+    //para el boton que te sigue toda la pantalla
+    const handleReserveNow = () => {
+        // Manejar la acción de reserva o compra
+        // Por ejemplo, navegar a una página de reserva o abrir un modal
+        if (!currentUser) {
+            navigate('/sign-in'); // Redirigir al inicio de sesión si el usuario no está autenticado
+        } else {
+            // Lógica para reservar o comprar
+        }
+    };
 
 
 
@@ -292,18 +303,9 @@ export default function Listing() {
                                 {listing.address}
                             </p>
 
-                            <div className='flex gap-4 my-4'>
-                                <p className='bg-sah-danger text-white font-semibold px-4 py-2 rounded-md'>
-                                    {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
-                                </p>
-                                {listing.offer && (
-                                    <p className='bg-sah-success text-white font-semibold px-4 py-2 rounded-md'>
-                                        Save ${+listing.regularPrice - +listing.discountPrice}
-                                    </p>
-                                )}
-                            </div>
+                              
 
-                            <p className='text-sah-dark leading-relaxed mt-6 text-lg'>
+                            <p className='text-sah-dark leading-relaxed mt-4 text-lg'>
                                 <span className='font-semibold'>Description:</span>{' '}
                                 {isExpanded
                                     ? listing.description
@@ -386,6 +388,22 @@ export default function Listing() {
                                                 >
                                                     Ver Opiniones
                                                 </button>
+
+                                                <div className="mt-4 flex flex-col sm:flex-row sm:items-start gap-4">
+                                                    {currentUser && listing.userRef !== currentUser._id && !contact && (
+                                                        <button
+                                                            onClick={() => setContact(true)}
+                                                            className='w-full sm:w-auto bg-blue-500 text-white px-6 py-3 rounded-md uppercase hover:bg-blue-600 transition-colors'
+                                                        >
+                                                            Contactar
+                                                        </button>
+                                                    )}
+                                                    {contact && (
+                                                        <div className="w-full">
+                                                            <Contact listing={listing} />
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
@@ -636,12 +654,6 @@ export default function Listing() {
                             <ReservationCard listingType={listing.type} regularPrice={listing.regularPrice} />
                         </div>
 
-                        {currentUser && listing.userRef !== currentUser._id && !contact && (
-                            <button onClick={() => setContact(true)} className='bg-orange-500 text-white px-4 py-2 rounded mt-4 uppercase hover:opacity-95  p-3 '>
-                                Contacta al Propietario
-                            </button>
-                        )}
-                        {contact && <Contact listing={listing} />}
 
                         {/* Sección de residentes actuales */}
 
@@ -680,9 +692,16 @@ export default function Listing() {
                         </div>
 
                     </div>
+                    <div>
+                        <MobileReservationFooter
+                            listing={listing}
+                            onReserve={handleReserveNow}
+                        />
+                    </div>
+
                 </div >
-            )
-            }
+
+            )}
         </main >
     );
 }
