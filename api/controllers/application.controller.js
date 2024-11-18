@@ -5,6 +5,7 @@ import Listing from '../models/listing.model.js';
 import { errorHandle } from '../utils/error.js';
 
 
+
 export const getUserApplications = async (req, res, next) => {
   try {
     const applications = await Application.find({ userId: req.user.id })

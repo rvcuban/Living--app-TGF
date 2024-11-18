@@ -1,57 +1,77 @@
 // src/pages/MyProperties.jsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { FaEnvelope, FaUsers, FaEdit } from 'react-icons/fa';
 
 export default function MyProperties() {
   const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Obtener las propiedades del usuario al cargar el componente
     fetch('/api/listing/user', {
-      credentials: 'include', // Incluye las cookies para autenticación
+      credentials: 'include',
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.success !== false) {
-          setProperties(data);
+          const fetchedProperties = data; // 'data' es el arreglo de propiedades
+
+          if (Array.isArray(fetchedProperties)) {
+            // Para cada propiedad, obtener el resumen
+            const fetchSummaries = fetchedProperties.map((property) =>
+              fetch(`/api/listing/${property._id}/summary`, {
+                credentials: 'include',
+              })
+                .then((res) => res.json())
+                .then((summaryData) => {
+                  if (summaryData.success) {
+                    return {
+                      ...property,
+                      applicationsCount: summaryData.data.applicationsCount,
+                      membersCount: summaryData.data.membersCount,
+                      capacity: summaryData.data.capacity,
+                    };
+                  } else {
+                    console.error(
+                      `Error fetching summary for property ${property._id}:`,
+                      summaryData.message
+                    );
+                    return property;
+                  }
+                })
+                .catch((error) => {
+                  console.error(
+                    `Error fetching summary for property ${property._id}:`,
+                    error
+                  );
+                  return property;
+                })
+            );
+
+            // Esperar a que todas las solicitudes se completen
+            Promise.all(fetchSummaries).then((updatedProperties) => {
+              setProperties(updatedProperties);
+              setLoading(false);
+            });
+          } else {
+            console.error('Las propiedades obtenidas no son un arreglo:', fetchedProperties);
+            setLoading(false);
+          }
         } else {
           console.error('Error fetching properties:', data.message);
+          setLoading(false);
         }
       })
       .catch((error) => {
         console.error('Error fetching properties:', error);
+        setLoading(false);
       });
   }, []);
 
-  const handleToggle = (propertyId, currentStatus) => {
-    // Actualizar el estado de visibilidad de la propiedad
-    fetch(`/api/listing/update/${propertyId}`, {
-      method: 'POST', // Según tu ruta, usas POST para actualizar
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include', // Incluye las cookies para autenticación
-      body: JSON.stringify({ visible: !currentStatus }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success !== false) {
-          // Actualizar el estado localmente
-          setProperties((prevProperties) =>
-            prevProperties.map((property) =>
-              property._id === propertyId
-                ? { ...property, visible: data.visible }
-                : property
-            )
-          );
-        } else {
-          console.error('Error updating property visibility:', data.message);
-        }
-      })
-      .catch((error) => {
-        console.error('Error updating property visibility:', error);
-      });
-  };
+  if (loading) {
+    return <p>Cargando propiedades...</p>;
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-4">
@@ -73,15 +93,44 @@ export default function MyProperties() {
                 />
                 {/* Información de la propiedad */}
                 <div className="flex-1 max-w-full">
-                  <h2 className="text-lg font-bold break-words truncate" title={property.name}>
+                  <h2
+                    className="text-lg font-bold break-words truncate"
+                    title={property.name}
+                  >
                     {property.name}
                   </h2>
                   <p className="text-gray-600">
                     {property.offer
-                      ? property.discountedPrice
+                      ? property.discountPrice
                       : property.regularPrice}{' '}
                     € / {property.type === 'rent' ? 'mes' : 'venta'}
                   </p>
+                  {/* Mostrar el número de solicitudes y miembros */}
+                  <div className="flex items-center mt-2 flex-wrap gap-2">
+                    {/* Botón para ver las solicitudes */}
+                    <Link
+                      to={`/property/${property._id}/applications`}
+                      className="flex items-center text-blue-500 mr-4"
+                    >
+                      <FaEnvelope className="mr-1" />
+                      <span>{property.applicationsCount || 0} Solicitudes</span>
+                    </Link>
+                    {/* Mostrar el número de miembros actuales */}
+                    <div className="flex items-center text-green-500">
+                      <FaUsers className="mr-1" />
+                      <span>
+                        {property.membersCount || 0} Miembros
+                      </span>
+                    </div>
+                  </div>
+                  {/* Botón de Editar */}
+                  <Link
+                    to={`/update-listing/${property._id}`}
+                    className="text-blue-500 hover:text-blue-700 mr-4 flex items-center"
+                  >
+                    <FaEdit className="mr-1" />
+                    <span>Editar</span>
+                  </Link>
                 </div>
               </div>
               {/* Botón deslizante */}
@@ -107,7 +156,7 @@ export default function MyProperties() {
                   </div>
                   <span className="ml-3 text-gray-700">
                     {property.visible ? 'Activo' : 'Inactivo'}
-                  </span> 
+                  </span>
                 </label>
               </div>
             </li>
@@ -115,8 +164,7 @@ export default function MyProperties() {
         </ul>
       ) : (
         <p>No tienes propiedades agregadas.</p>
-      )} 
+      )}
     </div>
   );
-  
 }

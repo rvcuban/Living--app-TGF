@@ -70,6 +70,7 @@ const listingSchema = new mongoose.Schema(
         ref: 'Review' }
     ],
     applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Application' }],
+    capacity: { type: Number, required: true }, // Total de miembros permitidos
 
     residentesActuales: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isvisible: {

@@ -20,12 +20,8 @@ export default function Aplications() {
                 },
             });
             const data = await res.json();
-            console.log('Applications fetched:', data);
             if (data.success !== false) {
                 setApplications(data.applications);
-                // Después de obtener las aplicaciones
-                
-
             } else {
                 console.error('Error fetching applications:', data.message);
                 setError(true);
@@ -41,7 +37,7 @@ export default function Aplications() {
     };
 
     // Función para cancelar una aplicación
-    const handleCancelApplication = async (applicationId) => {
+     const handleCancelApplication = async (applicationId) => {
         if (!window.confirm('¿Estás seguro de que deseas cancelar esta aplicación?')) {
             return;
         }
@@ -71,24 +67,9 @@ export default function Aplications() {
         }
     };
 
-
     useEffect(() => {
-        if (currentUser) {
-            fetchApplications();
-        } else {
-            setLoading(false);
-            setError(true);
-            toast.error('Por favor, inicia sesión para ver tus aplicaciones.');
-        }
-    }, [currentUser]);
-
-    if (!currentUser) {
-        return (
-            <div className="flex justify-center items-center h-full">
-                <p className="text-xl text-gray-700">Por favor, inicia sesión para ver tus aplicaciones.</p>
-            </div>
-        );
-    }
+        fetchApplications();
+    }, []);
 
     if (loading) {
         return (
@@ -106,7 +87,6 @@ export default function Aplications() {
         );
     }
 
-
     return (
         <div className="max-w-6xl mx-auto p-4">
             <h1 className="text-3xl font-semibold mb-6 text-center">Mis Aplicaciones</h1>
@@ -120,8 +100,32 @@ export default function Aplications() {
                                 applicationStatus={application.status} // Pasar el estado de la aplicación
                                 applicationId={application._id}
                                 isApplication={true} // Indicar que es en el contexto de una aplicación
-                                onCancelApplication={handleCancelApplication}
-
+                                onCancelApplication={async (applicationId) => {
+                                    // Función para cancelar la aplicación
+                                    if (window.confirm('¿Estás seguro de que deseas cancelar esta aplicación?')) {
+                                        try {
+                                            const res = await fetch(`/api/applications/${applicationId}`, {
+                                                method: 'DELETE',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'Authorization': `Bearer ${currentUser.token}`,
+                                                },
+                                            });
+                                            const data = await res.json();
+                                            if (data.success) {
+                                                toast.success("Aplicación cancelada correctamente.");
+                                                setApplications((prev) =>
+                                                    prev.filter((app) => app._id !== applicationId)
+                                                );
+                                            } else {
+                                                toast.error(data.message || "Error al cancelar la aplicación.");
+                                            }
+                                        } catch (error) {
+                                            console.error('Error canceling application:', error);
+                                            toast.error("Error al cancelar la aplicación.");
+                                        }
+                                    }
+                                }}
                             />
                         </li>
                     ))}

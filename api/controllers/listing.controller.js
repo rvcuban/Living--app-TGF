@@ -1,6 +1,8 @@
 import Listing from '../models/listing.model.js';
 import { errorHandle } from '../utils/error.js';
 import mongoose from 'mongoose';
+import {cancelApplication,getUserApplications,createApplication,updateApplication} from './application.controller.js';
+
 
 export const createListing = async (req, res, next) => {
   try {
@@ -89,6 +91,55 @@ export const getUserListings = async (req, res, next) => {
     next(error);
   }
 };
+
+// controllers/property.controller.js
+
+export const getPropertySummary = async (req, res, next) => {
+  try {
+    const {id} = req.params;
+    const property = await Listing.findById(id)
+      .populate('applications', '_id status')
+      .populate('residentesActuales', '_id')
+      .exec();
+
+    if (!property) {
+      return res.status(404).json({ success: false, message: 'Propiedad no encontrada.' });
+    }
+
+    const applicationsCount = property.applications ? property.applications.length : 0;
+    const membersCount = property.residentesActuales ? property.residentesActuales.length : 0;
+    const capacity = property.capacity || 'N/A';
+
+    res.status(200).json({
+      success: true,
+      data: {
+        applicationsCount,
+        membersCount,
+        capacity,
+      },
+    });
+  } catch (error) {
+    console.error('Error al obtener el resumen de la propiedad:', error);
+    next(error);
+  }
+};
+
+// controllers/application.controller.js
+
+export const getApplicationsByProperty = async (req, res, next) => {
+  try {
+    const { propertyId } = req.params;
+    const applications = await Application.find({ propertyId })
+      .populate('userId', '_id name profileImage')
+      .exec();
+
+    res.status(200).json({ success: true, applications });
+  } catch (error) {
+    console.error('Error al obtener las solicitudes:', error);
+    next(error);
+  }
+};
+
 
 
 
