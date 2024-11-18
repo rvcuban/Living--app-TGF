@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import PropertyCard from '../components/PropertyCard';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useSelector } from 'react-redux';
 
 export default function Aplications() {
     const [applications, setApplications] = useState([]);
@@ -12,11 +13,19 @@ export default function Aplications() {
     const fetchApplications = async () => {
         try {
             const res = await fetch('/api/applications', {
-                credentials: 'include', // Incluye credenciales si son necesarias
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentUser.token}`,
+                },
             });
             const data = await res.json();
+            console.log('Applications fetched:', data);
             if (data.success !== false) {
                 setApplications(data.applications);
+                // Después de obtener las aplicaciones
+                
+
             } else {
                 console.error('Error fetching applications:', data.message);
                 setError(true);
@@ -40,7 +49,10 @@ export default function Aplications() {
         try {
             const res = await fetch(`/api/applications/${applicationId}`, {
                 method: 'DELETE',
-                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentUser.token}`,
+                },
             });
             const data = await res.json();
             if (data.success !== false) {
@@ -50,18 +62,33 @@ export default function Aplications() {
                 );
                 toast.success('Aplicación cancelada correctamente.');
             } else {
-                console.error('Error canceling application:', data.message);
+                console.error('Error cancelando la aplicación:', data.message);
                 toast.error('Error al cancelar la aplicación.');
             }
         } catch (error) {
-            console.error('Error canceling application:', error);
+            console.error('Error cancelando la aplicación:', error);
             toast.error('Error al cancelar la aplicación.');
         }
     };
 
+
     useEffect(() => {
-        fetchApplications();
-    }, []);
+        if (currentUser) {
+            fetchApplications();
+        } else {
+            setLoading(false);
+            setError(true);
+            toast.error('Por favor, inicia sesión para ver tus aplicaciones.');
+        }
+    }, [currentUser]);
+
+    if (!currentUser) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <p className="text-xl text-gray-700">Por favor, inicia sesión para ver tus aplicaciones.</p>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -79,18 +106,22 @@ export default function Aplications() {
         );
     }
 
+
     return (
         <div className="max-w-6xl mx-auto p-4">
             <h1 className="text-3xl font-semibold mb-6 text-center">Mis Aplicaciones</h1>
+            <ToastContainer /> {/* Contenedor de notificaciones */}
             {applications.length > 0 ? (
                 <ul className="space-y-4">
                     {applications.map((application) => (
                         <li key={application._id}>
                             <PropertyCard
                                 property={application.propertyId}
+                                applicationStatus={application.status} // Pasar el estado de la aplicación
+                                applicationId={application._id}
+                                isApplication={true} // Indicar que es en el contexto de una aplicación
                                 onCancelApplication={handleCancelApplication}
-                                isApplication={true}
-                                applicationId={application._id} // Pasar el ID de la aplicación para cancelar
+
                             />
                         </li>
                     ))}

@@ -69,6 +69,7 @@ const listingSchema = new mongoose.Schema(
       { type: mongoose.Schema.Types.ObjectId, 
         ref: 'Review' }
     ],
+    applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Application' }],
 
     residentesActuales: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isvisible: {
