@@ -155,7 +155,7 @@ const renderStatus = () => {
                         <span className="ml-3 text-gray-700">
                             {property.visible ? 'Activo' : 'Inactivo'}
                         </span>
-                    </label>
+                    </label> 
                 )}
             </div>
     </div>
