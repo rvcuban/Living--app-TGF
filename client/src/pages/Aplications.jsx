@@ -96,7 +96,7 @@ export default function Aplications() {
                     {applications.map((application) => (
                         <li key={application._id}>
                             <PropertyCard
-                                property={application.propertyId}
+                                property={application.listingId}
                                 applicationStatus={application.status} // Pasar el estado de la aplicación
                                 applicationId={application._id}
                                 isApplication={true} // Indicar que es en el contexto de una aplicación

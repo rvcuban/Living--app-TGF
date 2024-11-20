@@ -9,7 +9,7 @@ import { errorHandle } from '../utils/error.js';
 export const getUserApplications = async (req, res, next) => {
   try {
     const applications = await Application.find({ userId: req.user.id })
-      .populate('propertyId') // Popula los datos de la propiedad
+      .populate('listingId') // Popula los datos de la propiedad
       .exec();
     res.status(200).json({ success: true, applications });
   } catch (error) {
@@ -20,33 +20,38 @@ export const getUserApplications = async (req, res, next) => {
 
 // Crear una nueva aplicación
 export const createApplication = async (req, res, next) => {
-  const { propertyId } = req.body;
+  const { listingId } = req.body;
 
-  if (!propertyId) {
-    return next(errorHandle(400, 'propertyId es requerido.'));
+  if (!listingId) {
+    return next(errorHandle(400, 'listingId es requerido.'));
   }
 
   try {
     // Verificar que la propiedad exista
-    const property = await Listing.findById(propertyId);
+    const property = await Listing.findById(listingId);
     if (!property) {
       return next(errorHandle(404, 'Propiedad no encontrada.'));
     }
 
     // Verificar si ya existe una aplicación para esta propiedad por el mismo usuario
-    const existingApplication = await Application.findOne({ userId: req.user.id, propertyId });
+    const existingApplication = await Application.findOne({ userId: req.user.id, listingId });
     if (existingApplication) {
       return next(errorHandle(400, 'Ya has aplicado a esta propiedad.'));
     }
 
     const newApplication = new Application({
       userId: req.user.id,
-      propertyId,
+      listingId,
       status: 'Enviada',
       history: [{ status: 'Enviada', timestamp: new Date() }],
     });
 
     await newApplication.save();
+    await Listing.findByIdAndUpdate( // hago esto para añadir la appplication al schema del listing en un vector de appilcations 
+      listingId,
+      { $push: { applications: newApplication._id } },
+      { new: true }
+    );
 
     res.status(201).json({ success: true, application: newApplication });
   } catch (error) {
@@ -70,7 +75,13 @@ export const cancelApplication = async (req, res, next) => {
       return next(errorHandle(401, 'No estás autorizado para cancelar esta aplicación.'));
     }
 
-    await application.remove();
+    await application.deleteOne(); //borro la pplication
+    await Listing.findByIdAndUpdate( //la borro del array de Listings
+      application.listingId,
+      { $pull: { applications: application._id } },
+      { new: true }
+    );
+
 
     res.status(200).json({ success: true, message: 'Aplicación cancelada correctamente.' });
   } catch (error) {
@@ -101,7 +112,7 @@ export const updateApplication = async (req, res, next) => {
     }
 
     // Verificar que la aplicación pertenece al usuario o al propietario de la propiedad
-    const property = await Listing.findById(application.propertyId);
+    const property = await Listing.findById(application.listingId);
     if (
       application.userId.toString() !== req.user.id &&
       property.userRef.toString() !== req.user.id
@@ -125,5 +136,117 @@ export const updateApplication = async (req, res, next) => {
   } catch (error) {
     console.error('Error updating application:', error);
     next(errorHandle(500, 'Error al actualizar la aplicación.'));
+  }
+};
+
+// application.controller.js
+
+export const getApplicationsByProperty = async (req, res, next) => {
+  try {
+    const {listingId} = req.params;
+
+    // Verificar que la propiedad existe y pertenece al usuario autenticado
+    const property = await Listing.findById(listingId);
+    if (!property) {
+      return next(errorHandle(404, 'Propiedad no encontrada.'));
+    }
+
+    if (property.userRef.toString() !== req.user.id) {
+      return next(errorHandle(401, 'No estás autorizado para ver las solicitudes de esta propiedad.'));
+    }
+
+    // Obtener las solicitudes de esta propiedad
+    const applications = await Application.find({ listingId })
+      .populate('userId', '_id username avatar email phoneNumber gender idDocument')
+      .exec();
+
+
+    const applicationsWithScore = applications.map((application) => {
+      const user = application.userId;
+      let score = 0;
+      if (user.email) score += 20;
+      if (user.phoneNumber) score += 20;
+      if (user.gender) score += 20;
+      if (user.idDocument) score += 40; // Puedes ajustar los valores como desees
+      
+      return {
+        ...application.toObject(),
+        userScore: score,
+      };
+    });
+ res.status(200).json({ success: true, applications: applicationsWithScore });
+
+  } catch (error) {
+    console.error('Error al obtener las solicitudes:', error);
+    next(errorHandle(500, 'Error al obtener las solicitudes.'));
+  }
+};
+
+
+// Aceptar una solicitud específica
+export const acceptApplication = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Buscar la aplicación
+    const application = await Application.findById(applicationId).populate('listingId');
+    if (!application) {
+      return next(errorHandle(404, 'Aplicación no encontrada.'));
+    }
+
+    // Verificar que la propiedad pertenece al usuario autenticado
+    if (application.listingId.userRef.toString() !== req.user.id) {
+      return next(errorHandle(401, 'No estás autorizado para aceptar esta solicitud.'));
+    }
+
+    // Verificar que la solicitud aún está en estado 'Enviada'
+    if (application.status !== 'Enviada') {
+      return next(errorHandle(400, 'La solicitud ya ha sido procesada.'));
+    }
+
+    // Actualizar el estado de la solicitud a 'Aceptada'
+    application.status = 'Aceptada';
+    application.history.push({ status: 'Aceptada', timestamp: new Date() });
+
+    await application.save();
+
+    res.status(200).json({ success: true, message: 'Solicitud aceptada correctamente.' });
+  } catch (error) {
+    console.error('Error al aceptar la solicitud:', error);
+    next(errorHandle(500, 'Error al aceptar la solicitud.'));
+  }
+};
+
+// Rechazar una solicitud específica
+export const rejectApplication = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Buscar la aplicación
+    const application = await Application.findById(applicationId).populate('listingId');
+    if (!application) {
+      return next(errorHandle(404, 'Aplicación no encontrada.'));
+    }
+
+    // Verificar que la propiedad pertenece al usuario autenticado
+    if (application.listingId.userRef.toString() !== req.user.id) {
+      return next(errorHandle(401, 'No estás autorizado para rechazar esta solicitud.'));
+    }
+
+    // Verificar que la solicitud aún está en estado 'Enviada'
+    if (application.status !== 'Enviada') {
+      return next(errorHandle(400, 'La solicitud ya ha sido procesada.'));
+    }
+
+    // Actualizar el estado de la solicitud a 'Rechazada'
+    application.status = 'Rechazada';
+    application.history.push({ status: 'Rechazada', timestamp: new Date() });
+
+    await application.save();
+
+    res.status(200).json({ success: true, message: 'Solicitud rechazada correctamente.' });
+  } catch (error) {
+    console.error('Error al rechazar la solicitud:', error);
+    next(errorHandle(500, 'Error al rechazar la solicitud.'));
   }
 };

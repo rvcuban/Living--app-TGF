@@ -21,6 +21,7 @@ import MyApplications from "./pages/MyApplications";
 
 import { ToastContainer } from 'react-toastify'; // Importar ToastContainer
 import 'react-toastify/dist/ReactToastify.css';
+import PropertyApplications from "./pages/PropertyApplications";
 
 
 export default function App() {
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/my-properties" element={<MyProperties />} /> 
         <Route path="/aplications" element={<Aplications />} />
         <Route path="/my_aplications" element={<MyApplications />} />
+        <Route path="/listing/:listingId/applications" element={<PropertyApplications />} />
 
 
         <Route path="/request" element={<RequestContent />} />

@@ -113,7 +113,7 @@ export default function Applications() {
           {applications.map((application) => (
             <li key={application._id}>
               <PropertyCard
-                property={application.propertyId}
+                property={application.listingId}
                 applicationStatus={application.status}
                 applicationId={application._id}
                 isApplication={true}

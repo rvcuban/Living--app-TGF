@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 const requestSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
+    listingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', required: true },
     status: {
         type: String,
         enum: ['Enviada', 'Aceptada', 'Rechazada', 'Generando Contrato', 'Esperando Confirmación', 'Revisando Modificaciones', 'Confirmación Final'],

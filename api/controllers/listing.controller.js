@@ -128,8 +128,8 @@ export const getPropertySummary = async (req, res, next) => {
 
 export const getApplicationsByProperty = async (req, res, next) => {
   try {
-    const { propertyId } = req.params;
-    const applications = await Application.find({ propertyId })
+    const {listingId} = req.params;
+    const applications = await Application.find({ listingId })
       .populate('userId', '_id name profileImage')
       .exec();
 

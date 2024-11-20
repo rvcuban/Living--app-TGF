@@ -109,7 +109,7 @@ export default function MyProperties() {
                   <div className="flex items-center mt-2 flex-wrap gap-2">
                     {/* Botón para ver las solicitudes */}
                     <Link
-                      to={`/property/${property._id}/applications`}
+                      to={`/listing/${property._id}/applications`}
                       className="flex items-center text-blue-500 mr-4"
                     >
                       <FaEnvelope className="mr-1" />

@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 export default function PropertyApplications() {
-  const { id } = useParams();
+  const { listingId } = useParams();
   const [applications, setApplications] = useState([]);
 
   useEffect(() => {
     // Obtener las solicitudes de la propiedad
-    fetch(`/api/applications/property/${id}`, {
+    fetch(`/api/applications/property/${listingId}`, {
       credentials: 'include',
     })
       .then((response) => response.json())
@@ -25,14 +25,14 @@ export default function PropertyApplications() {
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-3xl font-semibold mb-6">Solicitudes para {id}</h1>
+      <h1 className="text-3xl font-semibold mb-6">Solicitudes</h1>
       {applications.length > 0 ? (
         <ul className="space-y-4">
           {/* Mapea y muestra cada solicitud */}
           {applications.map((application) => (
             <li key={application._id} className="bg-white shadow-md rounded-lg p-4">
               {/* Información de la solicitud */}
-              <p>Solicitante: {application.userId.name}</p>
+              <p>Solicitante: {application.userId.username}</p>
               <p>Estado: {application.status}</p>
               {/* Botones para aceptar o rechazar la solicitud */}
               <div className="flex mt-2">

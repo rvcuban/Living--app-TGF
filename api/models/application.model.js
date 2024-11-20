@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const ApplicationSchema = new mongoose.Schema({
   
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  propertyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Listing', required: true }, // Asegurarse de que 'Listing' es el modelo correcto
+  listingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Listing', required: true }, // Asegurarse de que 'Listing' es el modelo correcto
   status: {
     type: String,
     enum: ['Enviada', 'Aceptada', 'Rechazada', 'Generando Contrato', 'Esperando Confirmación', 'Revisando Modificaciones', 'Confirmación Final'],

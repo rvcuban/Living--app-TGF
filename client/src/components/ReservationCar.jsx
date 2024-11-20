@@ -34,7 +34,7 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
                     // Asegúrate de que el backend maneje la autenticación por tokens
                     'Authorization': `Bearer ${currentUser.token}`,
                 },
-                body: JSON.stringify({ propertyId: listingId, rentalDuration }),
+                body: JSON.stringify({ listingId: listingId, rentalDuration }),
             });
 
             const data = await res.json();
