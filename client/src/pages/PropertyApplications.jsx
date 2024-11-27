@@ -501,7 +501,7 @@ export default function PropertyApplications() {
             overlayClassName="modal-overlay"
           >
             {selectedApplication && (
-              <div className='bg-white p-6 max-w-lg mx-auto rounded-lg shadow-lg'>
+              <div className='bg-white p-6 mx-auto rounded-xl shadow-lg w-11/12 max-w-sm sm:max-w-md md:max-w-lg'>
                 <h2 className="text-2xl mb-4">Generar Contrato</h2>
                 <p><strong>Propietario:</strong> {currentUser.username}</p>
                 <p><strong>Inquilino:</strong> {selectedApplication.userId.username}</p>
@@ -509,7 +509,7 @@ export default function PropertyApplications() {
                 {/* Mostrar más datos si es necesario */}
                 <div className="mt-4">
                   <button
-                    className="bg-green-500 text-white px-4 py-2 rounded mr-2"
+                    className="bg-green-500 text-white px-4 py-2 rounded mr-2 mb-2"
                     onClick={() => handleGenerateContract(selectedApplication._id)}
                   >
                      Generar automaticamente
