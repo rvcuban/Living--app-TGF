@@ -9,6 +9,7 @@ import {
   rejectApplication,
   uploadContract,
   sendContractToTenant,
+  generateContract,
   
 } from '../controllers/application.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
@@ -37,5 +38,6 @@ router.post('/:applicationId/upload-contract', verifyToken, uploadContract);
 
 // Nueva ruta para enviar el contrato al inquilino
 router.post('/:applicationId/send-contract', verifyToken, sendContractToTenant);
+router.post('/:applicationId/generate-contract', verifyToken, generateContract);
 
 export default router;

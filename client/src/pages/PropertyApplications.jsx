@@ -4,6 +4,11 @@ import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { storage } from '../firebase'; // Asegúrate de que la ruta es correcta
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import ReactModal from 'react-modal';
+
+// Configurar el elemento root para el modal
+ReactModal.setAppElement('#root');
+
 
 export default function PropertyApplications() {
   const { listingId } = useParams();
@@ -11,7 +16,22 @@ export default function PropertyApplications() {
   const [applications, setApplications] = useState([]);
   const navigate = useNavigate(); // Para redirigir al usuario
 
+  // modal que se abre al generar contrato
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+
   const [uploadProgress, setUploadProgress] = useState({}); // Para mostrar el progreso de subida
+
+
+  const openModal = (application) => {
+    setSelectedApplication(application);
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setSelectedApplication(null);
+  };
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -110,6 +130,7 @@ export default function PropertyApplications() {
       const data = await res.json();
       if (data.success) {
         toast.success('Contrato generado correctamente.');
+        // Actualizar el estado de la aplicación en el estado local
         setApplications((prevApplications) =>
           prevApplications.map((app) =>
             app._id === applicationId
@@ -118,12 +139,15 @@ export default function PropertyApplications() {
                 contract: {
                   ...app.contract,
                   generatedAt: new Date(),
-                  contractGenerated: true
-                }
+                  contractGenerated: true,
+                },
+                contractGenerated: true,
               }
               : app
           )
         );
+        // Cerrar el modal
+        closeModal();
       } else {
         toast.error(data.message || 'Error al generar el contrato.');
       }
@@ -390,7 +414,7 @@ export default function PropertyApplications() {
                               {!application.contractGenerated && (
                                 <button
                                   className="bg-yellow-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0"
-                                  onClick={() => handleGenerateContract(application._id)}
+                                  onClick={() => openModal(application)}
                                 >
                                   Generar Contrato
                                 </button>
@@ -469,7 +493,39 @@ export default function PropertyApplications() {
               </li>
             );
           })}
+          <ReactModal
+            isOpen={modalIsOpen}
+            onRequestClose={closeModal}
+            contentLabel="Generar Contrato"
+            className="modal"
+            overlayClassName="modal-overlay"
+          >
+            {selectedApplication && (
+              <div className='bg-white p-6 max-w-lg mx-auto rounded-lg shadow-lg'>
+                <h2 className="text-2xl mb-4">Generar Contrato</h2>
+                <p><strong>Propietario:</strong> {currentUser.username}</p>
+                <p><strong>Inquilino:</strong> {selectedApplication.userId.username}</p>
+                <p><strong>Propiedad:</strong> {selectedApplication.listingId.name}</p>
+                {/* Mostrar más datos si es necesario */}
+                <div className="mt-4">
+                  <button
+                    className="bg-green-500 text-white px-4 py-2 rounded mr-2"
+                    onClick={() => handleGenerateContract(selectedApplication._id)}
+                  >
+                     Generar automaticamente
+                  </button>
+                  <button
+                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                    onClick={closeModal}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </ReactModal>
         </ul>
+
       ) : (
         <p className="text-center text-gray-600">
           No hay solicitudes para esta propiedad.

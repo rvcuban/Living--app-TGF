@@ -5,6 +5,11 @@ import Listing from '../models/listing.model.js';
 import { errorHandle } from '../utils/error.js';
 import transporter from '../utils/email.js';
 
+import fs from 'fs';
+import path from 'path';
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+
 
 
 export const getUserApplications = async (req, res, next) => {
@@ -359,5 +364,98 @@ Tu Empresa`,
   } catch (error) {
     console.error('Error sending contract email:', error);
     next(errorHandle(500, 'Error al enviar el contrato.'));
+  }
+};
+
+
+//generacion automatica de contrato 
+export const generateContract = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Buscar la aplicación y poblar los datos necesarios
+    const application = await Application.findById(applicationId)
+      .populate('listingId')
+      .populate('userId');
+
+    if (!application) {
+      return next(errorHandle(404, 'Aplicación no encontrada.'));
+    }
+
+    // Verificar que el usuario autenticado es el propietario de la propiedad
+    if (application.listingId.userRef.toString() !== req.user.id) {
+      return next(errorHandle(401, 'No estás autorizado para generar el contrato de esta solicitud.'));
+    }
+
+    // Obtener los datos necesarios
+    const propietario = await User.findById(application.listingId.userRef);
+    const inquilino = application.userId;
+    const propiedad = application.listingId;
+
+    // Prepara los datos para la plantilla
+    const data = {
+      // Datos del propietario
+      nombrePropietario: propietario.username,
+      nacionalidadPropietario: propietario.nacionalidad || 'Española', // Asegúrate de tener este dato
+      domicilioPropietario: propietario.address || 'Dirección del propietario',
+      numeroIdentificacionPropietario: propietario.numeroIdentificacion || 'DNI/NIE',
+      // Datos del inquilino
+      nombreInquilino: inquilino.username,
+      nacionalidadInquilino: inquilino.nacionalidad || 'Española',
+      domicilioInquilino: inquilino.address || 'Dirección del inquilino',
+      numeroIdentificacionInquilino: inquilino.numeroIdentificacion || 'DNI/NIE',
+      // Datos de la propiedad
+      direccionInmueble: propiedad.address,
+      descripcionInmueble: propiedad.description,
+      // Otros datos necesarios
+      fecha: new Date().toLocaleDateString(),
+      lugar: 'Ciudad',
+      // Agrega más datos según tu plantilla
+    };
+
+    // Leer la plantilla del contrato
+    const content = fs.readFileSync(
+      path.resolve('templates', 'contrato_template.docx'),
+      'binary'
+    );
+
+    const zip = new PizZip(content);
+
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    doc.setData(data);
+
+    try {
+      // Renderizar el documento
+      doc.render();
+    } catch (error) {
+      console.error('Error al generar el contrato:', error);
+      return next(errorHandle(500, 'Error al generar el contrato.'));
+    }
+
+    // Generar el buffer del documento
+    const buffer = doc.getZip().generate({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+    });
+
+    // Guardar el documento en el servidor o en un almacenamiento externo
+    const contractPath = path.resolve('contracts', `contrato_${applicationId}.docx`);
+    fs.writeFileSync(contractPath, buffer);
+
+    // Actualizar la aplicación para indicar que el contrato ha sido generado
+    application.contractGenerated = true;
+    application.contract.generatedAt = new Date();
+    application.contract.fileName = `contrato_${applicationId}.docx`;
+    application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
+    await application.save();
+
+    res.status(200).json({ success: true, message: 'Contrato generado correctamente.' });
+  } catch (error) {
+    console.error('Error al generar el contrato:', error);
+    next(errorHandle(500, 'Error al generar el contrato.'));
   }
 };
