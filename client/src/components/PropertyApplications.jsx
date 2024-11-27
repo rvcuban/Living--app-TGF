@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams ,Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { storage } from '../firebase'; // Asegúrate de que la ruta es correcta
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+
 
 export default function PropertyApplications() {
   const { listingId } = useParams();
@@ -22,6 +26,123 @@ export default function PropertyApplications() {
         console.error('Error fetching applications:', error);
       });
   }, [id]);
+
+  const handleUploadContract = async (applicationId, file) => {
+    if (!file) {
+      toast.error('Por favor, selecciona un archivo PDF.');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Solo se permiten archivos PDF.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10 MB
+      toast.error('El archivo excede el tamaño máximo de 10MB.');
+      return;
+    }
+
+    const storageRef = ref(storage, `contracts/${applicationId}/${file.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        console.log(`Subiendo contrato: ${progress}% completado`);
+      },
+      (error) => {
+        console.error('Error al subir el contrato:', error);
+        toast.error('Error al subir el contrato.');
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+          try {
+            const res = await fetch(`/api/applications/${applicationId}/upload-contract`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser.token}`,
+              },
+              body: JSON.stringify({ contractUrl: downloadURL }),
+            });
+            const data = await res.json();
+            if (data.success) {
+              toast.success('Contrato subido correctamente.');
+              setApplications((prevApplications) =>
+                prevApplications.map((app) =>
+                  app._id === applicationId
+                    ? { ...app, contractUploaded: true, contractUrl: data.contractUrl }
+                    : app
+                )
+              );
+            } else {
+              toast.error(data.message || 'Error al subir el contrato.');
+            }
+          } catch (error) {
+            console.error('Error al actualizar el contrato en el backend:', error);
+            toast.error('Error al actualizar el contrato en el backend.');
+          }
+        });
+      }
+    );
+  };
+
+
+  const handleSendContract = async (applicationId) => {
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/send-contract`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Contrato enviado al inquilino correctamente.');
+      } else {
+        toast.error(data.message || 'Error al enviar el contrato.');
+      }
+    } catch (error) {
+      console.error('Error sending contract:', error);
+      toast.error('Error al enviar el contrato.');
+    }
+  };
+
+  const handleContact = (userId) => {
+    navigate(`/messages/${userId}`);
+  };
+
+
+
+  const handleGenerateContract = async (applicationId) => {
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/generate-contract`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Contrato generado correctamente.');
+        setApplications((prevApplications) =>
+          prevApplications.map((app) =>
+            app._id === applicationId ? { ...app, contractGenerated: true } : app
+          )
+        );
+      } else {
+        toast.error(data.message || 'Error al generar el contrato.');
+      }
+    } catch (error) {
+      console.error('Error generating contract:', error);
+      toast.error('Error al generar el contrato.');
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-4">

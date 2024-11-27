@@ -14,8 +14,18 @@ const ApplicationSchema = new mongoose.Schema({
     version: { type: Number, default: 1 },
     content: String, // Aquí se guardaría el contenido del contrato
     acceptedByUser: { type: Boolean, default: false },
-    acceptedByOwner: { type: Boolean, default: false }
+    acceptedByOwner: { type: Boolean, default: false },
+    fileName: {type: String},
+    generatedAt: { 
+      type: Date 
+    },
+    uploadedAt: { 
+      type: Date 
+    }
   },
+  contractGenerated: { type: Boolean, default: false },
+  contractUploaded: { type: Boolean, default: false },
+  contractUrl: { type: String, default: '' },
   history: [{
     status: String,
     timestamp: { type: Date, default: Date.now }

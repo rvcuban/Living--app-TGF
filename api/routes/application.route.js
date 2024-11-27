@@ -7,6 +7,9 @@ import {
   getApplicationsByProperty,
   acceptApplication,
   rejectApplication,
+  uploadContract,
+  sendContractToTenant,
+  
 } from '../controllers/application.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
 
@@ -27,5 +30,12 @@ router.post('/:applicationId/accept', verifyToken, acceptApplication);
 
 // Rechazar una solicitud
 router.post('/:applicationId/reject', verifyToken, rejectApplication);
+
+
+// Nueva ruta para subir el contrato
+router.post('/:applicationId/upload-contract', verifyToken, uploadContract);
+
+// Nueva ruta para enviar el contrato al inquilino
+router.post('/:applicationId/send-contract', verifyToken, sendContractToTenant);
 
 export default router;

@@ -3,6 +3,7 @@
 import Application from '../models/application.model.js';
 import Listing from '../models/listing.model.js';
 import { errorHandle } from '../utils/error.js';
+import transporter from '../utils/email.js';
 
 
 
@@ -248,5 +249,115 @@ export const rejectApplication = async (req, res, next) => {
   } catch (error) {
     console.error('Error al rechazar la solicitud:', error);
     next(errorHandle(500, 'Error al rechazar la solicitud.'));
+  }
+};
+
+// Función para subir el contrato
+
+export const uploadContract = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+    const { contractUrl, fileName } = req.body;
+
+    if (!contractUrl || !fileName) {
+      return next(errorHandle(400, 'URL del contrato y nombre del archivo son requeridos.'));
+    }
+
+    // Buscar la aplicación
+    const application = await Application.findById(applicationId).populate('listingId');
+    if (!application) {
+      return next(errorHandle(404, 'Aplicación no encontrada.'));
+    }
+
+    // Verificar que la propiedad pertenece al usuario autenticado
+    if (application.listingId.userRef.toString() !== req.user.id) {
+      return next(errorHandle(401, 'No estás autorizado para subir el contrato de esta solicitud.'));
+    }
+    
+    // Actualizar campos a nivel raíz
+    application.contractUrl = contractUrl;
+    application.contractUploaded = true;
+
+    // Actualizar información del contrato
+    application.contract = {
+      ...application.contract,
+      uploadedAt: new Date(),
+      fileName: fileName,
+      // Eliminar 'contractUploaded' de aquí
+    };
+
+    application.history.push({ status: 'Contrato Subido', timestamp: new Date() });
+
+    await application.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Contrato subido correctamente.',
+      contractUrl: application.contractUrl,
+      fileName: application.contract.fileName,
+    });
+  } catch (error) {
+    console.error('Error uploading contract:', error);
+    next(errorHandle(500, 'Error al subir el contrato.'));
+  }
+};
+
+
+// Función para enviar el contrato al inquilino por correo
+export const sendContractToTenant = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+
+    // Buscar la aplicación
+    const application = await Application.findById(applicationId)
+      .populate('listingId')
+      .populate('userId');
+    if (!application) {
+      return next(errorHandle(404, 'Aplicación no encontrada.'));
+    }
+
+    // Verificar permisos: solo el propietario puede enviar el contrato
+    if (application.listingId.userRef.toString() !== req.user.id) {
+      return next(errorHandle(401, 'No estás autorizado para enviar el contrato de esta solicitud.'));
+    }
+
+    // Verificar que el contrato ha sido subido
+    if (!application.contract.url) {
+      return next(errorHandle(400, 'El contrato aún no ha sido subido.'));
+    }
+
+    // Configurar el contenido del correo
+    const mailOptions = {
+      from: process.env.EMAIL_FROM, // Usa la variable de entorno para el remitente
+      to: application.userId.email,
+      subject: 'Tu Contrato de Arrendamiento',
+      text: `Hola ${application.userId.username || 'Usuario'},
+
+Tu contrato de arrendamiento ha sido generado y está listo para ser revisado. Puedes acceder al contrato haciendo clic en el siguiente enlace:
+
+${application.contract.url}
+
+Por favor, revisa el contrato y contáctanos si tienes alguna pregunta.
+
+Saludos cordiales,
+Tu Empresa`,
+      html: `<p>Hola ${application.userId.username || 'Usuario'},</p>
+<p>Tu contrato de arrendamiento ha sido generado y está listo para ser revisado. Puedes acceder al contrato haciendo clic en el siguiente enlace:</p>
+<p><a href="${application.contract.url}">Ver Contrato</a></p>
+<p>Por favor, revisa el contrato y contáctanos si tienes alguna pregunta.</p>
+<p>Saludos cordiales,<br/>Tu Empresa</p>`,
+    };
+
+    // Enviar el correo
+    await transporter.sendMail(mailOptions);
+
+    // Actualizar el historial
+    application.history.push({ status: 'Contrato Enviado al Inquilino', timestamp: new Date() });
+    await application.save();
+
+    res.status(200).json({ success: true, message: 'Contrato enviado al inquilino correctamente.' });
+  } catch (error) {
+    console.error('Error sending contract email:', error);
+    next(errorHandle(500, 'Error al enviar el contrato.'));
   }
 };

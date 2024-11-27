@@ -115,18 +115,17 @@ export default function PropertyCard({
                 {/* Texto de estado */}
                 <span className="text-sm font-semibold">
                   {applicationStatus}
+                  
                 </span>
               </div>
             )}
 
-            {isApplication && applicationStatus === 'Enviada' && (
-              <button
-                onClick={handleCancel}
-                className="text-red-600 hover:underline text-sm"
-              >
-                Cancelar
-              </button>
-            )}
+            <button
+              onClick={handleCancel}
+              className="text-red-600 hover:underline text-sm"
+            >
+              Cancelar
+            </button>
 
             {!isApplication && (
               <label className="flex items-center cursor-pointer ml-auto">
@@ -142,11 +141,10 @@ export default function PropertyCard({
                   />
                   <div className="block bg-gray-200 w-14 h-8 rounded-full"></div>
                   <div
-                    className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${
-                      property.visible
+                    className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${property.visible
                         ? 'transform translate-x-full bg-green-500'
                         : ''
-                    }`}
+                      }`}
                   ></div>
                 </div>
                 <span className="ml-3 text-gray-700">
