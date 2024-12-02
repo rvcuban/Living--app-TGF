@@ -4,13 +4,19 @@ import Application from '../models/application.model.js';
 import Listing from '../models/listing.model.js';
 import { errorHandle } from '../utils/error.js';
 import transporter from '../utils/email.js';
+import User from '../models/user.model.js';
+import bucket from '../utils/firebaseAdmin.js'; // Ajusta la ruta según tu estructura de carpetas
+
 
 import fs from 'fs';
 import path from 'path';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 
+import mammoth from 'mammoth';
+import puppeteer from 'puppeteer';
 
+import { fileURLToPath } from 'url';
 
 export const getUserApplications = async (req, res, next) => {
   try {
@@ -69,19 +75,25 @@ export const createApplication = async (req, res, next) => {
 // Cancelar una aplicación específica
 export const cancelApplication = async (req, res, next) => {
   const { applicationId } = req.params;
+ 
+  console.log('Intentando cancelar la aplicación:', applicationId);
+  console.log('Usuario autenticado:', req.user);
 
   try {
     const application = await Application.findById(applicationId);
     if (!application) {
+      console.log('Aplicación no encontrada.');
       return next(errorHandle(404, 'Aplicación no encontrada.'));
     }
 
-    // Verificar que la aplicación pertenece al usuario
-    if (application.userId.toString() !== req.user.id) {
+    // Verificar que la aplicación pertenece al usuario (dado que las dos partes deben poder cancelar la applicaction quiote la comprobacion)
+    /*if (application.userId.toString() !== req.user.id) {
+      console.log('Usuario no autorizado para cancelar esta aplicación.');
       return next(errorHandle(401, 'No estás autorizado para cancelar esta aplicación.'));
-    }
+    }*/
 
     await application.deleteOne(); //borro la pplication
+    console.log('Aplicación cancelada correctamente.');
     await Listing.findByIdAndUpdate( //la borro del array de Listings
       application.listingId,
       { $pull: { applications: application._id } },
@@ -149,7 +161,7 @@ export const updateApplication = async (req, res, next) => {
 
 export const getApplicationsByProperty = async (req, res, next) => {
   try {
-    const {listingId} = req.params;
+    const { listingId } = req.params;
 
     // Verificar que la propiedad existe y pertenece al usuario autenticado
     const property = await Listing.findById(listingId);
@@ -174,13 +186,13 @@ export const getApplicationsByProperty = async (req, res, next) => {
       if (user.phoneNumber) score += 20;
       if (user.gender) score += 20;
       if (user.idDocument) score += 40; // Puedes ajustar los valores como desees
-      
+
       return {
         ...application.toObject(),
         userScore: score,
       };
     });
- res.status(200).json({ success: true, applications: applicationsWithScore });
+    res.status(200).json({ success: true, applications: applicationsWithScore });
 
   } catch (error) {
     console.error('Error al obtener las solicitudes:', error);
@@ -278,7 +290,7 @@ export const uploadContract = async (req, res, next) => {
     if (application.listingId.userRef.toString() !== req.user.id) {
       return next(errorHandle(401, 'No estás autorizado para subir el contrato de esta solicitud.'));
     }
-    
+
     // Actualizar campos a nivel raíz
     application.contractUrl = contractUrl;
     application.contractUploaded = true;
@@ -370,6 +382,8 @@ Tu Empresa`,
 
 //generacion automatica de contrato 
 export const generateContract = async (req, res, next) => {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   try {
     const { applicationId } = req.params;
 
@@ -396,7 +410,7 @@ export const generateContract = async (req, res, next) => {
     const data = {
       // Datos del propietario
       nombrePropietario: propietario.username,
-      nacionalidadPropietario: propietario.nacionalidad || 'Española', // Asegúrate de tener este dato
+      nacionalidadPropietario: propietario.nacionalidad || 'Española',
       domicilioPropietario: propietario.address || 'Dirección del propietario',
       numeroIdentificacionPropietario: propietario.numeroIdentificacion || 'DNI/NIE',
       // Datos del inquilino
@@ -415,7 +429,7 @@ export const generateContract = async (req, res, next) => {
 
     // Leer la plantilla del contrato
     const content = fs.readFileSync(
-      path.resolve('templates', 'contrato_template.docx'),
+      path.join(__dirname, '..', 'templates', 'contrato_template.docx'),
       'binary'
     );
 
@@ -426,13 +440,12 @@ export const generateContract = async (req, res, next) => {
       linebreaks: true,
     });
 
-    doc.setData(data);
 
     try {
-      // Renderizar el documento
-      doc.render();
+      // Renderizar el documento con los datos
+      doc.render(data);
     } catch (error) {
-      console.error('Error al generar el contrato:', error);
+      console.error('Error al renderizar el documento:', error);
       return next(errorHandle(500, 'Error al generar el contrato.'));
     }
 
@@ -442,18 +455,46 @@ export const generateContract = async (req, res, next) => {
       compression: 'DEFLATE',
     });
 
-    // Guardar el documento en el servidor o en un almacenamiento externo
-    const contractPath = path.resolve('contracts', `contrato_${applicationId}.docx`);
-    fs.writeFileSync(contractPath, buffer);
+    // Convertir el buffer del .docx a HTML usando Mammoth
+    const { value: html } = await mammoth.convertToHtml({ buffer });
+    // Inicializar puppeteer y generar el PDF
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4' });
+    await browser.close();
+
+    // Subir el PDF a Firebase Storage
+    const fileName = `contracts/contrato_${applicationId}.pdf`;
+    const file = bucket.file(fileName);
+
+    await file.save(pdfBuffer, {
+      metadata: {
+        contentType: 'application/pdf',
+      },
+    });
+
+    // Obtener la URL de descarga
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: '03-01-2030', // Fecha de expiración de la URL
+    });
 
     // Actualizar la aplicación para indicar que el contrato ha sido generado
     application.contractGenerated = true;
+    application.contractUploaded = true;
     application.contract.generatedAt = new Date();
     application.contract.fileName = `contrato_${applicationId}.docx`;
+    application.contract.url = url;
     application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
     await application.save();
+   
 
-    res.status(200).json({ success: true, message: 'Contrato generado correctamente.' });
+    res.status(200).json({
+      success: true,
+      message: 'Contrato generado correctamente.',
+      contractUrl: url,
+    });
   } catch (error) {
     console.error('Error al generar el contrato:', error);
     next(errorHandle(500, 'Error al generar el contrato.'));

@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getStorage } from "firebase/storage";
+import { contextType } from "react-modal";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -12,7 +13,7 @@ const firebaseConfig = {
   storageBucket: "livingapp-ce503.appspot.com",
   messagingSenderId: "482311767910",
   appId: "1:482311767910:web:64b86c22468612bf342aa7"
-};
+};  
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);

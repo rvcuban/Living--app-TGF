@@ -40,4 +40,7 @@ router.post('/:applicationId/upload-contract', verifyToken, uploadContract);
 router.post('/:applicationId/send-contract', verifyToken, sendContractToTenant);
 router.post('/:applicationId/generate-contract', verifyToken, generateContract);
 
+// Cancelar (eliminar) una solicitud
+router.delete('/:applicationId/cancel',verifyToken, cancelApplication);
+
 export default router;
