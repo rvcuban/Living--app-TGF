@@ -11,7 +11,7 @@ const __dirname = dirname(__filename);
 
 // Leer las credenciales del archivo JSON
 const serviceAccount = JSON.parse(
-  readFileSync(join(__dirname, 'serviceAccountKey.json'), 'utf8')
+  readFileSync(join(__dirname, 'secrets/serviceAccountKey.json'), 'utf8')
 );
 
 // Inicializar la aplicación con las credenciales del servicio
