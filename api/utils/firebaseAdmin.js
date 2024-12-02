@@ -25,9 +25,19 @@ const __dirname = dirname(__filename);
   readFileSync(join(__dirname, 'secrets/serviceAccountKey.json'), 'utf8')
 );*/
 
-
-// Leer las credenciales desde la variable de entorno
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+if (!process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    console.error('FIREBASE_SERVICE_ACCOUNT_BASE64 no está definida.');
+    process.exit(1);
+  }
+  
+  // Decodificar la cadena Base64
+  const serviceAccountJson = Buffer.from(
+    process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
+    'base64'
+  ).toString('utf8');
+  
+  // Parsear el JSON
+  const serviceAccount = JSON.parse(serviceAccountJson);
 
 // Inicializar la aplicación con las credenciales del servicio
 admin.initializeApp({
