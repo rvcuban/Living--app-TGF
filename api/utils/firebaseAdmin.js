@@ -4,6 +4,7 @@ import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 // Definir __dirname en módulos ES
 const __filename = fileURLToPath(import.meta.url);
