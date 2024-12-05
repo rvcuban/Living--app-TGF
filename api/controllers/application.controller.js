@@ -459,7 +459,8 @@ export const generateContract = async (req, res, next) => {
     const { value: html } = await mammoth.convertToHtml({ buffer });
     // Inicializar puppeteer y generar el PDF
     const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: puppeteer.executablePath(), // Asegura que Puppeteer use el path correcto
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
