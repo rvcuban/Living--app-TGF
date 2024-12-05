@@ -4,6 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "postinstall": "npx puppeteer browsers install chrome",
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
     "build": "npm install && npm install --prefix client &&npm run build --prefix client"
