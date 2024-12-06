@@ -458,7 +458,10 @@ export const generateContract = async (req, res, next) => {
     // Convertir el buffer del .docx a HTML usando Mammoth
     const { value: html } = await mammoth.convertToHtml({ buffer });
     // Inicializar puppeteer y generar el PDF
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      // No es necesario especificar executablePath con Puppeteer v19
+    });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4' });
