@@ -382,6 +382,7 @@ Tu Empresa`,
 
 //generacion automatica de contrato 
 export const generateContract = async (req, res, next) => {
+  console.log('Iniciando generación de contrato para applicationId:', req.params.applicationId);
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   try {
@@ -457,6 +458,8 @@ export const generateContract = async (req, res, next) => {
 
     // Convertir el buffer del .docx a HTML usando Mammoth
     const { value: html } = await mammoth.convertToHtml({ buffer });
+
+    console.log('Inicializando Puppeteer...');
     // Inicializar puppeteer y generar el PDF
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -466,7 +469,7 @@ export const generateContract = async (req, res, next) => {
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4' });
     await browser.close();
-
+    console.log('Puppeteer lanzado correctamente.');
     // Subir el PDF a Firebase Storage
     const fileName = `contracts/contrato_${applicationId}.pdf`;
     const file = bucket.file(fileName);
@@ -492,7 +495,7 @@ export const generateContract = async (req, res, next) => {
     application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
     await application.save();
    
-
+    console.log('Contrato generado y subido correctamente. URL:', url);
     res.status(200).json({
       success: true,
       message: 'Contrato generado correctamente.',
