@@ -4,7 +4,6 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "postinstall": "PUPPETEER_CACHE_DIR=/tmp npx puppeteer browsers install chrome stable",
     "dev": "nodemon api/index.js",
     "start": "node api/index.js",
     "build": "npm install && npm install --prefix client &&npm run build --prefix client"
@@ -28,6 +27,6 @@
     "nodemailer": "^6.9.16",
     "nodemon": "^3.1.4",
     "pizzip": "^3.1.7",
-    "puppeteer": "^23.9.0"
+    "puppeteer": "19.7.5"
   }
 }
