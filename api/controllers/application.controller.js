@@ -15,6 +15,8 @@ import Docxtemplater from 'docxtemplater';
 
 import mammoth from 'mammoth';
 import puppeteer from 'puppeteer';
+import PDFDocument from 'pdfkit';
+
 
 import { fileURLToPath } from 'url';
 
@@ -382,11 +384,12 @@ Tu Empresa`,
 
 //generacion automatica de contrato 
 export const generateContract = async (req, res, next) => {
-  console.log('Iniciando generación de contrato para applicationId:', req.params.applicationId);
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
   try {
     const { applicationId } = req.params;
+
+    console.log('Iniciando generación de contrato para applicationId:', applicationId);
 
     // Buscar la aplicación y poblar los datos necesarios
     const application = await Application.findById(applicationId)
@@ -394,11 +397,13 @@ export const generateContract = async (req, res, next) => {
       .populate('userId');
 
     if (!application) {
+      console.error('Aplicación no encontrada.');
       return next(errorHandle(404, 'Aplicación no encontrada.'));
     }
 
     // Verificar que el usuario autenticado es el propietario de la propiedad
     if (application.listingId.userRef.toString() !== req.user.id) {
+      console.error('No estás autorizado para generar el contrato de esta solicitud.');
       return next(errorHandle(401, 'No estás autorizado para generar el contrato de esta solicitud.'));
     }
 
@@ -407,100 +412,100 @@ export const generateContract = async (req, res, next) => {
     const inquilino = application.userId;
     const propiedad = application.listingId;
 
-    // Prepara los datos para la plantilla
+    // Prepara los datos para el contrato
     const data = {
-      // Datos del propietario
       nombrePropietario: propietario.username,
       nacionalidadPropietario: propietario.nacionalidad || 'Española',
       domicilioPropietario: propietario.address || 'Dirección del propietario',
       numeroIdentificacionPropietario: propietario.numeroIdentificacion || 'DNI/NIE',
-      // Datos del inquilino
       nombreInquilino: inquilino.username,
       nacionalidadInquilino: inquilino.nacionalidad || 'Española',
       domicilioInquilino: inquilino.address || 'Dirección del inquilino',
       numeroIdentificacionInquilino: inquilino.numeroIdentificacion || 'DNI/NIE',
-      // Datos de la propiedad
       direccionInmueble: propiedad.address,
       descripcionInmueble: propiedad.description,
-      // Otros datos necesarios
       fecha: new Date().toLocaleDateString(),
       lugar: 'Ciudad',
-      // Agrega más datos según tu plantilla
+      // Agrega más campos según tus necesidades
     };
 
-    // Leer la plantilla del contrato
-    const content = fs.readFileSync(
-      path.join(__dirname, '..', 'templates', 'contrato_template.docx'),
-      'binary'
-    );
+    console.log('Generando PDF con PDFKit.');
 
-    const zip = new PizZip(content);
+    // Crear un nuevo documento PDF
+    const doc = new PDFDocument();
 
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
+    // Buffer para almacenar el PDF
+    let buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', async () => {
+      const pdfBuffer = Buffer.concat(buffers);
+
+      console.log('PDF generado correctamente.');
+
+      console.log('Subiendo el PDF a Firebase Storage.');
+      // Subir el PDF a Firebase Storage
+      const fileName = `contracts/contrato_${applicationId}.pdf`;
+      const file = bucket.file(fileName);
+
+      await file.save(pdfBuffer, {
+        metadata: {
+          contentType: 'application/pdf',
+        },
+      });
+
+      console.log('Obteniendo la URL de descarga del contrato.');
+      // Obtener la URL de descarga
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2030', // Fecha de expiración de la URL
+      });
+
+      console.log('Actualizando la aplicación con los detalles del contrato.');
+      // Actualizar la aplicación para indicar que el contrato ha sido generado
+      application.contractGenerated = true;
+      application.contractUploaded = true;
+      application.contract.generatedAt = new Date();
+      application.contract.fileName = `contrato_${applicationId}.pdf`;
+      application.contract.url = url;
+      application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
+      await application.save();
+
+      console.log('Contrato generado y subido correctamente. URL:', url);
+      res.status(200).json({
+        success: true,
+        message: 'Contrato generado correctamente.',
+        contractUrl: url,
+      });
     });
 
+    // Diseñar el PDF
+    doc.fontSize(20).text('Contrato de Alquiler', { align: 'center' });
+    doc.moveDown();
 
-    try {
-      // Renderizar el documento con los datos
-      doc.render(data);
-    } catch (error) {
-      console.error('Error al renderizar el documento:', error);
-      return next(errorHandle(500, 'Error al generar el contrato.'));
-    }
+    doc.fontSize(12).text(`Fecha: ${data.fecha}`);
+    doc.moveDown();
 
-    // Generar el buffer del documento
-    const buffer = doc.getZip().generate({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-    });
+    doc.text(`Propietario: ${data.nombrePropietario}`);
+    doc.text(`Nacionalidad: ${data.nacionalidadPropietario}`);
+    doc.text(`Domicilio: ${data.domicilioPropietario}`);
+    doc.text(`Número de Identificación: ${data.numeroIdentificacionPropietario}`);
+    doc.moveDown();
 
-    // Convertir el buffer del .docx a HTML usando Mammoth
-    const { value: html } = await mammoth.convertToHtml({ buffer });
+    doc.text(`Inquilino: ${data.nombreInquilino}`);
+    doc.text(`Nacionalidad: ${data.nacionalidadInquilino}`);
+    doc.text(`Domicilio: ${data.domicilioInquilino}`);
+    doc.text(`Número de Identificación: ${data.numeroIdentificacionInquilino}`);
+    doc.moveDown();
 
-    console.log('Inicializando Puppeteer...');
-    // Inicializar puppeteer y generar el PDF
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-      // No es necesario especificar executablePath con Puppeteer v19
-    });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4' });
-    await browser.close();
-    console.log('Puppeteer lanzado correctamente.');
-    // Subir el PDF a Firebase Storage
-    const fileName = `contracts/contrato_${applicationId}.pdf`;
-    const file = bucket.file(fileName);
+    doc.text(`Propiedad: ${data.direccionInmueble}`);
+    doc.text(`Descripción: ${data.descripcionInmueble}`);
+    doc.moveDown();
 
-    await file.save(pdfBuffer, {
-      metadata: {
-        contentType: 'application/pdf',
-      },
-    });
+    doc.text('Detalles adicionales del contrato...');
+    // Agrega más contenido según tus necesidades
 
-    // Obtener la URL de descarga
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '03-01-2030', // Fecha de expiración de la URL
-    });
-
-    // Actualizar la aplicación para indicar que el contrato ha sido generado
-    application.contractGenerated = true;
-    application.contractUploaded = true;
-    application.contract.generatedAt = new Date();
-    application.contract.fileName = `contrato_${applicationId}.docx`;
-    application.contract.url = url;
-    application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
-    await application.save();
-   
-    console.log('Contrato generado y subido correctamente. URL:', url);
-    res.status(200).json({
-      success: true,
-      message: 'Contrato generado correctamente.',
-      contractUrl: url,
-    });
+    // Finalizar el PDF
+    doc.end();
   } catch (error) {
     console.error('Error al generar el contrato:', error);
     next(errorHandle(500, 'Error al generar el contrato.'));
