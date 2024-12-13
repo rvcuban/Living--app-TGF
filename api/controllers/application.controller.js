@@ -10,15 +10,23 @@ import bucket from '../utils/firebaseAdmin.js'; // Ajusta la ruta según tu estr
 
 import fs from 'fs';
 import path from 'path';
+import { dirname, join } from 'path';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 
-import mammoth from 'mammoth';
-import puppeteer from 'puppeteer';
-import PDFDocument from 'pdfkit';
-
-
+import { PDFDocument } from 'pdf-lib';
 import { fileURLToPath } from 'url';
+
+import puppeteer from 'puppeteer';
+import mammoth from 'mammoth';
+
+
+
+// Definir __filename y __dirname en módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+
 
 export const getUserApplications = async (req, res, next) => {
   try {
@@ -382,16 +390,21 @@ Tu Empresa`,
 };
 
 
-//generacion automatica de contrato 
+
+
+
+
+//---------GENERACION AUTOMATIOCA DE CONTRATOS-----------------
+
+
+// Función para cargar una fuente personalizada
 export const generateContract = async (req, res, next) => {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
   try {
     const { applicationId } = req.params;
 
     console.log('Iniciando generación de contrato para applicationId:', applicationId);
 
-    // Buscar la aplicación y poblar los datos necesarios
+    // Buscar la aplicación y poblar datos
     const application = await Application.findById(applicationId)
       .populate('listingId')
       .populate('userId');
@@ -401,111 +414,106 @@ export const generateContract = async (req, res, next) => {
       return next(errorHandle(404, 'Aplicación no encontrada.'));
     }
 
-    // Verificar que el usuario autenticado es el propietario de la propiedad
+    // Verificar permisos
     if (application.listingId.userRef.toString() !== req.user.id) {
-      console.error('No estás autorizado para generar el contrato de esta solicitud.');
-      return next(errorHandle(401, 'No estás autorizado para generar el contrato de esta solicitud.'));
+      console.error('No estás autorizado para generar el contrato.');
+      return next(errorHandle(401, 'No autorizado.'));
     }
 
-    // Obtener los datos necesarios
+    // Obtener datos necesarios
     const propietario = await User.findById(application.listingId.userRef);
-    const inquilino = application.userId;
     const propiedad = application.listingId;
 
-    // Prepara los datos para el contrato
+    // Data para reemplazar en la plantilla DOCX
     const data = {
-      nombrePropietario: propietario.username,
+      lugar: propiedad.address || 'Lugar por defecto',
+      fecha: new Date().toLocaleDateString(),
+      nombrePropietario: propietario.username || 'Propietario',
       nacionalidadPropietario: propietario.nacionalidad || 'Española',
       domicilioPropietario: propietario.address || 'Dirección del propietario',
       numeroIdentificacionPropietario: propietario.numeroIdentificacion || 'DNI/NIE',
-      nombreInquilino: inquilino.username,
-      nacionalidadInquilino: inquilino.nacionalidad || 'Española',
-      domicilioInquilino: inquilino.address || 'Dirección del inquilino',
-      numeroIdentificacionInquilino: inquilino.numeroIdentificacion || 'DNI/NIE',
-      direccionInmueble: propiedad.address,
-      descripcionInmueble: propiedad.description,
-      fecha: new Date().toLocaleDateString(),
-      lugar: 'Ciudad',
-      // Agrega más campos según tus necesidades
+      // Añade más datos según tus marcadores en la plantilla
     };
 
-    console.log('Generando PDF con PDFKit.');
+    // Cargar plantilla DOCX
+    const templatePath = path.join(__dirname, '..', 'templates', 'contrato_template.docx');
+    if (!fs.existsSync(templatePath)) {
+      console.error(`La plantilla no se encontró: ${templatePath}`);
+      return next(errorHandle(500, 'No se encontró la plantilla.'));
+    }
 
-    // Crear un nuevo documento PDF
-    const doc = new PDFDocument();
-
-    // Buffer para almacenar el PDF
-    let buffers = [];
-    doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', async () => {
-      const pdfBuffer = Buffer.concat(buffers);
-
-      console.log('PDF generado correctamente.');
-
-      console.log('Subiendo el PDF a Firebase Storage.');
-      // Subir el PDF a Firebase Storage
-      const fileName = `contracts/contrato_${applicationId}.pdf`;
-      const file = bucket.file(fileName);
-
-      await file.save(pdfBuffer, {
-        metadata: {
-          contentType: 'application/pdf',
-        },
-      });
-
-      console.log('Obteniendo la URL de descarga del contrato.');
-      // Obtener la URL de descarga
-      const [url] = await file.getSignedUrl({
-        action: 'read',
-        expires: '03-01-2030', // Fecha de expiración de la URL
-      });
-
-      console.log('Actualizando la aplicación con los detalles del contrato.');
-      // Actualizar la aplicación para indicar que el contrato ha sido generado
-      application.contractGenerated = true;
-      application.contractUploaded = true;
-      application.contract.generatedAt = new Date();
-      application.contract.fileName = `contrato_${applicationId}.pdf`;
-      application.contract.url = url;
-      application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
-      await application.save();
-
-      console.log('Contrato generado y subido correctamente. URL:', url);
-      res.status(200).json({
-        success: true,
-        message: 'Contrato generado correctamente.',
-        contractUrl: url,
-      });
+    const content = fs.readFileSync(templatePath, 'binary');
+    const zip = new PizZip(content);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
     });
 
-    // Diseñar el PDF
-    doc.fontSize(20).text('Contrato de Alquiler', { align: 'center' });
-    doc.moveDown();
+    // Reemplazar marcadores
+    doc.render(data);
 
-    doc.fontSize(12).text(`Fecha: ${data.fecha}`);
-    doc.moveDown();
+    // Generar buffer del DOCX resultante
+    const docxBuffer = doc.getZip().generate({ type: 'nodebuffer' });
 
-    doc.text(`Propietario: ${data.nombrePropietario}`);
-    doc.text(`Nacionalidad: ${data.nacionalidadPropietario}`);
-    doc.text(`Domicilio: ${data.domicilioPropietario}`);
-    doc.text(`Número de Identificación: ${data.numeroIdentificacionPropietario}`);
-    doc.moveDown();
+    // Convertir DOCX a HTML con mammoth
+    const { value: html } = await mammoth.convertToHtml({ buffer: docxBuffer });
 
-    doc.text(`Inquilino: ${data.nombreInquilino}`);
-    doc.text(`Nacionalidad: ${data.nacionalidadInquilino}`);
-    doc.text(`Domicilio: ${data.domicilioInquilino}`);
-    doc.text(`Número de Identificación: ${data.numeroIdentificacionInquilino}`);
-    doc.moveDown();
+    // Puedes inyectar CSS en el HTML para estilos:
+    const styledHtml = `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; font-size: 12pt; margin: 2cm; line-height: 1.5; }
+          h1, h2, h3 { text-align: center; }
+          p { text-align: justify; }
+        </style>
+      </head>
+      <body>${html}</body>
+    </html>
+    `;
 
-    doc.text(`Propiedad: ${data.direccionInmueble}`);
-    doc.text(`Descripción: ${data.descripcionInmueble}`);
-    doc.moveDown();
+    // Generar PDF con Puppeteer
+    console.log('Generando PDF con Puppeteer...');
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+    await page.setContent(styledHtml, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    await browser.close();
+    console.log('PDF generado correctamente.');
 
-    doc.text('Detalles adicionales del contrato...');
-    // Agrega más contenido según tus necesidades
+    // Subir el PDF a Firebase Storage
+    const fileName = `contracts/contrato_${applicationId}.pdf`;
+    const file = bucket.file(fileName);
 
-    // Finalizar el PDF
-    doc.end();
+    await file.save(pdfBuffer, {
+      metadata: {
+        contentType: 'application/pdf',
+      },
+    });
+
+    // Obtener URL de descarga
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: '03-01-2030',
+    });
+
+    // Actualizar la aplicación
+    application.contractGenerated = true;
+    application.contractUploaded = true;
+    application.contract.generatedAt = new Date();
+    application.contract.fileName = `contrato_${applicationId}.pdf`;
+    application.contract.url = url;
+    application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
+    await application.save();
+
+    console.log('Contrato generado y subido correctamente. URL:', url);
+    res.status(200).json({
+      success: true,
+      message: 'Contrato generado correctamente.',
+      contractUrl: url,
+    });
   } catch (error) {
     console.error('Error al generar el contrato:', error);
     next(errorHandle(500, 'Error al generar el contrato.'));
