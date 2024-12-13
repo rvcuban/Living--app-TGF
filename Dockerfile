@@ -3,18 +3,21 @@ FROM node:18-alpine
 # Crear directorio de la app
 WORKDIR /usr/src/app
 
-# Copiar package.json e instalar dependencias
+# Copiar package.json e instalar dependencias (del backend)
 COPY package*.json ./
 RUN npm install
 
-# Copiar el resto del código
+# Instalar dependencias y construir el frontend
+COPY client/package*.json client/
+RUN npm install --prefix client
+RUN npm run build --prefix client
+
+# Copiar el resto del código del backend
 COPY . .
 
-# Instalar Chrome estable con puppeteer
-RUN npx puppeteer browsers install chrome@stable
+# Asegúrate que el servidor Node sirva los archivos estáticos desde client/dist
+# Por ejemplo, si tu servidor Node usa express.static('client/dist'):
+# ya tienes los archivos construidos en client/dist debido a los pasos anteriores.
 
-# Exponer el puerto (asumiendo que tu app corre en 5000)
 EXPOSE 5000
-
-# Comando para iniciar tu servidor Node
 CMD ["npm", "start"]
