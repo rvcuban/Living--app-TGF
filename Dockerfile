@@ -1,26 +1,20 @@
-# Usa una imagen base oficial de Node.js
-FROM node:16-alpine
+FROM node:18-alpine
 
-# Crea y usa el directorio de trabajo
+# Crear directorio de la app
 WORKDIR /usr/src/app
 
-# Copia los archivos de dependencias (package.json, package-lock.json)
+# Copiar package.json e instalar dependencias
 COPY package*.json ./
-
-# Instala las dependencias del proyecto (esto incluye Puppeteer)
 RUN npm install
 
-# Copia el resto de los archivos de tu proyecto al contenedor
+# Copiar el resto del código
 COPY . .
 
-# En Render no es necesario establecer variables específicas en Dockerfile,
-# pero si quieres forzar la descarga de Chromium, asegúrate de no tener PUPPETEER_SKIP_DOWNLOAD
-# y de ejecutar la instalación del browser.
-# Por ejemplo, puedes hacer:
-RUN npx puppeteer browsers install chromium
+# Instalar Chrome estable con puppeteer
+RUN npx puppeteer browsers install chrome@stable
 
-# Indica el puerto en el que corre tu aplicación (Render lo detectará)
+# Exponer el puerto (asumiendo que tu app corre en 5000)
 EXPOSE 5000
 
-# Comando para iniciar tu aplicación
+# Comando para iniciar tu servidor Node
 CMD ["npm", "start"]
