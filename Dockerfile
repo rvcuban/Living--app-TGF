@@ -1,23 +1,11 @@
-FROM node:18-alpine
+FROM ghcr.io/puppeteer/puppeteer:latest
 
-WORKDIR /usr/src/app
+ENV PUPPETEER_SKIP_CHROMIUN_DOWNLOAD=tur \
+    PUPPETEER__EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Instalar dependencias del backend
+WORKDIR /usr/bin/app
+
 COPY package*.json ./
-RUN npm install
-
-# Instalar dependencias del frontend
-COPY client/package*.json client/
-RUN npm install --prefix client
-
-# Ahora copiar todo el frontend incluido index.html
-COPY client/ client/
-
-# Ejecutar el build del frontend
-RUN npm run build --prefix client
-
-# Copiar el resto del backend
+RUN npm ci 
 COPY . .
-
-EXPOSE 5000
-CMD ["npm", "start"]
+CMD [ "node": "node api/index.js",],
