@@ -475,6 +475,10 @@ export const generateContract = async (req, res, next) => {
     // Generar PDF con Puppeteer
     console.log('Generando PDF con Puppeteer...');
     const browser = await puppeteer.launch({
+      executablePath: 
+      process.env.NODE_ENV ==="production"
+      ? process.env.PUPPETER_EXECUTABLE_PATH
+      : puppeteer.executablePath(),
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     const page = await browser.newPage();

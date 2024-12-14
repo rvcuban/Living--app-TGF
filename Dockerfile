@@ -8,4 +8,4 @@ WORKDIR /usr/bin/app
 COPY package*.json ./
 RUN npm ci 
 COPY . .
-CMD [ "node": "node api/index.js",],
+CMD ["node", "api/index.js"]
