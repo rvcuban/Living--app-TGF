@@ -44,3 +44,4 @@ router.post('/:applicationId/generate-contract', verifyToken, generateContract);
 router.delete('/:applicationId/cancel',verifyToken, cancelApplication);
 
 export default router;
+  

@@ -85,7 +85,7 @@ export const createApplication = async (req, res, next) => {
 // Cancelar una aplicación específica
 export const cancelApplication = async (req, res, next) => {
   const { applicationId } = req.params;
- 
+
   console.log('Intentando cancelar la aplicación:', applicationId);
   console.log('Usuario autenticado:', req.user);
 
@@ -475,11 +475,11 @@ export const generateContract = async (req, res, next) => {
     // Generar PDF con Puppeteer
     console.log('Generando PDF con Puppeteer...');
     const browser = await puppeteer.launch({
-      executablePath: 
-      process.env.NODE_ENV ==="production"
-      ? process.env.PUPPETER_EXECUTABLE_PATH
-      : puppeteer.executablePath(),
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+
+      args: [
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+      ],
     });
     const page = await browser.newPage();
     await page.setContent(styledHtml, { waitUntil: 'networkidle0' });
