@@ -8,17 +8,31 @@ import User from '../models/user.model.js';
 import bucket from '../utils/firebaseAdmin.js'; // Ajusta la ruta según tu estructura de carpetas
 
 
+
+
 import fs from 'fs';
 import path from 'path';
 import { dirname, join } from 'path';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 
-import { PDFDocument } from 'pdf-lib';
+
 import { fileURLToPath } from 'url';
 
 import puppeteer from 'puppeteer';
 import mammoth from 'mammoth';
+
+
+// Importamos nuestros helpers:
+import {
+  addContractHeader,
+  addReunidosSection,
+  addExponenSection,
+  addClausulas,
+  addFirma,
+} from '../helpers/pdfContractHelpers.js';
+
+import PDFDocument from 'pdfkit';
 
 
 
@@ -423,6 +437,7 @@ export const generateContract = async (req, res, next) => {
     // Obtener datos necesarios
     const propietario = await User.findById(application.listingId.userRef);
     const propiedad = application.listingId;
+    const inquilino = application.userId;
 
     // Data para reemplazar en la plantilla DOCX
     const data = {
@@ -434,93 +449,54 @@ export const generateContract = async (req, res, next) => {
       numeroIdentificacionPropietario: propietario.numeroIdentificacion || 'DNI/NIE',
       // Añade más datos según tus marcadores en la plantilla
     };
+    // Crear doc PDFKit y capturar en memoria
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    let buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', async () => {
+      const pdfData = Buffer.concat(buffers);
 
-    // Cargar plantilla DOCX
-    const templatePath = path.join(__dirname, '..', 'templates', 'contrato_template.docx');
-    if (!fs.existsSync(templatePath)) {
-      console.error(`La plantilla no se encontró: ${templatePath}`);
-      return next(errorHandle(500, 'No se encontró la plantilla.'));
-    }
+      // Subir a Firebase
+      const fileName = `contracts/contrato_pdfkit_${applicationId}.pdf`;
+      const file = bucket.file(fileName);
 
-    const content = fs.readFileSync(templatePath, 'binary');
-    const zip = new PizZip(content);
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
+      await file.save(pdfData, {
+        metadata: { contentType: 'application/pdf' },
+      });
+
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2030',
+      });
+
+      // Actualizar en la BD
+      application.contractGenerated = true;
+      application.contractUploaded = true;
+      application.contract.generatedAt = new Date();
+      application.contract.fileName = fileName;
+      application.contract.url = url;
+      application.history.push({ status: 'Contrato Generado (PDFKit)', timestamp: new Date() });
+      await application.save();
+
+      console.log('Contrato PDFKit listo. URL:', url);
+      res.status(200).json({
+        success: true,
+        message: 'Contrato (PDFKit) generado correctamente.',
+        contractUrl: url,
+      });
     });
 
-    // Reemplazar marcadores
-    doc.render(data);
+    // =========== Llamadas a Helpers ==============
+    addContractHeader(doc, data);
+    addReunidosSection(doc, data);
+    addExponenSection(doc, data);
+    addClausulas(doc, data);
+    addFirma(doc, data);
 
-    // Generar buffer del DOCX resultante
-    const docxBuffer = doc.getZip().generate({ type: 'nodebuffer' });
-
-    // Convertir DOCX a HTML con mammoth
-    const { value: html } = await mammoth.convertToHtml({ buffer: docxBuffer });
-
-    // Puedes inyectar CSS en el HTML para estilos:
-    const styledHtml = `
-    <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; font-size: 12pt; margin: 2cm; line-height: 1.5; }
-          h1, h2, h3 { text-align: center; }
-          p { text-align: justify; }
-        </style>
-      </head>
-      <body>${html}</body>
-    </html>
-    `;
-    const chromePath = computeExecutablePath('chrome'); 
-    console.log(chromePath);
-    // Generar PDF con Puppeteer
-    console.log('Generando PDF con Puppeteer...');
-    const browser = await puppeteer.launch({
-      executablePath: chromePath,
-      args: [
-        "--disable-setuid-sandbox",
-        "--no-sandbox",
-      ],
-    });
-    const page = await browser.newPage();
-    await page.setContent(styledHtml, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-    await browser.close();
-    console.log('PDF generado correctamente.');
-
-    // Subir el PDF a Firebase Storage
-    const fileName = `contracts/contrato_${applicationId}.pdf`;
-    const file = bucket.file(fileName);
-
-    await file.save(pdfBuffer, {
-      metadata: {
-        contentType: 'application/pdf',
-      },
-    });
-
-    // Obtener URL de descarga
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '03-01-2030',
-    });
-
-    // Actualizar la aplicación
-    application.contractGenerated = true;
-    application.contractUploaded = true;
-    application.contract.generatedAt = new Date();
-    application.contract.fileName = `contrato_${applicationId}.pdf`;
-    application.contract.url = url;
-    application.history.push({ status: 'Contrato Generado', timestamp: new Date() });
-    await application.save();
-
-    console.log('Contrato generado y subido correctamente. URL:', url);
-    res.status(200).json({
-      success: true,
-      message: 'Contrato generado correctamente.',
-      contractUrl: url,
-    });
+    // Cerrar doc
+    doc.end();
   } catch (error) {
-    console.error('Error al generar el contrato:', error);
-    next(errorHandle(500, 'Error al generar el contrato.'));
+    console.error('Error generando contrato PDFKit:', error);
+    next(errorHandle(500, 'Error al generar el contrato con PDFKit.'));
   }
 };
