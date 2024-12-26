@@ -39,7 +39,7 @@ export default function DropDownProfile({ onOptionSelect }) {
             dispatch(deleteUserSuccess(data));
             setIsSigningOut(false);
             
-            navigate('/');
+            navigate('/sign-in');
             setTimeout(() => {
                 window.location.reload(false);
             }, 300); // Retraso de 300 ms para asegurar la redirección
