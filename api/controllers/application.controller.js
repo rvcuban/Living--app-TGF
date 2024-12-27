@@ -453,6 +453,7 @@ export const generateContract = async (req, res, next) => {
       direccionInmueble: propiedad.address || 'Dirección de la vivienda',
       descripcionInmueble: propiedad.description || '',
       isAmueblado: propiedad.furnished, // boolean
+      rentalDurationMonths : application.rentalDurationMonths,
       // ...lo que necesites de la property, por ejemplo bathrooms, bedrooms, etc.
       // refCatastral: propiedad.refCatastral || '',  (si lo tuvieras en listing)
     };
