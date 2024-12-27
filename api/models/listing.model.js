@@ -38,6 +38,10 @@ const listingSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
+    trastero: {
+      type: Boolean,
+      required: true,
+    },
     type: {
       type: String,
       required: true,
@@ -64,6 +68,11 @@ const listingSchema = new mongoose.Schema(
       default: 0,
     },
 
+    capacidadTotal: {
+      type: Number,
+      default: 0,
+    },
+
     // Añadido: campo para almacenar las referencias de las reseñas
     reviews: [
       { type: mongoose.Schema.Types.ObjectId, 
@@ -77,6 +86,7 @@ const listingSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
 
   },
   { timestamps: true }

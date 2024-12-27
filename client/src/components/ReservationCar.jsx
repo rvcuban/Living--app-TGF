@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 export default function ReservationCard({ listingType, listingId, onReserve }) {
-    const [rentalDuration, setRentalDuration] = useState(3);
+    const [rentalDurationMonths, setRentalDurationMonths] = useState(3);
     const [showPopup, setShowPopup] = useState(false); // Estado para mostrar el popup
     const [loading, setLoading] = useState(false); // Estado para manejar el loading
 
@@ -34,7 +34,7 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
                     // Asegúrate de que el backend maneje la autenticación por tokens
                     'Authorization': `Bearer ${currentUser.token}`,
                 },
-                body: JSON.stringify({ listingId: listingId, rentalDuration }),
+                body: JSON.stringify({ listingId: listingId, rentalDurationMonths }),
             });
 
             const data = await res.json();
@@ -68,17 +68,19 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
                 {listingType === 'rent' ? 'Reserva Ahora' : 'Comprar Ahora'}
             </h3>
             {listingType === 'rent' && (
-                <select
-                    className="w-full p-3 mt-3 border border-gray-300 rounded-lg bg-slate-100 text-slate-600"
-                    value={rentalDuration}
-                    onChange={handleDurationChange}
-                >
-                    {[3, 6, 9, 12].map((months) => (
-                        <option key={months} value={months}>
-                            {months} {months === 1 ? 'mes' : 'meses'}
-                        </option>
-                    ))}
-                </select>
+                <div className="mt-3">
+                <label htmlFor="rentalDuration" className="block text-slate-600 mb-1">
+                  Duración del alquiler (meses):
+                </label>
+                <input
+                  id="rentalDuration"
+                  type="number"
+                  min="1"
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-slate-100 text-slate-600"
+                  value={rentalDurationMonths}
+                  onChange={(e) => setRentalDurationMonths(e.target.value)}
+                />
+              </div>
             )}
             <button
                 className="bg-blue-600 text-white w-full p-3 mt-6 rounded-lg hover:bg-blue-500 transition-colors"
@@ -94,7 +96,7 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
                     <div className="bg-white border border-gray-300 p-6 rounded-lg shadow-lg w-80 text-center">
                         <p className="text-lg font-semibold text-sah-primary">Confirmar Reserva</p>
                         <p className="text-gray-700 mt-2">
-                            Una vez que acepte, se enviará una solicitud de entrada con el tiempo marcado de {rentalDuration} {rentalDuration === 1 ? 'mes' : 'meses'}.
+                            Una vez que acepte, se enviará una solicitud de entrada con el tiempo marcado de {rentalDurationMonths} {rentalDurationMonths === 1 ? 'mes' : 'meses'}.
                         </p>
                         <p className="text-gray-700 mt-2">
                             ¿Está seguro que desea enviar la petición?

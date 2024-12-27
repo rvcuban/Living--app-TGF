@@ -7,20 +7,11 @@ import transporter from '../utils/email.js';
 import User from '../models/user.model.js';
 import bucket from '../utils/firebaseAdmin.js'; // Ajusta la ruta según tu estructura de carpetas
 
-
-
-
-import fs from 'fs';
-import path from 'path';
 import { dirname, join } from 'path';
-import PizZip from 'pizzip';
-import Docxtemplater from 'docxtemplater';
-
 
 import { fileURLToPath } from 'url';
 
-import puppeteer from 'puppeteer';
-import mammoth from 'mammoth';
+
 
 
 // Importamos nuestros helpers:
@@ -80,6 +71,7 @@ export const createApplication = async (req, res, next) => {
       listingId,
       status: 'Enviada',
       history: [{ status: 'Enviada', timestamp: new Date() }],
+      rentalDurationMonths: req.body.rentalDurationMonths,
     });
 
     await newApplication.save();
@@ -439,65 +431,82 @@ export const generateContract = async (req, res, next) => {
     const propiedad = application.listingId;
     const inquilino = application.userId;
 
-    // Data para reemplazar en la plantilla DOCX
+    // Data para Helpers y generacion de Plantilla
     const data = {
-      lugar: propiedad.address || 'Lugar por defecto',
+      // Fecha y lugar
+      lugar: 'atravez de DCT',
       fecha: new Date().toLocaleDateString(),
+
+      // Datos propietario
       nombrePropietario: propietario.username || 'Propietario',
       nacionalidadPropietario: propietario.nacionalidad || 'Española',
       domicilioPropietario: propietario.address || 'Dirección del propietario',
       numeroIdentificacionPropietario: propietario.numeroIdentificacion || 'DNI/NIE',
-      // Añade más datos según tus marcadores en la plantilla
+
+      // Datos inquilino
+      nombreInquilino: inquilino.username || 'Inquilino',
+      nacionalidadInquilino: inquilino.nacionalidad || 'Española',
+      domicilioInquilino: inquilino.address || 'Dirección del inquilino',
+      numeroIdentificacionInquilino: inquilino.numeroIdentificacion || 'DNI/NIE',
+
+      // Datos listing
+      direccionInmueble: propiedad.address || 'Dirección de la vivienda',
+      descripcionInmueble: propiedad.description || '',
+      isAmueblado: propiedad.furnished, // boolean
+      // ...lo que necesites de la property, por ejemplo bathrooms, bedrooms, etc.
+      // refCatastral: propiedad.refCatastral || '',  (si lo tuvieras en listing)
     };
-    // Crear doc PDFKit y capturar en memoria
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    let buffers = [];
-    doc.on('data', buffers.push.bind(buffers));
-    doc.on('end', async () => {
-      const pdfData = Buffer.concat(buffers);
 
-      // Subir a Firebase
-      const fileName = `contracts/contrato_pdfkit_${applicationId}.pdf`;
-      const file = bucket.file(fileName);
 
-      await file.save(pdfData, {
-        metadata: { contentType: 'application/pdf' },
-      });
+  // Crear doc PDFKit y capturar en memoria
+  const doc = new PDFDocument({ size: 'A4', margin: 50 });
+  let buffers = [];
+  doc.on('data', buffers.push.bind(buffers));
+  doc.on('end', async () => {
+    const pdfData = Buffer.concat(buffers);
 
-      const [url] = await file.getSignedUrl({
-        action: 'read',
-        expires: '03-01-2030',
-      });
+    // Subir a Firebase
+    const fileName = `contracts/contrato_pdfkit_${applicationId}.pdf`;
+    const file = bucket.file(fileName);
 
-      // Actualizar en la BD
-      application.contractGenerated = true;
-      application.contractUploaded = true;
-      application.contract.generatedAt = new Date();
-      application.contract.fileName = fileName;
-      application.contract.url = url;
-      application.history.push({ status: 'Contrato Generado (PDFKit)', timestamp: new Date() });
-      await application.save();
-
-      console.log('Contrato PDFKit listo. URL:', url);
-      res.status(200).json({
-        success: true,
-        message: 'Contrato (PDFKit) generado correctamente.',
-        contractUrl: url,
-      });
+    await file.save(pdfData, {
+      metadata: { contentType: 'application/pdf' },
     });
 
-    // =========== Llamadas a Helpers ==============
-    
-    addContractHeader(doc, data);
-    addReunidosSection(doc, data);
-    addExponenSection(doc, data);
-    addClausulasSection(doc, data);
-    addFirma(doc,data);
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: '03-01-2030',
+    });
 
-    // Cerrar doc
-    doc.end();
-  } catch (error) {
-    console.error('Error generando contrato PDFKit:', error);
-    next(errorHandle(500, 'Error al generar el contrato con PDFKit.'));
-  }
+    // Actualizar en la BD
+    application.contractGenerated = true;
+    application.contractUploaded = true;
+    application.contract.generatedAt = new Date();
+    application.contract.fileName = fileName;
+    application.contract.url = url;
+    application.history.push({ status: 'Contrato Generado (PDFKit)', timestamp: new Date() });
+    await application.save();
+
+    console.log('Contrato PDFKit listo. URL:', url);
+    res.status(200).json({
+      success: true,
+      message: 'Contrato (PDFKit) generado correctamente.',
+      contractUrl: url,
+    });
+  });
+
+  // =========== Llamadas a Helpers ==============
+
+  addContractHeader(doc, data);
+  addReunidosSection(doc, data);
+  addExponenSection(doc, data);
+  addClausulasSection(doc, data);
+  addFirma(doc, data);
+
+  // Cerrar doc
+  doc.end();
+} catch (error) {
+  console.error('Error generando contrato PDFKit:', error);
+  next(errorHandle(500, 'Error al generar el contrato con PDFKit.'));
+}
 };

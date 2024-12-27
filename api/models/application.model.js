@@ -29,7 +29,34 @@ const ApplicationSchema = new mongoose.Schema({
   history: [{
     status: String,
     timestamp: { type: Date, default: Date.now }
-  }]
+  }],
+
+
+
+  startDate: { type: Date, default: Date.now },   // Fecha efectiva (lo forzamos a la fecha actual si no se envía)
+  lugarFirma: { type: String, default: 'atravez de DCT' },
+
+  // Duración inicial en meses (p.ej. 3,6,9,12)
+  rentalDurationMonths: { type: Number, default: 12 },
+
+  // Renta y forma de pago
+  monthlyRent: { type: Number},  // Ajusta el default a tus necesidades o quítalo
+  paymentMethod: { 
+    type: String, 
+    enum: ['TRANSFERENCIA', 'DOMICILIACION'], 
+    default: 'TRANSFERENCIA' 
+  },
+  bankAccountOwner: { type: String },  // IBAN del propietario (opción 1)
+  bankAccountTenant: { type: String }, // IBAN del inquilino (opción 2)
+
+  // Fianza
+  fianzaCantidad: { type: Number, default: 0 },
+  fianzaMeses: { type: Number, default: 1 },  // p.ej. 1 mes de fianza
+  guaranteeType: { 
+    type: String, 
+    enum: ['DEPOSITO', 'AVAL_BANCARIO', 'NINGUNA'], 
+    default: 'NINGUNA' 
+  },
 }, { timestamps: true });
 
 const Application = mongoose.model('Application', ApplicationSchema);

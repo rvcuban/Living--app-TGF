@@ -29,7 +29,7 @@ export function addReunidosSection(doc, data) {
   // Propietario
   doc.fontSize(12).text(
     `De una parte,\n\n` +
-    `Don/Doña ${data.nombrePropietario}, mayor de edad, de nacionalidad ${data.nacionalidadPropietario}, con domicilio en ${data.domicilioPropietario} ` +
+    `Don/Doña ${data.nombrePropietario}, mayor de edad, con domicilio en ${data.domicilioPropietario} ` +
     `y DNI/Pasaporte/NIE número ${data.numIdentPropietario}.\n\n` +
     `Actúa en su propio nombre y representación (en adelante, el/los "Propietario/s").`
   );
@@ -39,10 +39,8 @@ export function addReunidosSection(doc, data) {
   // Inquilino(s)
   doc.fontSize(12).text(
     `De otra parte,\n\n` +
-    `Don/Doña ${data.nombreInquilino1}, mayor de edad, de nacionalidad ${data.nacionalidadInquilino1}, con domicilio en ${data.domicilioInquilino1} ` +
+    `Don/Doña ${data.nombreInquilino1}, mayor de edad, con domicilio en ${data.domicilioInquilino1} ` +
     `y DNI/Pasaporte/NIE número ${data.numIdentInquilino1}.\n\n` +
-    `Don/Doña ${data.nombreInquilino2}, mayor de edad, de nacionalidad ${data.nacionalidadInquilino2}, con domicilio en ${data.domicilioInquilino2} ` +
-    `y DNI/Pasaporte/NIE número ${data.numIdentInquilino2}.\n\n` +
     `(en adelante, el/los "Inquilino/s").`
   );
 
@@ -67,11 +65,6 @@ export function addExponenSection(doc, data) {
   doc.fontSize(12)
     .text(
       `1º.- Que el Propietario, es propietaria de la vivienda sita en ${data.direccionInmueble}, calle ${data.calleInmueble} (${data.descripcionInmueble}), ` +
-      `indicar si tiene garaje o trastero y describirlo.\n\n` +
-      `- REF. CATASTRAL: ${data.refCatastral}.\n` +
-      `- Comunidad de propietarios: ${data.comunidadPropietarios}.\n` +
-      `- Nº Cédula de habitabilidad: ${data.cedulaHabitabilidad}. Se adjunta fotocopia de la misma como anexo al final del presente contrato.\n` +
-      `- Certificado de eficiencia energética: ${data.certEficEnergetica}. Se adjunta fotocopia del certificado como anexo al final del presente contrato.\n\n` +
       'El Propietario manifiesta expresamente que el Inmueble cumple con todos los requisitos y condiciones necesarias para ser destinado a satisfacer las necesidades permanentes de vivienda del Inquilino.\n\n' +
       '(En adelante, la vivienda y sus dependencias descritas, conjuntamente, el "Inmueble").\n\n' +
       `2º.- Que el Inquilino, manifiesta su interés en tomar en arrendamiento el citado Inmueble descrito en el Expositivo 1º, ` +
@@ -83,10 +76,6 @@ export function addExponenSection(doc, data) {
     .moveDown(2);
 
 }
-
-
-
-
 
 
 /**
