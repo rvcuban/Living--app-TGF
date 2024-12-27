@@ -23,6 +23,22 @@ documentos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }],
 favoritos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
 rol: { type: String, enum: ['inquilino', 'propietario'], default: 'inquilino' },
 
+numeroIdentificacion: { 
+    type: String, 
+    required: true, 
+    unique: true // Asumiendo que cada identificación es única
+  },
+  tipoIdentificacion: { 
+    type: String, 
+    enum: ['DNI', 'Pasaporte', 'NIE'], 
+    required: true 
+  },
+
+  favoritos: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Property' 
+  }],
+
 
 
 avatar:{

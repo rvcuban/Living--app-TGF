@@ -28,7 +28,7 @@ import {
   addContractHeader,
   addReunidosSection,
   addExponenSection,
-  addClausulas,
+  addClausulasSection,
   addFirma,
 } from '../helpers/pdfContractHelpers.js';
 
@@ -487,11 +487,12 @@ export const generateContract = async (req, res, next) => {
     });
 
     // =========== Llamadas a Helpers ==============
+    
     addContractHeader(doc, data);
     addReunidosSection(doc, data);
     addExponenSection(doc, data);
-    addClausulas(doc, data);
-    addFirma(doc, data);
+    addClausulasSection(doc, data);
+    addFirma(doc,data);
 
     // Cerrar doc
     doc.end();
