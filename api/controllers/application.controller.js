@@ -292,6 +292,7 @@ export const uploadContract = async (req, res, next) => {
     const { applicationId } = req.params;
     const { contractUrl, fileName } = req.body;
 
+    // Validaciones
     if (!contractUrl || !fileName) {
       return next(errorHandle(400, 'URL del contrato y nombre del archivo son requeridos.'));
     }
@@ -302,32 +303,36 @@ export const uploadContract = async (req, res, next) => {
       return next(errorHandle(404, 'Aplicación no encontrada.'));
     }
 
-    // Verificar que la propiedad pertenece al usuario autenticado
+    // Verificar permisos
     if (application.listingId.userRef.toString() !== req.user.id) {
-      return next(errorHandle(401, 'No estás autorizado para subir el contrato de esta solicitud.'));
+      return next(errorHandle(401, 'No estás autorizado para subir el contrato.'));
     }
 
-    // Actualizar campos a nivel raíz
-    application.contractUrl = contractUrl;
+    // Asegúrate de guardarlo en BOTH (si quieres) y *especialmente* en `application.contract.url`
+    // para ser consistente con la lógica "generateContract".
     application.contractUploaded = true;
+    application.contractUrl = contractUrl; // <-- si deseas en la raíz (opcional)
 
-    // Actualizar información del contrato
     application.contract = {
       ...application.contract,
       uploadedAt: new Date(),
+      url: contractUrl,   // <-- Ojo: la propiedad "url" dentro de "contract"
       fileName: fileName,
-      // Eliminar 'contractUploaded' de aquí
     };
 
-    application.history.push({ status: 'Contrato Subido', timestamp: new Date() });
+    application.history.push({
+      status: 'Contrato Subido',
+      timestamp: new Date(),
+    });
 
     await application.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Contrato subido correctamente.',
-      contractUrl: application.contractUrl,
-      fileName: application.contract.fileName,
+      contractUrl: contractUrl, // El front usará esto en data.contractUrl
+      fileName: fileName,
+
     });
   } catch (error) {
     console.error('Error uploading contract:', error);
@@ -453,61 +458,116 @@ export const generateContract = async (req, res, next) => {
       direccionInmueble: propiedad.address || 'Dirección de la vivienda',
       descripcionInmueble: propiedad.description || '',
       isAmueblado: propiedad.furnished, // boolean
-      rentalDurationMonths : application.rentalDurationMonths,
+      rentalDurationMonths: application.rentalDurationMonths,
       // ...lo que necesites de la property, por ejemplo bathrooms, bedrooms, etc.
       // refCatastral: propiedad.refCatastral || '',  (si lo tuvieras en listing)
     };
 
 
-  // Crear doc PDFKit y capturar en memoria
-  const doc = new PDFDocument({ size: 'A4', margin: 50 });
-  let buffers = [];
-  doc.on('data', buffers.push.bind(buffers));
-  doc.on('end', async () => {
-    const pdfData = Buffer.concat(buffers);
+    // Crear doc PDFKit y capturar en memoria
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    let buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', async () => {
+      const pdfData = Buffer.concat(buffers);
 
-    // Subir a Firebase
-    const fileName = `contracts/contrato_pdfkit_${applicationId}.pdf`;
-    const file = bucket.file(fileName);
+      // Subir a Firebase
+      // Definimos la ruta en Firebase
+      // para que quede en "contracts/contrato_gen_{applicationId}.pdf"
+      const storagePath = `contracts/contrato_gen_${applicationId}_.pdf`;
+      const file = bucket.file(storagePath);
 
-    await file.save(pdfData, {
-      metadata: { contentType: 'application/pdf' },
+      await file.save(pdfData, {
+        metadata: { contentType: 'application/pdf' },
+      });
+
+      const [url] = await file.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2030',
+      });
+
+      // Aquí obtienes solo "contrato_gen_{applicationId}.pdf"
+      const fileName = storagePath.split('/').pop();
+      console.log(fileName);
+
+      // Actualizar en la BD
+      application.contractGenerated = true;
+      application.contractUploaded = true;
+      application.contract.generatedAt = new Date();
+      application.contract.fileName = storagePath;
+      application.contract.url = url;
+      application.history.push({ status: 'Contrato Generado (PDFKit)', timestamp: new Date() });
+      await application.save();
+
+      console.log('Contrato PDFKit listo. URL:', url);
+      res.status(200).json({
+        success: true,
+        message: 'Contrato (PDFKit) generado correctamente.',
+        contractUrl: url,
+        fileName: fileName,
+      });
     });
 
-    const [url] = await file.getSignedUrl({
-      action: 'read',
-      expires: '03-01-2030',
+    // =========== Llamadas a Helpers ==============
+
+    addContractHeader(doc, data);
+    addReunidosSection(doc, data);
+    addExponenSection(doc, data);
+    addClausulasSection(doc, data);
+    addFirma(doc, data);
+
+    // Cerrar doc
+    doc.end();
+  } catch (error) {
+    console.error('Error generando contrato PDFKit:', error);
+    next(errorHandle(500, 'Error al generar el contrato con PDFKit.'));
+  }
+};
+
+export const deleteContract = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+
+    // 1. Verificamos la app
+    const application = await Application.findById(applicationId).populate('listingId');
+    if (!application) return next(errorHandle(404, 'Aplicación no encontrada.'));
+
+    // 2. Verificamos permisos
+    if (application.listingId.userRef.toString() !== req.user.id) {
+      return next(errorHandle(401, 'No autorizado.'));
+    }
+
+    const fileName = application.contract.fileName; 
+    if (!fileName) {
+      return next(errorHandle(400, 'No hay contrato para eliminar.'));
+    }
+
+    // 3. Borramos el archivo en Firebase Storage (Admin SDK).
+    // El fileName ya contiene "contracts/...".
+    await bucket.file(fileName).delete();
+
+    // 4. Reseteamos los datos en la BD
+    application.contractGenerated = false;
+    application.contractUploaded = false;
+    application.contract.url = '';
+    application.contract.fileName = '';
+    application.contract.uploadedAt = null;
+    application.contract.generatedAt = null;
+    // etc, si hay más flags
+
+    application.history.push({
+      status: 'Contrato Eliminado',
+      timestamp: new Date(),
     });
 
-    // Actualizar en la BD
-    application.contractGenerated = true;
-    application.contractUploaded = true;
-    application.contract.generatedAt = new Date();
-    application.contract.fileName = fileName;
-    application.contract.url = url;
-    application.history.push({ status: 'Contrato Generado (PDFKit)', timestamp: new Date() });
     await application.save();
 
-    console.log('Contrato PDFKit listo. URL:', url);
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: 'Contrato (PDFKit) generado correctamente.',
-      contractUrl: url,
+      message: 'Contrato eliminado correctamente.',
     });
-  });
-
-  // =========== Llamadas a Helpers ==============
-
-  addContractHeader(doc, data);
-  addReunidosSection(doc, data);
-  addExponenSection(doc, data);
-  addClausulasSection(doc, data);
-  addFirma(doc, data);
-
-  // Cerrar doc
-  doc.end();
-} catch (error) {
-  console.error('Error generando contrato PDFKit:', error);
-  next(errorHandle(500, 'Error al generar el contrato con PDFKit.'));
-}
+  } catch (err) {
+    console.error('Error al eliminar el contrato: ', err);
+    return next(errorHandle(500, 'Error al eliminar el contrato.'));
+  }
 };

@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'; // Importamos L
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { storage } from '../firebase'; // Asegúrate de que la ruta es correcta
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import ReactModal from 'react-modal';
 
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -193,7 +193,7 @@ export default function PropertyApplications() {
                   generatedAt: new Date(),
                   contractGenerated: true,
                   url: data.contractUrl,
-                  fileName: `contrato_${applicationId}.pdf`,
+                  fileName: data.fileName,
                 },
               }
               : app
@@ -210,91 +210,75 @@ export default function PropertyApplications() {
 
 
   const handleUploadContract = async (applicationId, file) => {
-    if (!file) {
-      toast.error('Por favor, selecciona un archivo PDF.');
-      return;
-    }
+    // ... validaciones
+    const fileName = `contrato_manual_${applicationId}.pdf`
+    const storageRef = ref(storage, `contracts/${fileName}`)
 
-    if (file.type !== 'application/pdf') {
-      toast.error('Solo se permiten archivos PDF.');
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) { // 10 MB
-      toast.error('El archivo excede el tamaño máximo de 10MB.');
-      return;
-    }
-
-    const storageRef = ref(storage, `contracts/${applicationId}/${file.name}`);
     const uploadTask = uploadBytesResumable(storageRef, file);
-
     uploadTask.on(
       'state_changed',
       (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        console.log(`Subiendo contrato: ${progress}% completado`);
-        setUploadProgress((prevProgress) => ({
-          ...prevProgress,
-          [applicationId]: progress,
-        }));
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress((prev) => ({ ...prev, [applicationId]: progress }));
       },
       (error) => {
         console.error('Error al subir el contrato:', error);
         toast.error('Error al subir el contrato.');
-        setUploadProgress((prevProgress) => ({
-          ...prevProgress,
-          [applicationId]: 0,
-        }));
+        setUploadProgress((prev) => ({ ...prev, [applicationId]: 0 }));
       },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
-          try {
-            const res = await fetch(`/api/applications/${applicationId}/upload-contract`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${currentUser.token}`,
-              },
-              body: JSON.stringify({ contractUrl: downloadURL, fileName: file.name }), // Enviar 'fileName'
-            });
-            const data = await res.json();
-            if (data.success) {
-              toast.success('Contrato subido correctamente.');
-              setApplications((prevApplications) =>
-                prevApplications.map((app) =>
-                  app._id === applicationId
-                    ? {
-                      ...app,
-                      contractUrl: data.contractUrl,     // A nivel raíz
-                      contractUploaded: true,            // A nivel raíz
-                      contract: {
-                        ...app.contract,
-                        uploadedAt: new Date(),
-                        fileName: data.fileName,
-                      },
-                    }
-                    : app
-                )
-              );
-              setContractPreview(false);
-              setContractUrl('');
-              closeModal();
-              setUploadProgress((prevProgress) => ({
-                ...prevProgress,
-                [applicationId]: 100,
-              }));
-            } else {
-              toast.error(data.message || 'Error al subir el contrato.');
-            }
-          } catch (error) {
-            console.error('Error al actualizar el contrato en el backend:', error);
-            toast.error('Error al actualizar el contrato en el backend.');
+      async () => {
+        try {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          const res = await fetch(`/api/applications/${applicationId}/upload-contract`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentUser.token}`,
+            },
+            body: JSON.stringify({ contractUrl: downloadURL, fileName }),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            toast.success('Contrato subido correctamente.');
+            setApplications((prevApps) =>
+              prevApps.map((app) =>
+                app._id === applicationId
+                  ? {
+                    ...app,
+                    contractUploaded: true,
+                    contract: {
+                      ...app.contract,
+                      // OJO: guarda la URL devuelta por el backend (o la que mandaste).
+                      url: data.contractUrl, // <--- important
+                      uploadedAt: new Date(),
+                      fileName: data.fileName,
+                    },
+                  }
+                  : app
+              )
+            );
+            setContractPreview(false);
+            setContractUrl('');
+            closeModal();
+            setUploadProgress((prev) => ({ ...prev, [applicationId]: 100 }));
+          } else {
+            toast.error(data.message || 'Error al subir el contrato.');
           }
-        });
+        } catch (error) {
+          console.error('Error al actualizar el contrato en el backend:', error);
+          toast.error('Error al actualizar el contrato en el backend.');
+        }
       }
     );
   };
+
+
+
+
+
+
+
 
   const handleSendContract = async (applicationId) => {
     try {
@@ -321,43 +305,31 @@ export default function PropertyApplications() {
   // Función para eliminar el contrato
   const handleDeleteContract = async (applicationId) => {
     try {
-      // Obtener la URL del contrato
-      const application = applications.find(app => app._id === applicationId);
-      if (!application || !application.contract.url) {
-        toast.error('Contrato no encontrado.');
-        return;
-      }
-
-      // Obtener la referencia del archivo en Firebase Storage
-      const fileRef = ref(storage, `contracts/${applicationId}/${application.contract.fileName}`);
-
-      // Eliminar el archivo de Firebase Storage
-      await deleteObject(fileRef);
-      console.log('Contrato eliminado de Firebase Storage.');
-
-      // Eliminar la URL del contrato en el backend
+      // Llamamos a la ruta de backend
       const res = await fetch(`/api/applications/${applicationId}/delete-contract`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.token}`,
+          Authorization: `Bearer ${currentUser.token}`,
         },
       });
       const data = await res.json();
       if (data.success) {
         toast.success('Contrato eliminado correctamente.');
-        setApplications((prevApplications) =>
-          prevApplications.map((app) =>
+        // Actualizar estado local:
+        setApplications((prevApps) =>
+          prevApps.map((app) =>
             app._id === applicationId
               ? {
                 ...app,
-                contractUrl: '',               // A nivel raíz
-                contractUploaded: false,       // A nivel raíz
+                contractUrl: '', // o contract?.url = ''
+                contractUploaded: false,
                 contract: {
+                  ...app.contract,
                   url: '',
-                  uploadedAt: null,
-                  contractUploaded: false,
                   fileName: '',
+                  uploadedAt: null,
+                  generatedAt: null,
                 },
               }
               : app
@@ -498,17 +470,20 @@ export default function PropertyApplications() {
                   {application.status === 'Aceptada' && (
                     <>
                       {/* Si el contrato ha sido subido, mostrar botones Ver, Eliminar, Enviar */}
+                      {/* split / es para que el filename no muestre el nombre de la carpeta que lo contiene */}
                       {application.contractUploaded ? (
                         <div className="flex flex-col">
                           <p className="mb-2">
-                            <strong>Contrato:</strong> {application.contract.fileName}
+                            <strong>Contrato:</strong> {' '} {application.contract.fileName 
+                              ? application.contract.fileName.split('/').pop() 
+                              : ''}
                           </p>
                           <div className="flex flex-col md:flex-row">
                             <a
-                              href={application.contract.url}
+                              href={application.contract.url}  // la url del storage
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-none text-center bg-blue-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0 cursor-pointer"
+                              className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
                             >
                               Ver Contrato
                             </a>
@@ -530,49 +505,60 @@ export default function PropertyApplications() {
                         <>
                           {/* Mostrar botones para generar o subir contrato */}
                           <div className="flex flex-col">
-                          <p className="mb-2">
-                            <strong>Contrato:</strong> {application.contract.fileName}
-                          </p>
+                            <p className="mb-2">
+                              <strong>Contrato:</strong> {application.contract.fileName}
+                            </p>
                             {/* Botón para Generar Contrato */}
                             {!application.contractGenerated && (
-                             <div className='flex flex-col md:flex-row mb-2'>
+                              <div className='flex flex-col md:flex-row mb-2'>
 
-                              <button
-                                className="flex-none bg-yellow-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0"
-                                onClick={() => openModal(application)}
-                              >
-                                Generar Contrato
-                              </button>
-                              
-                              <button
-                                  className="flex-none text-center bg-blue-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0 cursor-pointer"
-                                  onClick={() => handleUploadContract(application._id)}
+                                <button
+                                  className="flex-none bg-yellow-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0"
+                                  onClick={() => openModal(application)}
                                 >
-                                  Subir Contrato
+                                  Generar Contrato
                                 </button>
-                             </div>
-                              
+
+                                <label
+                                  htmlFor={`file-upload-${application._id}`}
+                                  className="bg-purple-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0 cursor-pointer text-center"
+                                >
+                                  Subir mi Contrato
+                                </label>
+
+                                {/* Input type="file" oculto, que dispara onChange cuando el usuario seleccione un PDF */}
+                                <input
+                                  id={`file-upload-${application._id}`}
+                                  type="file"
+                                  accept="application/pdf"
+                                  style={{ display: 'none' }}
+                                  onChange={(e) =>
+                                    handleUploadContract(application._id, e.target.files[0])
+                                  }
+                                />
+                              </div>
+
                             )}
 
                             {/* Botón para Subir Contrato */}
                             {application.contractGenerated && !application.contractUploaded && (
                               <div className="flex flex-col md:items-end">
                                 <div className="flex flex-col md:flex-row">
-                                <a
-                                  href={application.contract.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex-none text-center bg-blue-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0 cursor-pointer"
-                                >
-                                  Ver Contrato
-                                </a>
-                                <button
-                                  className="flex-none text-center bg-green-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0 cursor-pointer"
-                                  onClick={() => handleSendContract(application._id)}
-                                >
-                                  Enviar Contrato
-                                </button>
-                              </div>
+                                  <a
+                                    href={application.contract.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-none text-center bg-blue-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0 cursor-pointer"
+                                  >
+                                    Ver Contrato
+                                  </a>
+                                  <button
+                                    className="flex-none text-center bg-green-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0 cursor-pointer"
+                                    onClick={() => handleSendContract(application._id)}
+                                  >
+                                    Enviar Contrato
+                                  </button>
+                                </div>
                               </div>
                             )}
 

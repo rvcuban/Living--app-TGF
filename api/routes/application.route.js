@@ -10,6 +10,7 @@ import {
   uploadContract,
   sendContractToTenant,
   generateContract,
+  deleteContract,
   
 } from '../controllers/application.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
@@ -42,6 +43,11 @@ router.post('/:applicationId/generate-contract', verifyToken, generateContract);
 
 // Cancelar (eliminar) una solicitud
 router.delete('/:applicationId/cancel',verifyToken, cancelApplication);
+// por ejemplo en tu archivo routes/application.routes.js
+
+
+router.delete('/:applicationId/delete-contract', verifyToken, deleteContract);
+
 
 export default router;
   

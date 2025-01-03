@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux"
 import { useRef, useState, useEffect } from 'react'; // para la imagen
-import { getStorage, ref, getDownloadURL, uploadBytesResumable, } from 'firebase/storage';
+import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject} from 'firebase/storage';
 import { app } from '../firebase';
 
 import {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams ,Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { storage } from '../firebase'; // Asegúrate de que la ruta es correcta
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL ,deleteObject} from 'firebase/storage';
 
 
 export default function PropertyApplications() {

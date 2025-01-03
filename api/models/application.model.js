@@ -12,6 +12,7 @@ const ApplicationSchema = new mongoose.Schema({
   },
   contract: {
     version: { type: Number, default: 1 },
+    url:{type: String},
     content: String, // Aquí se guardaría el contenido del contrato
     acceptedByUser: { type: Boolean, default: false },
     acceptedByOwner: { type: Boolean, default: false },
