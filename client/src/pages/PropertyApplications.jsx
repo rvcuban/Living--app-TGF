@@ -324,6 +324,7 @@ export default function PropertyApplications() {
                 ...app,
                 contractUrl: '', // o contract?.url = ''
                 contractUploaded: false,
+                contractGenerated: false,
                 contract: {
                   ...app.contract,
                   url: '',
