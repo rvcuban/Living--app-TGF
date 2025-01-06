@@ -312,7 +312,9 @@ export const uploadContract = async (req, res, next) => {
     // para ser consistente con la lógica "generateContract".
     application.contractUploaded = true;
     application.contractUrl = contractUrl; // <-- si deseas en la raíz (opcional)
-
+    application.status = 'Contrato Subido';
+    application.contract.fileName = fileName;
+    application.contract.uploadedAt = new Date();
     application.contract = {
       ...application.contract,
       uploadedAt: new Date(),
@@ -330,8 +332,7 @@ export const uploadContract = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: 'Contrato subido correctamente.',
-      contractUrl: contractUrl, // El front usará esto en data.contractUrl
-      fileName: fileName,
+      application: application
 
     });
   } catch (error) {
@@ -342,6 +343,7 @@ export const uploadContract = async (req, res, next) => {
 
 
 // Función para enviar el contrato al inquilino por correo
+// Controlador para “enviar” (o notificar) la disponibilidad del contrato al inquilino
 export const sendContractToTenant = async (req, res, next) => {
   try {
     const { applicationId } = req.params;
@@ -354,54 +356,40 @@ export const sendContractToTenant = async (req, res, next) => {
       return next(errorHandle(404, 'Aplicación no encontrada.'));
     }
 
-    // Verificar permisos: solo el propietario puede enviar el contrato
+    // Verificar permisos: solo el propietario puede marcar el contrato como enviado
     if (application.listingId.userRef.toString() !== req.user.id) {
-      return next(errorHandle(401, 'No estás autorizado para enviar el contrato de esta solicitud.'));
+      return next(errorHandle(401, 'No autorizado para notificar el contrato de esta solicitud.'));
     }
 
-    // Verificar que el contrato ha sido subido
+    // Verificar que el contrato existe o haya sido subido/generado
     if (!application.contract.url) {
-      return next(errorHandle(400, 'El contrato aún no ha sido subido.'));
+      return next(errorHandle(400, 'El contrato aún no ha sido subido o generado.'));
     }
 
-    // Configurar el contenido del correo
-    const mailOptions = {
-      from: process.env.EMAIL_FROM, // Usa la variable de entorno para el remitente
-      to: application.userId.email,
-      subject: 'Tu Contrato de Arrendamiento',
-      text: `Hola ${application.userId.username || 'Usuario'},
+    // 1. Cambiar el estado de la aplicación a algo más representativo
+    application.status = 'Firmado'; 
+    // (Puedes llamarlo “Enviado al Inquilino”, “Notificado”, “Entrega de Contrato”, etc.)
 
-Tu contrato de arrendamiento ha sido generado y está listo para ser revisado. Puedes acceder al contrato haciendo clic en el siguiente enlace:
+    // 2. Agregar un entry en el historial
+    application.history.push({ 
+      status: 'Contrato Notificado', 
+      timestamp: new Date() 
+    });
 
-${application.contract.url}
-
-Por favor, revisa el contrato y contáctanos si tienes alguna pregunta.
-
-Saludos cordiales,
-Tu Empresa`,
-      html: `<p>Hola ${application.userId.username || 'Usuario'},</p>
-<p>Tu contrato de arrendamiento ha sido generado y está listo para ser revisado. Puedes acceder al contrato haciendo clic en el siguiente enlace:</p>
-<p><a href="${application.contract.url}">Ver Contrato</a></p>
-<p>Por favor, revisa el contrato y contáctanos si tienes alguna pregunta.</p>
-<p>Saludos cordiales,<br/>Tu Empresa</p>`,
-    };
-
-    // Enviar el correo
-    await transporter.sendMail(mailOptions);
-
-    // Actualizar el historial
-    application.history.push({ status: 'Contrato Enviado al Inquilino', timestamp: new Date() });
+    // Guardar los cambios
     await application.save();
 
-    res.status(200).json({ success: true, message: 'Contrato enviado al inquilino correctamente.' });
+    // Retornar la aplicación para que el front pueda actualizar la vista si lo desea
+    return res.status(200).json({
+      success: true,
+      message: 'Contrato marcado como enviado/notificado al inquilino.',
+      application
+    });
   } catch (error) {
-    console.error('Error sending contract email:', error);
-    next(errorHandle(500, 'Error al enviar el contrato.'));
+    console.error('Error al notificar disponibilidad del contrato:', error);
+    next(errorHandle(500, 'Error al notificar disponibilidad del contrato.'));
   }
 };
-
-
-
 
 
 
@@ -471,6 +459,17 @@ export const generateContract = async (req, res, next) => {
     doc.on('end', async () => {
       const pdfData = Buffer.concat(buffers);
 
+      // =========== Llamadas a Helpers ==============
+
+      addContractHeader(doc, data);
+      addReunidosSection(doc, data);
+      addExponenSection(doc, data);
+      addClausulasSection(doc, data);
+      addFirma(doc, data);
+
+      // Cerrar doc
+      doc.end();
+
       // Subir a Firebase
       // Definimos la ruta en Firebase
       // para que quede en "contracts/contrato_gen_{applicationId}.pdf"
@@ -491,6 +490,7 @@ export const generateContract = async (req, res, next) => {
       console.log(fileName);
 
       // Actualizar en la BD
+      application.status = 'Contrato Generado';
       application.contractGenerated = true;
       application.contractUploaded = true;
       application.contract.generatedAt = new Date();
@@ -503,21 +503,11 @@ export const generateContract = async (req, res, next) => {
       res.status(200).json({
         success: true,
         message: 'Contrato (PDFKit) generado correctamente.',
-        contractUrl: url,
-        fileName: fileName,
+        application: application,
       });
     });
 
-    // =========== Llamadas a Helpers ==============
 
-    addContractHeader(doc, data);
-    addReunidosSection(doc, data);
-    addExponenSection(doc, data);
-    addClausulasSection(doc, data);
-    addFirma(doc, data);
-
-    // Cerrar doc
-    doc.end();
   } catch (error) {
     console.error('Error generando contrato PDFKit:', error);
     next(errorHandle(500, 'Error al generar el contrato con PDFKit.'));
@@ -537,7 +527,7 @@ export const deleteContract = async (req, res, next) => {
       return next(errorHandle(401, 'No autorizado.'));
     }
 
-    const fileName = application.contract.fileName; 
+    const fileName = application.contract.fileName;
     if (!fileName) {
       return next(errorHandle(400, 'No hay contrato para eliminar.'));
     }

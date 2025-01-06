@@ -105,10 +105,10 @@ export const getPropertySummary = async (req, res, next) => {
     if (!property) {
       return res.status(404).json({ success: false, message: 'Propiedad no encontrada.' });
     }
-
+  
     const applicationsCount = property.applications ? property.applications.length : 0;
     const membersCount = property.residentesActuales ? property.residentesActuales.length : 0;
-    const capacity = property.capacity || 'N/A';
+    const capacity = property.bedrooms;
 
     res.status(200).json({
       success: true,

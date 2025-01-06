@@ -49,7 +49,9 @@ export default function PropertyApplications() {
   const { listingId } = useParams();
   const { currentUser } = useSelector((state) => state.user);
   const [applications, setApplications] = useState([]);
+  const [capacity, setCapacity] = useState(0);
   const navigate = useNavigate(); // Para redirigir al usuario
+   
 
   // modal que se abre al generar contrato
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -90,6 +92,10 @@ export default function PropertyApplications() {
         const data = await res.json();
         if (data.success) {
           setApplications(data.applications);
+          console.log(data);
+          
+        
+          
         } else {
           toast.error(data.message || 'Error al obtener las solicitudes.');
         }
@@ -103,7 +109,32 @@ export default function PropertyApplications() {
   }, [listingId, currentUser.token]);
 
 
-
+  useEffect(() => {
+    const fetchListingSummary = async () => {
+      try {
+        const res = await fetch(`/api/listing/${listingId}/summary`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.token}`,
+          },
+        });
+        const data = await res.json();
+        if (data.success) {
+          // data.data.capacity es tu número máximo de inquilinos
+          setCapacity(data.data.capacity);
+        } else {
+          toast.error(data.message || 'Error al obtener el resumen de la propiedad.');
+        }
+      } catch (error) {
+        console.error('Error al obtener la capacidad:', error);
+        toast.error('Error al obtener la capacidad.');
+      }
+    };
+  
+    if (listingId) {
+      fetchListingSummary();
+    }
+  }, [listingId, currentUser.token]);
 
   const calculateUserScore = (user) => {
     let score = 0;
@@ -140,6 +171,8 @@ export default function PropertyApplications() {
       toast.error('Error al aceptar la solicitud.');
     }
   };
+
+
 
   const handleReject = async (applicationId) => {
     try {
@@ -181,21 +214,13 @@ export default function PropertyApplications() {
         // Establecer la URL del contrato y mostrar la vista previa
         setContractUrl(data.contractUrl);
         setContractPreview(true);
+
+        const updatedApp = data.application;
         // Actualizar el estado de la aplicación en el estado local
         setApplications((prevApplications) =>
           prevApplications.map((app) =>
             app._id === applicationId
-              ? {
-                ...app,
-                contractUploaded: true, // el contrato se sube al backend
-                contract: {
-                  ...app.contract,
-                  generatedAt: new Date(),
-                  contractGenerated: true,
-                  url: data.contractUrl,
-                  fileName: data.fileName,
-                },
-              }
+              ? updatedApp // <--- aqui sustituyes la entera
               : app
           )
         );
@@ -387,11 +412,18 @@ export default function PropertyApplications() {
   console.log('listingId:', listingId);
 
   console.log('listingId:', listingId); // Añade este console.log
+
+  // Filtrar cuántas apps tienen el estado 'Firmado' (o 'Aceptada' según tu lógica):
+  const acceptedCount = applications.filter(app => app.status === 'Firmado').length;
   return (
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-3xl font-semibold mb-6 text-center">
         Solicitudes para tu Propiedad
       </h1>
+      {/* Contador de inquilinos */}
+      <div className="text-center mb-4 text-gray-700 font-medium">
+        {acceptedCount}/{capacity} inquilinos Firmado
+      </div> 
       {applications.length > 0 ? (
         <ul className="space-y-4">
           {applications.map((application) => {
@@ -468,15 +500,16 @@ export default function PropertyApplications() {
                     </>
                   )}
 
-                  {application.status === 'Aceptada' && (
+
+                  {['Aceptada', 'Contrato Generado', 'Contrato Subido', 'Contrato Notificado'].includes(application.status) && (
                     <>
                       {/* Si el contrato ha sido subido, mostrar botones Ver, Eliminar, Enviar */}
                       {/* split / es para que el filename no muestre el nombre de la carpeta que lo contiene */}
                       {application.contractUploaded ? (
                         <div className="flex flex-col">
                           <p className="mb-2">
-                            <strong>Contrato:</strong> {' '} {application.contract.fileName 
-                              ? application.contract.fileName.split('/').pop() 
+                            <strong>Contrato:</strong> {' '} {application.contract.fileName
+                              ? application.contract.fileName.split('/').pop()
                               : ''}
                           </p>
                           <div className="flex flex-col md:flex-row">
@@ -498,7 +531,7 @@ export default function PropertyApplications() {
                               className="flex-none bg-green-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0"
                               onClick={() => handleSendContract(application._id)}
                             >
-                              Enviar Contrato
+                              Firmar y enviar
                             </button>
                           </div>
                         </div>
@@ -577,6 +610,19 @@ export default function PropertyApplications() {
                         </>
                       )}
                     </>
+                  )}
+
+                  {application.status === 'Firmado' && (
+                    <div className="flex flex-col md:flex-row">
+                      <a
+                        href={application.contract.url}  // la url del storage
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                      >
+                        Ver Contrato
+                      </a>
+                    </div>
                   )}
 
                 </div>

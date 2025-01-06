@@ -7,9 +7,18 @@ const ApplicationSchema = new mongoose.Schema({
   listingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Listing', required: true }, // Asegurarse de que 'Listing' es el modelo correcto
   status: {
     type: String,
-    enum: ['Enviada', 'Aceptada', 'Rechazada', 'Generando Contrato', 'Esperando Confirmación', 'Revisando Modificaciones', 'Confirmación Final'],
+    enum: ['Enviada',
+      'Revisando',
+      'Aceptada',
+      'Contrato Generado',
+      'Contrato Subido',
+      'Firmas Pendientes',
+      'Firmado',
+      'Rechazada',
+      'Cancelada'],
     default: 'Enviada'
   },
+  
   contract: {
     version: { type: Number, default: 1 },
     url:{type: String},

@@ -9,6 +9,8 @@ import MobileReservationFooter from '../components/MobileReservationFooter';
 
 import 'swiper/css/bundle';
 
+import { toast } from 'react-toastify';
+
 
 
 
@@ -59,7 +61,7 @@ export default function Listing() {
 
     const params = useParams();
     console.log("Listing ID:", params.listingId); // Verifica que `listingId` sea válido
-    
+
     useEffect(() => {
         const fetchListing = async () => {
 
@@ -150,9 +152,9 @@ export default function Listing() {
 
 
     const handleReviewSubmit = async () => {
-        if (rating > 0 && comment.trim() !== '') {
+        if (rating > 0) {
             try {
-                const response = await fetch('/api/review/', {
+                const response = await fetch('/api/review/createReview', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -170,9 +172,19 @@ export default function Listing() {
                     }));
                     setRating(0);
                     setComment('');
+                    toast.success('Tu reseña fue enviada con éxito.');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                 }
             } catch (error) {
                 console.error('Error submitting review:', error);
+            }
+        } else {
+            if (rating < 0) {
+                toast.error('Por favor, selecciona al menos 1 estrella.');
+                return;
+                
             }
         }
     };
@@ -303,7 +315,7 @@ export default function Listing() {
                                 {listing.address}
                             </p>
 
-                              
+
 
                             <p className='text-sah-dark leading-relaxed mt-4 text-lg'>
                                 <span className='font-semibold'>Description:</span>{' '}
@@ -651,7 +663,7 @@ export default function Listing() {
                     {/* Tarjeta de reserva */}
                     <div className="bg-white p-6 shadow-lg rounded-lg  relative">
                         <div className='mt-8'>
-                            <ReservationCard listingType={listing.type}  listingId={listing._id} regularPrice={listing.regularPrice} />
+                            <ReservationCard listingType={listing.type} listingId={listing._id} regularPrice={listing.regularPrice} />
                         </div>
 
 

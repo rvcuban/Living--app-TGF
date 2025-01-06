@@ -4,6 +4,20 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSelector } from 'react-redux';
 
+
+// Estados del stepper (modifícalos acorde a tu flujo)
+const statusFlow = [
+  'Enviada',
+  'Revisando',
+  'Aceptada',
+  'Contrato Generado',
+  'Contrato Subido',
+  'Firmas Pendientes',
+  'Firmado',
+  'Rechazada',
+  'Cancelada',
+];
+
 export default function Applications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,13 +125,18 @@ export default function Applications() {
       {applications.length > 0 ? (
         <ul className="space-y-4">
           {applications.map((application) => (
-            <li key={application._id}>
+            <li key={application._id}
+            >
               <PropertyCard
                 property={application.listingId}
                 applicationStatus={application.status}
                 applicationId={application._id}
                 isApplication={true}
                 onCancelApplication={handleCancelApplication}
+                rentalDuration={application.rentalDurationMonths}
+                // extra props para ver el contrato:
+                contractUrl={application.contract?.url}
+                fileName={application.contract?.fileName}
               />
             </li>
           ))}
