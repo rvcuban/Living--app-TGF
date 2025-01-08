@@ -23,6 +23,8 @@ import { ToastContainer } from 'react-toastify'; // Importar ToastContainer
 import 'react-toastify/dist/ReactToastify.css';
 import PropertyApplications from "./pages/PropertyApplications";
 
+import PublicProfile from "./pages/PublicProfile";
+
 
 export default function App() {
   return (<BrowserRouter>
@@ -35,6 +37,9 @@ export default function App() {
       <Route path="/search" element={<Search />} />
 
       <Route path="/listing/:listingId" element={<Listing />} />
+
+         {/* Ruta para el perfil público de un usuario */}
+         <Route path="/user/:userId/public" element={<PublicProfile />} />
 
       <Route element={<PrivateRoute />}>
         <Route path="/profile" element={<Profile />} />

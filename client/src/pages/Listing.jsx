@@ -6,6 +6,7 @@ import SwiperCore from 'swiper';
 import { useSelector } from 'react-redux'; // eto apra tener los datos del usuario y armar la funcionalidad de contactar propietario
 import { Navigation } from 'swiper/modules';
 import MobileReservationFooter from '../components/MobileReservationFooter';
+import { Link } from 'react-router-dom';
 
 import 'swiper/css/bundle';
 
@@ -184,7 +185,7 @@ export default function Listing() {
             if (rating < 0) {
                 toast.error('Por favor, selecciona al menos 1 estrella.');
                 return;
-                
+
             }
         }
     };
@@ -400,6 +401,15 @@ export default function Listing() {
                                                 >
                                                     Ver Opiniones
                                                 </button>
+
+                                                <div>
+                                                    <Link
+                                                        to={`/user/${ownerData._id}/public`}
+                                                        className="text-blue-500 hover:underline"
+                                                    >
+                                                        Ver Perfil del Propietario
+                                                    </Link>
+                                                </div>
 
                                                 <div className="mt-4 flex flex-col sm:flex-row sm:items-start gap-4">
                                                     {currentUser && listing.userRef !== currentUser._id && !contact && (

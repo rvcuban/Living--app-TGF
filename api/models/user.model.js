@@ -21,7 +21,7 @@ address: { type: String },
 gender: { type: String, enum: ['masculino', 'femenino', 'otro'] },
 documentos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }],
 favoritos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
-rol: { type: String, enum: ['inquilino', 'propietario'], default: 'inquilino' },
+rol: { type: String, enum: ['Estudiante', 'Trabajador','Viajero','Sin Rol'], default: 'Sin Rol' },
 
 numeroIdentificacion: { 
     type: String, 
@@ -45,10 +45,21 @@ avatar:{
     type:String,
     default:"https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"
 },
+
+lookingForRoommate: { type: Boolean, default: false }, 
+  // indica si busca compañeros de piso
+
+  // Preferencias de convivencia
+  preferences: {
+    pets: { type: Boolean, default: false },          // ¿Acepta mascotas?
+    smoker: { type: Boolean, default: false },        // ¿Fumador?
+    schedule: { type: String },                      // ej. "Soy diurno", "Tengo un horario flexible", etc.
+  },        
 reviews: [
     { type: mongoose.Schema.Types.ObjectId, 
       ref: 'Review' }
   ],
+  
 },{timestamps: true}
 );
 

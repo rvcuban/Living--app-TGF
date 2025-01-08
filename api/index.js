@@ -7,6 +7,7 @@ import listingRouter from './routes/listing.route.js';
 import cookieParser from "cookie-parser";
 import reviewRouter from './routes/review.routes.js';
 import applicationRouter from './routes/application.route.js';
+import userReviewRouter from './routes/userReview.route.js';
 
 
 import path from 'path';
@@ -42,6 +43,7 @@ app.use("/api/user", UserRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing',listingRouter);
 app.use('/api/review', reviewRouter);
+app.use('/api/userreview', userReviewRouter);
 app.use('/api/applications', applicationRouter); 
 
 

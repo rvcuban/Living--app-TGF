@@ -92,3 +92,17 @@ export const getUser = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getPublicProfile = async (req, res, next) => {
+  const { userId } = req.params;
+  try {
+    // EJEMPLO si usas Mongoose:
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    // Retornar
+    return res.status(200).json({ success: true, user });
+  } catch (error) {
+    console.error(error);
+    return next(errorHandle(500, 'Error al obtener el perfil público.'));
+  }
+};
