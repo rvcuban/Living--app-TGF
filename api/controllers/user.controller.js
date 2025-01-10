@@ -106,3 +106,88 @@ export const getPublicProfile = async (req, res, next) => {
     return next(errorHandle(500, 'Error al obtener el perfil público.'));
   }
 };
+
+
+
+//esta es la logica de bsuqueda , es exactamente lo que diseñe para los listing pero para las personas 
+export const getUsers = async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit) || 9;
+    const startIndex = parseInt(req.query.startIndex) || 0;
+
+    let {
+      searchTerm = '',
+      type = 'all',
+      pets,
+      smoker,
+      schedule,
+      verified,
+      badges,
+      sort = 'createdAt',
+      order = 'desc',
+    } = req.query;
+
+    const filter = {};
+
+    // Búsqueda por término (username, bio, etc.)
+    if (searchTerm) {
+      filter.$or = [
+        { username: { $regex: searchTerm, $options: 'i' } },
+        // Añade más campos si es necesario
+      ];
+    }
+
+    // Filtro por tipo
+    if (type && type !== 'all') {
+      filter.rol = type === 'landlord' ? 'Landlord' : 'Tenant';
+    }
+
+    // Filtros de preferencias
+    if (pets === 'true' || pets === true) {
+      filter['preferences.pets'] = true;
+    }
+
+    if (smoker === 'true' || smoker === true) {
+      filter['preferences.smoker'] = true;
+    }
+
+    if (schedule) {
+      filter['preferences.schedule'] = { $regex: schedule, $options: 'i' };
+    }
+
+    // Filtro de verificación
+    if (verified === 'true' || verified === true) {
+      filter.verified = true;
+    }
+
+    // Filtro por medallas
+    if (badges) {
+      const badgesArray = badges.split(',').map((badge) => badge.trim());
+      filter.badges = { $all: badgesArray };
+    }
+
+    // Ordenamiento
+    const sortOptions = {};
+    sortOptions[sort] = order === 'asc' ? 1 : -1;
+
+    // Consulta a la base de datos
+    const users = await User.find(filter)
+      .sort(sortOptions)
+      .limit(limit)
+      .skip(startIndex)
+      .select('-password') // Excluir campos sensibles si los hay
+      .lean(); // Optimización para lectura
+
+    // Total de documentos para paginación 
+    const total = await User.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      data: users,
+      total,
+      message: users.length > 0 ? undefined : 'No se encontraron usuarios.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};

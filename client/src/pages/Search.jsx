@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ListingItem from '../components/ListingItem';
+import { toast } from 'react-toastify';
+import UserItem from '../components/UserItem';
 
 export default function Search() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [sidebardata, setSidebardata] = useState({
     searchTerm: '',
     type: 'all',
@@ -20,7 +24,9 @@ export default function Search() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768); // Detectar si es móvil
   const [showFilters, setShowFilters] = useState(false); // Controlar la visibilidad de los filtros en móviles
 
-
+  // Estado para manejar la operación: 'rent' o 'share'
+  const [operation, setOperation] = useState('rent'); // 'rent' o 'share'
+  const [users, setUsers] = useState([]); // Nuevo estado para usuarios
 
 
 
@@ -33,6 +39,7 @@ export default function Search() {
     const offerFromUrl = urlParams.get('offer');
     const sortFromUrl = urlParams.get('sort');
     const orderFromUrl = urlParams.get('order');
+    const operationFromUrl = urlParams.get('operation') || 'rent';
 
     if (
       searchTermFromUrl ||
@@ -41,7 +48,8 @@ export default function Search() {
       furnishedFromUrl ||
       offerFromUrl ||
       sortFromUrl ||
-      orderFromUrl
+      orderFromUrl||
+      operationFromUrl
     ) {
       setSidebardata({
         searchTerm: searchTermFromUrl || '',
@@ -52,25 +60,77 @@ export default function Search() {
         sort: sortFromUrl || 'created_at',
         order: orderFromUrl || 'desc',
       });
+      setOperation(operationFromUrl); // Actualizar estado 'operation'
     }
 
-    const fetchListings = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setShowMore(false);
       const searchQuery = urlParams.toString();
-      const res = await fetch(`/api/listing/get?${searchQuery}`);
-      const data = await res.json();
-      if (data.length > 8) {
-        setShowMore(true);
-      } else {
-        setShowMore(false);
+
+      try {
+        if (operationFromUrl === 'rent') {
+          // Buscar en listings
+          const res = await fetch(`/api/listing/get?${searchQuery}`);
+          const data = await res.json();
+          console.log('Listings recibidos:', data);
+          if (data.length > 8) {
+            setShowMore(true);
+          } else {
+            setShowMore(false);
+          }
+          setListings(data);
+          setUsers([]); // Limpiar usuarios
+        } else if (operationFromUrl === 'share') {
+          // Buscar en users
+          const res = await fetch(`/api/user/get?${searchQuery}`);
+          const data = await res.json();
+          console.log('Usuarios recibidos:', data.data); // Log para depuración
+          if (data.length > 8) {
+            setShowMore(true);
+          } else {
+            setShowMore(false);
+          }
+          setUsers(data.data);
+          console.log(users);
+          setListings([]); // Limpiar listings
+          console.log('Estado users actualizado:', data); // Log adicional
+        }
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+        toast.error('Error al obtener los resultados de búsqueda.');
       }
-      setListings(data);
+
       setLoading(false);
     };
-
-    fetchListings();
+    fetchData();
   }, [location.search]);
+
+  /*const fetchListings = async () => {
+    setLoading(true);
+    setShowMore(false);
+    const searchQuery = urlParams.toString();
+    const res = await fetch(`/api/listing/get?${searchQuery}`);
+    const data = await res.json();
+    if (data.length > 8) {
+      setShowMore(true);
+    } else {
+      setShowMore(false);
+    }
+    setListings(data);
+    setLoading(false);
+  };
+
+  fetchListings();
+}, [location.search]);*/
+
+
+
+
+
+
+
+
 
 
   useEffect(() => {
@@ -124,6 +184,8 @@ export default function Search() {
     urlParams.set('offer', sidebardata.offer);
     urlParams.set('sort', sidebardata.sort);
     urlParams.set('order', sidebardata.order);
+
+    urlParams.set('operation', operation); // Incluir operación
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
   };
@@ -141,6 +203,10 @@ export default function Search() {
     }
     setListings([...listings, ...data]);
   };
+
+  console.log('Estado operation:', operation);
+  console.log('Estado listings.length:', listings.length);
+  console.log('Estado users.length:', users.length);
   return (
     <div className='flex flex-col md:flex-row'>
 
@@ -172,8 +238,9 @@ export default function Search() {
                 onChange={handleChange}
               />
             </div>
+            {/* Filtros específicos según el tipo */}
             <div className='flex gap-2 flex-col '>
-              <label className='font-semibold'>Type:</label>
+              <label className='font-semibold'>Tipo:</label>
               <div className='flex gap-2'>
                 <input
                   type='checkbox'
@@ -215,6 +282,7 @@ export default function Search() {
                 <span>Offer</span>
               </div>
             </div>
+
             <div className='flex gap-2 flex-col '>
               <label className='font-semibold'>Amenities:</label>
               <div className='flex gap-2'>
@@ -238,32 +306,46 @@ export default function Search() {
                 <span>Furnished</span>
               </div>
             </div>
-            <div className='flex flex-col  gap-2'>
-              <label className='font-semibold'>Sort:</label>
+
+            <div className='flex flex-col gap-2'>
+              <label className='font-semibold'>Ordenar por:</label>
               <select
                 onChange={handleChange}
                 defaultValue={'created_at_desc'}
                 id='sort_order'
                 className='border rounded-lg p-3'
               >
-                <option value='regularPrice_desc'>Price high to low</option>
-                <option value='regularPrice_asc'>Price low to hight</option>
-                <option value='createdAt_desc'>Latest</option>
-                <option value='createdAt_asc'>Oldest</option>
+                {operation === 'rent' ? (
+                  <>
+                    <option value='regularPrice_desc'>Precio alto a bajo</option>
+                    <option value='regularPrice_asc'>Precio bajo a alto</option>
+                    <option value='created_at_desc'>Más recientes</option>
+                    <option value='created_at_asc'>Más antiguos</option>
+                  </>
+                ) : (
+                  <>
+                    <option value='averageRating_desc'>Calificación alta a baja</option>
+                    <option value='averageRating_asc'>Calificación baja a alta</option>
+                    <option value='created_at_desc'>Más recientes</option>
+                    <option value='created_at_asc'>Más antiguos</option>
+                  </>
+                )}
               </select>
             </div>
+
             <button className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors uppercase hover:opacity-95'>
-              Search
+              Buscar
             </button>
           </form>
         </div>
       )}
+
       <div className='flex-1'>
         <h1 className='text-3xl font-semibold border-b p-3 text-slate-700 mt-5'>
-          Listing results:
+          Resultados:
         </h1>
         <div className='p-7 flex flex-wrap gap-4'>
-          {!loading && listings.length === 0 && (
+          {!loading && listings.length === 0 && operation === 'rent' && (
             <p className='text-xl text-slate-700'>No listing found!</p>
           )}
           {loading && (
@@ -272,11 +354,17 @@ export default function Search() {
             </p>
           )}
 
-          {!loading &&
-            listings &&
-            listings.map((listing) => (
-              <ListingItem key={listing._id} listing={listing} />
-            ))}
+          {/* Renderizar Listings o Users */}
+          {!loading && operation === 'rent' && listings.map((listing) => (
+            <ListingItem key={listing._id} listing={listing} />
+          ))}
+          {!loading && operation === 'share' && users.map((user) => (
+            <UserItem key={user._id} user={user} />
+          ))}
+
+          {!loading && operation === 'share' && users.length === 0 && (
+            <p className='text-xl text-slate-700'>No se encontraron usuarios.</p>
+          )}
 
           {showMore && (
             <button

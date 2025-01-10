@@ -22,6 +22,10 @@ gender: { type: String, enum: ['masculino', 'femenino', 'otro'] },
 documentos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }],
 favoritos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
 rol: { type: String, enum: ['Estudiante', 'Trabajador','Viajero','Sin Rol'], default: 'Sin Rol' },
+badges: { type: [String], default: ['Perfil nuevo'] }, // e.g., ["Superhost", "Verified"]
+    verified: { type: Boolean, default: false },
+    reliability: { type: String, default: 'Estándar' }, // e.g., "Alta", "Estándar"
+    averageRating: { type: Number, default: 0 },
 
 numeroIdentificacion: { 
     type: String, 
