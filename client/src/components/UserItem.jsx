@@ -13,6 +13,7 @@ export default function UserItem({ user }) {
     badges = [],
     verified,
     averageRating,
+    location,
   } = user;
 
   // Helper para renderizar estrellas (rating)
@@ -34,7 +35,7 @@ export default function UserItem({ user }) {
   };
 
   return (
-    <div className="bg-white hover:shadow-lg transition-shadow overflow-hidden rounded-lg w-full sm:w-[330px]">
+    <div className="bg-white border-solid border-2 border-l-stone-300 rover:shadow-lg transition-shadow overflow-hidden rounded-xl w-full sm:w-[330px]">
       <Link to={`/user/${_id}/public`}>
         <div className="p-4 flex items-center">
           <img
@@ -45,11 +46,20 @@ export default function UserItem({ user }) {
           <div className="ml-4">
             <div className="flex items-center">
               <p className="font-semibold text-slate-800">{username}</p>
+
               {verified && (
                 <FaCheckCircle className="text-green-500 ml-2" title="Verificado" />
               )}
+
             </div>
+
+            <div className="ml-4">
+            <p className="text-sm text-gray-700 mt-1">Buscando en: {location}</p> {/* Nueva línea para ubicación */}
+            </div>
+
+
             <div className="flex items-center mt-1">
+
               {renderStars(averageRating || 0)}
               <span className="ml-1 text-sm text-gray-600">({averageRating || 0})</span>
             </div>

@@ -16,6 +16,7 @@ export default function Search() {
     offer: false,
     sort: 'created_at',
     order: 'desc',
+    location: '', // Añadido el campo 'location'
   });
 
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,7 @@ export default function Search() {
     const sortFromUrl = urlParams.get('sort');
     const orderFromUrl = urlParams.get('order');
     const operationFromUrl = urlParams.get('operation') || 'rent';
+    const locationFromUrl = urlParams.get('location') || '';
 
     if (
       searchTermFromUrl ||
@@ -49,7 +51,8 @@ export default function Search() {
       offerFromUrl ||
       sortFromUrl ||
       orderFromUrl||
-      operationFromUrl
+      operationFromUrl ||
+      locationFromUrl
     ) {
       setSidebardata({
         searchTerm: searchTermFromUrl || '',
@@ -59,6 +62,8 @@ export default function Search() {
         offer: offerFromUrl === 'true' ? true : false,
         sort: sortFromUrl || 'created_at',
         order: orderFromUrl || 'desc',
+        location: locationFromUrl || '',
+        
       });
       setOperation(operationFromUrl); // Actualizar estado 'operation'
     }
@@ -149,7 +154,7 @@ export default function Search() {
       setSidebardata({ ...sidebardata, type: e.target.id });
     }
 
-    if (e.target.id === 'searchTerm') {
+    if (e.target.id === 'searchTerm' || id === 'location') {
       setSidebardata({ ...sidebardata, searchTerm: e.target.value });
     }
 
@@ -184,6 +189,7 @@ export default function Search() {
     urlParams.set('offer', sidebardata.offer);
     urlParams.set('sort', sidebardata.sort);
     urlParams.set('order', sidebardata.order);
+    urlParams.set('location', sidebardata.location);
 
     urlParams.set('operation', operation); // Incluir operación
     const searchQuery = urlParams.toString();

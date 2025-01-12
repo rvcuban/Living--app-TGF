@@ -29,13 +29,11 @@ badges: { type: [String], default: ['Perfil nuevo'] }, // e.g., ["Superhost", "V
 
 numeroIdentificacion: { 
     type: String, 
-    required: true, 
     unique: true // Asumiendo que cada identificación es única
   },
   tipoIdentificacion: { 
     type: String, 
     enum: ['DNI', 'Pasaporte', 'NIE'], 
-    required: true 
   },
 
   favoritos: [{ 
@@ -63,6 +61,9 @@ reviews: [
     { type: mongoose.Schema.Types.ObjectId, 
       ref: 'Review' }
   ],
+  location: { // Nuevo campo: Ubicación para mostrar la ubicacion donde esta bsucando compañeros
+    type: String,
+  },
   
 },{timestamps: true}
 );

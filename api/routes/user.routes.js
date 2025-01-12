@@ -10,13 +10,14 @@ router.get('/get', getUsers);
 
 // 1) Poner aquí la ruta de perfil público
 router.get('/public-profile/:userId', getPublicProfile);
+
 router.post('/update/:id',verifyToken,updateUser);
 router.delete('/delete/:id',verifyToken,deleteUser);
 
 
 
 router.get('/listings/:id', verifyToken, getUserListings)
-router.get('/:id', verifyToken, getUser)
+router.get('/:id', getUser)
 
 
 export default router; 

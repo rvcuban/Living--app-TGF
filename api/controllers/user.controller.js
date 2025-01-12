@@ -38,6 +38,9 @@ export const updateUser = async (req, res, next) => {
           gender: req.body.gender,
           documentos: req.body.documentos,
           favoritos:req.body.favoritos,
+          preferences: req.body.preferences,
+          lookingForRoommate: req.body.lookingForRoommate,
+          location:req.body.location    
         },
       },
       { new: true }//retorna si si se a hcho el upate con nueva informacion
@@ -123,6 +126,7 @@ export const getUsers = async (req, res, next) => {
       schedule,
       verified,
       badges,
+      location,
       sort = 'createdAt',
       order = 'desc',
     } = req.query;
@@ -164,6 +168,11 @@ export const getUsers = async (req, res, next) => {
     if (badges) {
       const badgesArray = badges.split(',').map((badge) => badge.trim());
       filter.badges = { $all: badgesArray };
+    }
+
+    if (location) {
+      // Filtrar por ubicación exacta 
+      filter.location = { $regex: location, $options: 'i' };
     }
 
     // Ordenamiento

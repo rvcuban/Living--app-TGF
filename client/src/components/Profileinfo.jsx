@@ -11,7 +11,7 @@ import {
     updateUserStart,
     updateUserSuccess,
     updateUserFailure,
-  } from '../redux/user/userSlice';
+} from '../redux/user/userSlice';
 
 const profileItems = [
     { icon: "https://cdn.builder.io/api/v1/image/assets/TEMP/7630f2d8f2a9edd111ea306d0cbf7026fb36ffacacd3d89489edc7c36f022b2c?placeholderIfAbsent=true&apiKey=75a06edce8de4127b1443d78918d0955", title: "Phone", content: "+1 (123) 456 7890" },
@@ -27,7 +27,7 @@ function ProfileInfo({ currentUser, className }) {
     const [uploadError, setUploadError] = useState('');
 
     const [updateSuccess, setUpdateSuccess] = useState(false);
-    
+
 
     const dispatch = useDispatch();
 
@@ -39,6 +39,7 @@ function ProfileInfo({ currentUser, className }) {
         username: currentUser.username || '',
         email: currentUser.email || '',
         passportFront: currentUser.passportFront || '',
+        location: currentUser.location || '',
         idBack: currentUser.idBack || '',
         solvencyDoc: currentUser.solvencyDoc || '',
     });
@@ -86,7 +87,7 @@ function ProfileInfo({ currentUser, className }) {
         setFormData({ ...formData, [e.target.id]: e.target.value });
         console.log(e.target.id)
     };
-  
+
 
     //esta funcion es la encargada de mandarle la informacion al backend , e utiliza en el form 
     const handleSubmit = async (e) => {
@@ -189,7 +190,7 @@ function ProfileInfo({ currentUser, className }) {
             <label className="block mb-4">
                 <span className="block text-gray-600 font-semibold">Gender</span>
                 <select
-                   id="gender"
+                    id="gender"
                     value={formData.gender}
                     onChange={handleChange}
                     className="mt-1 p-2 block w-full rounded-md border border-gray-300 shadow-sm text-gray-900 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200"
@@ -201,7 +202,24 @@ function ProfileInfo({ currentUser, className }) {
                 </select>
             </label>
 
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">My Documents</h2>
+
+            {/* Ubicación */}
+            <div className="flex flex-col">
+                <label htmlFor="location" className="font-semibold">Ubicación:</label>
+                <input
+                    type="text"
+                    id="location"
+                    
+                    placeholder="Ciudad, Estado, País..."
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="border p-3 rounded-lg"
+                    required
+                />
+            </div>
+
+
+            <h2 className="text-2xl font-bold mb-4 mt-2 text-gray-800">My Documents</h2>
             {/* File Upload */}
             <div className="mb-4">
                 <label className="block text-gray-600 font-semibold mb-1">

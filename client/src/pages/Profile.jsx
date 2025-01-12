@@ -28,7 +28,7 @@ import Aplications from "./Aplications";
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 
-
+import { toast } from 'react-toastify'; // Importar toast
 
 
 

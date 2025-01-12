@@ -167,6 +167,13 @@ export default function PublicProfile() {
         }
     };
 
+    const renderPetsPreference = (petsVal) => {
+  if (typeof petsVal === 'undefined' || petsVal === null) {
+    return 'No definido';
+  }
+  return petsVal ? 'Amo/acepto mascotas' : 'No acepto mascotas';
+};
+
     return (
         <div className="max-w-4xl mx-auto p-4">
             {/* Encabezado con avatar */}

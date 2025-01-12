@@ -16,7 +16,7 @@ import {
 import { Link } from 'react-router-dom';
 
 import ProfileInfo from "../components/Profileinfo";
-
+import { toast } from 'react-toastify'; // Importar toastimport { toast } from 'react-toastify'; // Importar toast
 
 
 
@@ -30,7 +30,13 @@ function ProfileContent() {
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [showListingsError, setShowListingsError] = useState(false);
-  const [userListings, setUserListings] = useState([]); //aqui guardamos la infomacion recogida sobre las propiedades del usuerio
+  const [userListings, setUserListings] = useState({
+    username: currentUser.username || '',
+    email: currentUser.email || '',
+    location: currentUser.location || '',
+    password: '', // Si deseas permitir cambiar la contraseña
+    avatar: currentUser.avatar || '',
+  }); //aqui guardamos la infomacion recogida sobre las propiedades del usuerio
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [activeSection, setActiveSection] = useState(''); // Estado para la sección activa
@@ -91,11 +97,13 @@ function ProfileContent() {
       },
       (error) => {
         setFileUploadError(true);
+        toast.error('Error al subir la imagen. Inténtalo de nuevo.');
       },
       () => {//aqui finalmente tenemos el enlace de la imagen descargada 
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) =>//si
           setFormData({ ...formData, avatar: downloadURL }) //aqui trackeamos todos lo cmabios de la imagen y asignamos a la variable avatar la ruta de la imagen para hacer el cambio
         );
+        toast.success('Avatar actualizado exitosamente.');
       }
     );
   };
@@ -120,11 +128,13 @@ function ProfileContent() {
       const data = await res.json();
       if (data.success === false) {
         dispatch(updateUserFailure(data.message));
+        toast.error(data.message || 'Error al actualizar el perfil.');
         return;
       }
 
       dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
+      toast.success('Perfil actualizado exitosamente.');
     } catch (error) {
       dispatch(updateUserFailure(error.message));
     }
