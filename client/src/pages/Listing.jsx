@@ -238,6 +238,17 @@ export default function Listing() {
     };
 
 
+    /*-----Para el Scrool del FOOTER*/
+    // 1) Creamos la referencia para la sección de la tarjeta
+    const reservationCardRef = useRef(null);
+
+    // 2) Función que se llamará desde el footer para hacer scroll
+    const scrollToReservationCard = () => {
+        if (reservationCardRef.current) {
+            reservationCardRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
 
 
     return (
@@ -668,52 +679,53 @@ export default function Listing() {
                     {/* Segunda columna: tarjeta de reserva */}
                     {/* Tarjeta de reserva */}
                     <div className="bg-white p-6 shadow-lg rounded-lg  relative">
-                        <div className='mt-8'>
-                            <ReservationCard listingType={listing.type} listingId={listing._id} regularPrice={listing.regularPrice} />
-                        </div>
+                        <div ref={reservationCardRef}>
+                            <div className='mt-8'>
+                                <ReservationCard listingType={listing.type} listingId={listing._id} regularPrice={listing.regularPrice} />
+                            </div>
 
 
-                        {/* Sección de residentes actuales */}
+                            {/* Sección de residentes actuales */}
 
-                        <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
-                            <h4 className="text-xl font-semibold">Additional Info</h4>
-                            <h5 className="text-sm font-medium text-slate-700 mt-4">Quien vive aqui</h5>
-                            <ul className="mt-4 space-y-3">
-                                {provisionalResidents && provisionalResidents.length > 0 ? (
-                                    provisionalResidents.map((resident, index) => (
-                                        <li
-                                            key={resident._id || index} // Clave única para cada elemento
-                                            className="flex items-center p-2 bg-slate-100 rounded-lg shadow-sm border border-sah-light"
-                                        >
-                                            <img
-                                                src={resident.avatar || 'default-avatar.jpg'}
-                                                alt={resident.username || 'Resident'}
-                                                className="w-8 h-8 rounded-full mr-4"
-                                            />
-                                            <div className="flex-1">
-                                                <p className="text-slate-800 font-semibold text-lg">
-                                                    {resident.name}
-                                                </p>
-                                            </div>
-                                            <button
-                                                onClick={() => navigate(`/profile/${resident._id}`)}
-                                                className="ml-auto px-3 py-1 text-white bg-blue-500 rounded-lg hover:bg-sah-primary-dark transition-colors"
+                            <div className="mt-8 bg-white border border-gray-300 p-6 shadow-lg rounded-lg">
+                                <h4 className="text-xl font-semibold">Additional Info</h4>
+                                <h5 className="text-sm font-medium text-slate-700 mt-4">Quien vive aqui</h5>
+                                <ul className="mt-4 space-y-3">
+                                    {provisionalResidents && provisionalResidents.length > 0 ? (
+                                        provisionalResidents.map((resident, index) => (
+                                            <li
+                                                key={resident._id || index} // Clave única para cada elemento
+                                                className="flex items-center p-2 bg-slate-100 rounded-lg shadow-sm border border-sah-light"
                                             >
-                                                View Profile
-                                            </button>
-                                        </li>
-                                    ))
-                                ) : (
-                                    <p className="text-gray-600 mt-2">No current residents listed.</p>
-                                )}
-                            </ul>
+                                                <img
+                                                    src={resident.avatar || 'default-avatar.jpg'}
+                                                    alt={resident.username || 'Resident'}
+                                                    className="w-8 h-8 rounded-full mr-4"
+                                                />
+                                                <div className="flex-1">
+                                                    <p className="text-slate-800 font-semibold text-lg">
+                                                        {resident.name}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={() => navigate(`/profile/${resident._id}`)}
+                                                    className="ml-auto px-3 py-1 text-white bg-blue-500 rounded-lg hover:bg-sah-primary-dark transition-colors"
+                                                >
+                                                    View Profile
+                                                </button>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <p className="text-gray-600 mt-2">No current residents listed.</p>
+                                    )}
+                                </ul>
+                            </div>
                         </div>
-
                     </div>
                     <div>
                         <MobileReservationFooter
                             listing={listing}
-                            onReserve={handleReserveNow}
+                            onReserveClick={scrollToReservationCard}
                         />
                     </div>
 
