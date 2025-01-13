@@ -712,9 +712,8 @@ export default function Listing() {
                     </div>
                     <div>
                         <MobileReservationFooter
-                            listingType={listing.type} listingId={listing._id} regularPrice={listing.regularPrice}
+                            listing={listing}
                             onReserve={handleReserveNow}
-
                         />
                     </div>
 
