@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState,useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 //he importado y añadido esta ibreria de swiper para anvegar entre las imagenes de las casas,pd.lo escribo por que leugo se me olvidara pra que utilizo esta ibreria 
 import { Swiper, SwiperSlide } from 'swiper/react';
