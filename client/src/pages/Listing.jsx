@@ -373,11 +373,7 @@ export default function Listing() {
                                                 <h5 className="text-xl font-semibold text-sah-interaction">{ownerData.username}</h5>
                                                 <p className="text-gray-600 text-sm">Miembro desde {new Date(ownerData.createdAt).toLocaleDateString()}</p>
 
-                                                {/* Nivel de fiabilidad */}
-                                                <div className="mt-2 flex items-center gap-2">
-                                                    <span className="text-sah-success font-medium">Nivel de Fiabilidad:</span>
-                                                    <span className="bg-sah-success text-white text-xs px-2 py-1 rounded-md">{ownerData.reliability || 'Estándar'}</span>
-                                                </div>
+
 
                                                 {/* Calificación general */}
                                                 <div className="mt-2 flex flex-col sm:flex-row items-start sm:items-center gap-1">
@@ -396,29 +392,29 @@ export default function Listing() {
                                                 </div>
                                                 {/* Botón para ver comentarios */}
                                                 <button
-                                                    onClick={() => navigate(`/profile/${ownerData._id}/reviews`)}
+                                                    onClick={() => navigate(`/user/${ownerData._id}/public`)}
                                                     className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors"
                                                 >
-                                                    Ver Opiniones
+                                                    Ver Perfil/Opiniones
                                                 </button>
 
-                                                <div>
-                                                    <Link
-                                                        to={`/user/${ownerData._id}/public`}
-                                                        className="text-blue-500 hover:underline"
-                                                    >
-                                                        Ver Perfil del Propietario
-                                                    </Link>
-                                                </div>
 
-                                                <div className="mt-4 flex flex-col sm:flex-row sm:items-start gap-4">
+                                                <div className="mt-2 flex flex-col sm:flex-row sm:items-start gap-4">
                                                     {currentUser && listing.userRef !== currentUser._id && !contact && (
-                                                        <button
-                                                            onClick={() => setContact(true)}
-                                                            className='w-full sm:w-auto bg-blue-500 text-white px-6 py-3 rounded-md uppercase hover:bg-blue-600 transition-colors'
-                                                        >
-                                                            Contactar
-                                                        </button>
+                                                        ownerData?.phone && ownerData.phone.trim().length > 0 ? (
+                                                            // Caso 1: El propietario SÍ tiene teléfono
+                                                            <a
+                                                                href={`tel:${ownerData.phone}`}
+                                                                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors"
+                                                            >
+                                                                Llamar al Propietario
+                                                            </a>
+                                                        ) : (
+                                                            // Caso 2: No hay teléfono
+                                                            <p className="text-gray-500 italic">
+                                                                El propietario no ha dejado ningún método de contacto disponible.
+                                                            </p>
+                                                        )
                                                     )}
                                                     {contact && (
                                                         <div className="w-full">
@@ -716,8 +712,9 @@ export default function Listing() {
                     </div>
                     <div>
                         <MobileReservationFooter
-                            listing={listing}
+                            listingType={listing.type} listingId={listing._id} regularPrice={listing.regularPrice}
                             onReserve={handleReserveNow}
+
                         />
                     </div>
 
