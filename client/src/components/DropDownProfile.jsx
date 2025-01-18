@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux"
 import { useRef, useState, useEffect } from 'react'; // para la imagen
-import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject} from 'firebase/storage';
+import { getStorage, ref, getDownloadURL, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { app } from '../firebase';
 
 import {
@@ -38,7 +38,7 @@ export default function DropDownProfile({ onOptionSelect }) {
             setIsSigningOut(false);
             dispatch(deleteUserSuccess(data));
             setIsSigningOut(false);
-            
+
             navigate('/sign-in');
             setTimeout(() => {
                 window.location.reload(false);
@@ -60,13 +60,18 @@ export default function DropDownProfile({ onOptionSelect }) {
                     </Link>
                 </li>
                 <li>
-                    <Link to='/saved-searches' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'  onClick={onOptionSelect}>
+                    <Link to='/saved-searches' className='block px-4 py-2 text-gray-700 hover:bg-gray-100' onClick={onOptionSelect}>
                         Búsquedas Guardadas
                     </Link>
                 </li>
                 <li>
-                    <Link to='/my_aplications' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'  onClick={onOptionSelect}>
+                    <Link to='/my_aplications' className='block px-4 py-2 text-gray-700 hover:bg-gray-100' onClick={onOptionSelect}>
                         Mis Aplicaciones
+                    </Link>
+                </li>
+                <li>
+                    <Link to="/my-roomies" className='block px-4 py-2 text-gray-700 hover:bg-gray-100' onClick={onOptionSelect}>
+                        Mis Compañeros
                     </Link>
                 </li>
                 <li>

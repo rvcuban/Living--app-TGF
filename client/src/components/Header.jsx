@@ -147,7 +147,7 @@ useEffect(() => {
                 <Link to='/' className="text-slate-700 hover:underline">Home</Link>
               </li>
               <li>
-                <Link to='/about' className="text-slate-700 hover:underline">About</Link>
+                <Link to='/chat' className="text-slate-700 hover:underline">Mis Chats</Link>
               </li>
               <li className='relative' ref={propertyMenuRef}>
                 <button

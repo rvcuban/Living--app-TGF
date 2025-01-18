@@ -24,6 +24,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import PropertyApplications from "./pages/PropertyApplications";
 
 import PublicProfile from "./pages/PublicProfile";
+import Chat from "./pages/Chat";
+import MyBuddies from "./pages/MyBuddies";
 
 
 export default function App() {
@@ -43,13 +45,15 @@ export default function App() {
 
       <Route element={<PrivateRoute />}>
         <Route path="/profile/*" element={<Profile />} />
-        
+        <Route path="/chat" element={<Chat />} />
         <Route path="/create-listing" element={<CreateListing />} />
         <Route path="/update-listing/:listingId" element={<UpdateListing />} />
         <Route path="/my-properties" element={<MyProperties />} /> 
         <Route path="/aplications" element={<Aplications />} />
         <Route path="/my_aplications" element={<MyApplications />} />
         <Route path="/listing/:listingId/applications" element={<PropertyApplications />} />
+
+        <Route path="/my-roomies" element={<MyBuddies />} />
 
 
         <Route path="/request" element={<RequestContent />} />

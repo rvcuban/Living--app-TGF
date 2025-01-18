@@ -1,8 +1,7 @@
-// PublicProfile.jsx
-
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
 import {
     FaDog,
     FaSmoking,
@@ -17,25 +16,23 @@ import UserReviewModal from '../components/UserReviewModal';
 
 export default function PublicProfile() {
     const { userId } = useParams();
+    const { currentUser } = useSelector((state) => state.user);
+
     const [user, setUser] = useState(null);
-    const [reviews, setReviews] = useState([]); // Reseñas
+    const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Controlar la visibilidad del Modal
+    // Estado para saber la relación de compañeros
+    // Puede ser: 'none' (sin solicitud), 'pending', 'accepted', 'self' (el mismo user)
+    const [buddyStatus, setBuddyStatus] = useState('none');
+
     const [showReviewModal, setShowReviewModal] = useState(false);
-
-    // Ejemplo: tu token (suponiendo que lo tengas en localStorage o Redux):
-    const [currentUserToken, setCurrentUserToken] = useState('');
-
-    const handleReviewCreated = (newReview) => {
-        // Podrías agregar la nueva reseña a tu lista local o volver a hacer fetch.
-        setReviews((prev) => [newReview, ...prev]);
-    };
+    const navigate = useNavigate();
 
     useEffect(() => {
-        async function fetchPublicProfile() {
+        const fetchPublicProfile = async () => {
             try {
-                // 1) Cargar datos de usuari
+                // 1) Datos del usuario
                 const res = await fetch(`/api/user/public-profile/${userId}`);
                 const data = await res.json();
                 if (data.success) {
@@ -47,11 +44,11 @@ export default function PublicProfile() {
                 console.error('Error fetching public profile:', error);
                 toast.error('Error al obtener el perfil público.');
             }
-        }
+        };
 
-        async function fetchUserReviews() {
+        const fetchUserReviews = async () => {
             try {
-                // 2) Llamar a /api/userreview/:userId
+                // 2) Reseñas
                 const resReviews = await fetch(`/api/userreview/${userId}`);
                 const dataReviews = await resReviews.json();
                 if (dataReviews.success) {
@@ -62,13 +59,74 @@ export default function PublicProfile() {
             } catch (error) {
                 console.error('Error fetching user reviews:', error);
             }
-        }
+        };
+
+        const fetchBuddyStatus = async () => {
+            // Llamar a un endpoint que devuelva la relación
+            // Solo si currentUser existe y no es el mismo user
+            if (!currentUser || currentUser._id === userId) {
+                if (currentUser && currentUser._id === userId) {
+                    setBuddyStatus('self');
+                }
+                return;
+            }
+            try {
+                const res = await fetch(`/api/roommate/status/${userId}`, {
+                    headers: {
+                        Authorization: `Bearer ${currentUser.token}`
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    // data.status = 'none' | 'pending' | 'accepted'
+                    setBuddyStatus(data.status);
+                }
+            } catch (error) {
+                console.error('Error fetching buddy status:', error);
+            }
+        };
 
         setLoading(true);
-        fetchPublicProfile()
-            .then(() => fetchUserReviews())
-            .finally(() => setLoading(false));
-    }, [userId]);
+        Promise.all([
+            fetchPublicProfile(),
+            fetchUserReviews(),
+            fetchBuddyStatus()
+        ]).finally(() => setLoading(false));
+    }, [userId, currentUser]);
+
+    // Lógica de envío de solicitud
+    const handleBeMyRoommate = async () => {
+        if (!currentUser) {
+            toast.info('Necesitas iniciar sesión para enviar una solicitud.');
+            navigate('/sign-in');
+            return;
+        }
+        if (buddyStatus === 'pending' || buddyStatus === 'accepted') {
+            return; // Evita reenviar la solicitud
+        }
+
+        try {
+            const res = await fetch('/api/roommate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${currentUser.token}`,
+                },
+                body: JSON.stringify({ receiverId: userId }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                toast.success('Solicitud de compañero enviada.');
+                setBuddyStatus('pending'); // Cambiamos a 'pending'
+            } else {
+                toast.error(data.message || 'No se pudo enviar la solicitud.');
+            }
+        } catch (error) {
+            console.error('Error enviando solicitud:', error);
+            toast.error('Error enviando la solicitud.');
+        }
+    };
 
     if (loading) {
         return <p className="text-center mt-8 text-2xl">Cargando...</p>;
@@ -88,7 +146,6 @@ export default function PublicProfile() {
         avatar,
         shortBio,
         preferences,
-        rol,
         badges,
         verified,
         reliability,
@@ -138,42 +195,6 @@ export default function PublicProfile() {
         return stars;
     };
 
-
-    const handleCreateUserReview = async () => {
-        try {
-            const body = {
-                targetUser: someUserId,  // A quién reseñas
-                rating,
-                comment
-            };
-
-            const res = await fetch('/api/userreview', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${currentUser.token}`,
-                },
-                body: JSON.stringify(body),
-            });
-            const data = await res.json();
-            if (data.success) {
-                // refrescar la lista de reseñas, etc.
-                toast.success('Reseña creada correctamente');
-            } else {
-                toast.error(data.message || 'Error al crear reseña');
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const renderPetsPreference = (petsVal) => {
-  if (typeof petsVal === 'undefined' || petsVal === null) {
-    return 'No definido';
-  }
-  return petsVal ? 'Amo/acepto mascotas' : 'No acepto mascotas';
-};
-
     return (
         <div className="max-w-4xl mx-auto p-4">
             {/* Encabezado con avatar */}
@@ -183,7 +204,7 @@ export default function PublicProfile() {
                     alt={`${username || 'Usuario'} avatar`}
                     className="w-24 h-24 rounded-full mb-4 object-cover border-2 border-blue-200"
                 />
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center sm:text-center">
                     <h2 className="text-2xl font-bold text-slate-700">
                         {username || 'User'}
                     </h2>
@@ -194,13 +215,6 @@ export default function PublicProfile() {
                         </div>
                     )}
                 </div>
-                <p className="text-gray-600 mt-2">Rol: <strong>{rol}</strong></p>
-                <p className="text-gray-600 mt-1">
-                    Confiabilidad:
-                    <span className="ml-1 text-sm px-2 py-1 bg-slate-100 text-slate-700 rounded">
-                        {reliability || 'Estándar'}
-                    </span>
-                </p>
                 {renderBadges(badges)}
                 {shortBio && (
                     <p className="text-gray-800 mt-4 text-center italic">{shortBio}</p>
@@ -235,6 +249,46 @@ export default function PublicProfile() {
                         </span>
                     </div>
                 </div>
+
+                <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-center">
+                    {/* Botón "Sé mi compañero" */}
+                    {currentUser && currentUser._id !== userId && buddyStatus !== 'self' && (
+                        <>
+                            {buddyStatus === 'none' && (
+                                <button
+                                    onClick={handleBeMyRoommate}
+                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                                >
+                                    Sé mi compañero
+                                </button>
+                            )}
+                            {buddyStatus === 'pending' && (
+                                <button
+                                    disabled
+                                    className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+                                >
+                                    Solicitud enviada...
+                                </button>
+                            )}
+                            {buddyStatus === 'accepted' && (
+                                <button
+                                    disabled
+                                    className="bg-green-500 text-white px-4 py-2 rounded cursor-not-allowed"
+                                >
+                                    Ya son compañeros
+                                </button>
+                            )}
+                        </>
+                    )}
+
+                    {/* Botón Enviar Mensaje */}
+                    <Link
+                        to={`/chat?otherUserId=${userId}&prefilled=Hola,he visto tu perfil y `}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                    >
+                        Enviar Mensaje
+                    </Link>
+                </div>
             </div>
 
             {/* Reseñas que ha recibido */}
@@ -254,8 +308,6 @@ export default function PublicProfile() {
 
                 {reviews && reviews.length > 0 ? (
                     <ul className="space-y-4">
-                        {/* Botón para abrir modal de reseña */}
-                        
                         {reviews.map((review, idx) => (
                             <li
                                 key={review._id || `review-${idx}`}
@@ -290,12 +342,13 @@ export default function PublicProfile() {
                 ) : (
                     <p className="text-gray-500">Aún no hay reseñas para este perfil.</p>
                 )}
+
                 <UserReviewModal
                     visible={showReviewModal}
                     onClose={() => setShowReviewModal(false)}
                     targetUserId={userId}
-                    currentUserToken={currentUserToken}
-                    onReviewCreated={handleReviewCreated}
+                    currentUserToken={currentUser?.token}
+                    onReviewCreated={(newReview) => setReviews((prev) => [newReview, ...prev])}
                 />
             </div>
 
@@ -314,8 +367,6 @@ export default function PublicProfile() {
                     Enviar Mensaje
                 </Link>
             </div>
-
         </div>
-
     );
 }
