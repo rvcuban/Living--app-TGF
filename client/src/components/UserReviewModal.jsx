@@ -38,6 +38,7 @@ export default function UserReviewModal({
         rating,
         comment,
       };
+      console.log('Enviando reseña a userID:', targetUserId);
 
       const res = await fetch('/api/userreview', {
         method: 'POST',

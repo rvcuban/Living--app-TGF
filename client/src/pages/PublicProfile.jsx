@@ -195,6 +195,29 @@ export default function PublicProfile() {
         return stars;
     };
 
+
+
+    const handleReviewCreated = (newReview) => {
+        // 1) Actualizar la lista de reseñas local
+        setReviews((prev) => [newReview, ...prev]);
+      
+        // 2) Calcular el nuevo promedio de estrellas
+        const totalRating = (user.averageRating * reviews.length) + newReview.rating;
+        const newAverage = totalRating / (reviews.length + 1);
+      
+        // 3) Calcular la nueva cantidad de reseñas
+        const newReviewsCount = reviews.length + 1;  // sumamos la nueva reseña
+      
+        // 4) Actualizar el estado del usuario
+        setUser((prevUser) => ({
+          ...prevUser,
+          averageRating: newAverage,      // la nueva media calculada
+          reviewsCount: newReviewsCount,  // la nueva cantidad
+        }));
+      };
+      
+    
+
     return (
         <div className="max-w-4xl mx-auto p-4">
             {/* Encabezado con avatar */}
@@ -223,9 +246,9 @@ export default function PublicProfile() {
                 <div className="mt-4 flex items-center gap-2">
                     <span className="text-slate-700 font-medium">Valoración:</span>
                     <div className="flex items-center">
-                        {renderStars(averageRating || 0)}
+                        {renderStars(user.averageRating || 0)}
                     </div>
-                    <span className="ml-1 text-gray-500 text-sm">({averageRating || 0})</span>
+                    <span className="ml-1 text-gray-500 text-sm">({user.reviewsCount || 0})</span>
                 </div>
 
                 {/* Preferencias de convivencia */}
@@ -348,7 +371,7 @@ export default function PublicProfile() {
                     onClose={() => setShowReviewModal(false)}
                     targetUserId={userId}
                     currentUserToken={currentUser?.token}
-                    onReviewCreated={(newReview) => setReviews((prev) => [newReview, ...prev])}
+                    onReviewCreated={handleReviewCreated}
                 />
             </div>
 
