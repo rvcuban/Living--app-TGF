@@ -510,6 +510,7 @@ export const generateContract = async (req, res, next) => {
      addClausulasSection(doc, data);
      addFirma(doc, data);
 
+     
      // Cerrar doc
      doc.end();
 
