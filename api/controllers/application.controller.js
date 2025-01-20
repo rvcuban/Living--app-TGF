@@ -455,21 +455,16 @@ export const generateContract = async (req, res, next) => {
     // Crear doc PDFKit y capturar en memoria
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     let buffers = [];
+
+
+
+
+
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', async () => {
       const pdfData = Buffer.concat(buffers);
 
-      // =========== Llamadas a Helpers ==============
-
-      addContractHeader(doc, data);
-      addReunidosSection(doc, data);
-      addExponenSection(doc, data);
-      addClausulasSection(doc, data);
-      addFirma(doc, data);
-
-      // Cerrar doc
-      doc.end();
-
+     
       // Subir a Firebase
       // Definimos la ruta en Firebase
       // para que quede en "contracts/contrato_gen_{applicationId}.pdf"
@@ -506,6 +501,18 @@ export const generateContract = async (req, res, next) => {
         application: application,
       });
     });
+
+     // =========== Llamadas a Helpers ==============
+
+     addContractHeader(doc, data);
+     addReunidosSection(doc, data);
+     addExponenSection(doc, data);
+     addClausulasSection(doc, data);
+     addFirma(doc, data);
+
+     // Cerrar doc
+     doc.end();
+
 
 
   } catch (error) {
