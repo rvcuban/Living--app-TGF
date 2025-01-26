@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import OAuth from '../components/OAuth';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux"; // asumiendo que usas Redux
+import { signInSuccess } from "../redux/user/userSlice"; // tu acción que setea currentUser
+import OAuth from "../components/OAuth";
 
-export default function SignUp() {
+export default function SignUpAutoLogin() {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);

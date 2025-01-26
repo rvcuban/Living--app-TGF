@@ -84,3 +84,38 @@ export const signOut = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const signupAutoLogin = async (req, res, next) => {
+  try {
+    const { username, email, password } = req.body;
+    // 1) Hashear password
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+
+    // 2) Crear el usuario
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+      // avatar o lo que necesites inicial
+    });
+    await newUser.save();
+
+    // 3) Crear token JWT
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
+
+    // 4) Excluir password del objeto de respuesta
+    const { password: pass, ...userData } = newUser._doc;
+
+    // 5) Retornar
+    return res.status(201).json({
+      success: true,
+      token,
+      user: userData,
+      message: "Usuario creado y logueado automáticamente"
+    });
+  } catch (error) {
+    // Manejo de errores
+    next(error);
+  }
+};

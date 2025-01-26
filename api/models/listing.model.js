@@ -14,6 +14,9 @@ const listingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    addressNoAccent: {
+      type: String,
+    },
     regularPrice: {
       type: Number,
       required: true,
@@ -75,8 +78,10 @@ const listingSchema = new mongoose.Schema(
 
     // Añadido: campo para almacenar las referencias de las reseñas
     reviews: [
-      { type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Review' }
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Review'
+      }
     ],
     applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Application' }],
     capacity: { type: Number, required: true }, // Total de miembros permitidos

@@ -200,3 +200,27 @@ export const getUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const updateSetNewUser = async (req, res, next) => {
+  try {
+    // req.user.id es el user logueado, req.params.id es el user a actualizar...
+    // verifica permisos si hace falta
+
+    const { isNewUser, ...rest } = req.body;
+
+    const updated = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { ...rest, isNewUser } },
+      { new: true }
+    );
+
+    return res.json({
+      success: true,
+      data: updated,
+      message: "Usuario actualizado correctamente."
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,7 +1,10 @@
 // eslint-disable-next-line no-unused-vars
 import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
-import { useNavigate,useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+
+import { useSelector } from "react-redux";
+import CompleteProfileModal from "../components/CompleteProfileModal";
 
 
 
@@ -12,6 +15,21 @@ export default function Home() {
   const navigate = useNavigate(); //inicilizamos el use-navegador para poder redirigir al usuario
   const [operation, setOperation] = useState('rent'); // 'rent' o 'share'
   const location = useLocation();
+
+
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+
+  // Obtenemos el user de Redux
+  const { currentUser } = useSelector((state) => state.user);
+
+
+  useEffect(() => {
+    // Si user existe y user.isNew === true => mostrar modal
+    if (currentUser && currentUser.isNewUser) {
+      setShowCompleteModal(true);
+    }
+  }, [currentUser]);
+
 
   // este es codigo replicado de la header (deberia crear una funcion aparte que se use ene los dos sitios para evitar repetir codigo)
   const handleSubmit = (e) => {
@@ -44,6 +62,21 @@ export default function Home() {
 
   return (
     <div className='flex flex-col justify-center items-center '>
+
+      {showCompleteModal && (
+        <CompleteProfileModal
+          visible={showCompleteModal}
+          currentUser={currentUser}
+          onClose={() => setShowCompleteModal(false)}
+          onComplete={() => {
+            console.log("Se completó la acción en el modal");
+            setShowCompleteModal(false);
+          }}
+        />
+      )}
+
+
+
       {/*top side*/}
 
 
@@ -63,32 +96,29 @@ export default function Home() {
           La manera mas facil y sencilla de encontrar un sitio donde vivir.
         </div>
 
-          {/* Opciones de Búsqueda: Alquileres y Compañeros de Piso */}
-          <div className="relative w-full max-w-xl mx-auto">
+        {/* Opciones de Búsqueda: Alquileres y Compañeros de Piso */}
+        <div className="relative w-full max-w-xl mx-auto">
           <div className="flex justify-between items-center bg-gray-200 rounded-full p-1 h-10">
             {/* Resaltado deslizante */}
             <div
-              className={`absolute inset-y-0 left-0 bg-white shadow-lg rounded-full transition-transform duration-300 ease-in-out w-1/2 ${
-                operation === 'rent' ? 'translate-x-0' : 'translate-x-full'
-              }`}
+              className={`absolute inset-y-0 left-0 bg-white shadow-lg rounded-full transition-transform duration-300 ease-in-out w-1/2 ${operation === 'rent' ? 'translate-x-0' : 'translate-x-full'
+                }`}
             ></div>
 
             {/* Botones de operación */}
             <button
               type="button"
               onClick={() => setOperation('rent')}
-              className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium ${
-                operation === 'rent' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
-              }`}
+              className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium ${operation === 'rent' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
+                }`}
             >
               Alquilar
             </button>
             <button
               type="button"
               onClick={() => setOperation('share')}
-              className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium ${
-                operation === 'share' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
-              }`}
+              className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium ${operation === 'share' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
+                }`}
             >
               Buscar Compi
             </button>
@@ -125,5 +155,6 @@ export default function Home() {
 
 
     </div>
+
   )
 }

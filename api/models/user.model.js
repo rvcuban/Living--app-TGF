@@ -68,6 +68,10 @@ const userSchema = new mongoose.Schema({
   location: { // Nuevo campo: Ubicación para mostrar la ubicacion donde esta bsucando compañeros
     type: String,
   },
+  isNewUser: {
+    type: Boolean,
+    default: true  // Al crear, la cuenta es "nueva"
+  },
 
 }, { timestamps: true }
 );

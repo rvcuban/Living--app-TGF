@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { signInStart, signInSuccess, signInFailure } from "../redux/user/userSlice";
 import OAuth from "../components/OAuth";
-
+import CompleteProfileModal from "../components/CompleteProfileModal";
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
@@ -16,6 +16,25 @@ export default function SignIn() {
 
   const navigate = useNavigate(); //inicailizamos el navigate para poder eredirecccionar a otras paginas
   const dispatch = useDispatch();
+
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const { currentUser } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    if (currentUser && !currentUser.phone) {
+      setShowCompleteModal(true);
+    }
+  }, [currentUser]);
+
+  const handleModalClose = () => {
+    setShowCompleteModal(false);
+  };
+
+  const handleModalComplete = () => {
+    // El user completó su perfil
+    setShowCompleteModal(false);
+  };
+
 
   const handleChange = (e) => {
     setFormData(//esto se usa `para conservar el estado y poder mantener siempre el usuario , el email y la contraseña 
@@ -66,7 +85,7 @@ export default function SignIn() {
           <input type="text" placeholder='email' className='border p-3 rounded-lg' id='email' onChange={handleChange} />
           <input type="text" placeholder='password' className='border p-3 rounded-lg' id='password' onChange={handleChange} />
           <button disabled={loading} className='bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80'>
-            {loading ? 'Loading...' : 'Sing In'}
+            {loading ? 'Loading...' : 'Iniciar Sesion'}
           </button>
           <div className="text-center">
             <p className="text-gray-600">o</p>
@@ -74,17 +93,28 @@ export default function SignIn() {
           <OAuth />
         </form>
         <div className='flex gap-2 mt-5'>
-          <p>No account?</p>
+          <p>No tienes una cuenta?</p>
 
           <Link to={"/sign-up"}>
-            <span className="text-blue-700">Sign up </span>
+            <span className="text-blue-700">Registrate </span>
           </Link>
         </div>
         {error && <p className="text-red-500 mt-5">{error} </p>}
       </div>
+
+
+      <CompleteProfileModal
+        visible={showCompleteModal}
+        currentUser={currentUser}
+        onClose={handleModalClose}
+        onComplete={handleModalComplete}
+      />
+
     </div>
 
-    
+
+
   );
+
 
 }
