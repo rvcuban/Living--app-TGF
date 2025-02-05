@@ -3,6 +3,11 @@ import { errorHandle } from '../utils/error.js';
 import mongoose from 'mongoose';
 import {cancelApplication,getUserApplications,createApplication,updateApplication} from './application.controller.js';
 
+function removeDiacritics(str) {
+  return str
+    .normalize('NFD')          // Descompone tildes, e.g. "á" -> "a" + diacrítico
+    .replace(/[\u0300-\u036f]/g, '');  // Elimina los diacríticos
+}
 
 export const createListing = async (req, res, next) => {
   try {
@@ -154,6 +159,7 @@ export const getListings = async (req, res, next) => {
   try {
     //aqui limitamos el numero visible a 9 en caso de que no se haga una peticion en concreto a la url
     const limit = parseInt(req.query.limit) || 9;
+    
 
     //indice de apginacion , si no se proporciona empezamos por 0
     const startIndex = parseInt(req.query.startIndex) || 0;
@@ -182,19 +188,21 @@ export const getListings = async (req, res, next) => {
     }
 
    const searchTerm = req.query.searchTerm || '';
+   const normalizedTerm = removeDiacritics(searchTerm.toLowerCase());
 
     const sort = req.query.sort || 'createdAt';
 
     const order = req.query.order || 'desc';
 
     const listings = await Listing.find({ //busqueda
-      address: { $regex: searchTerm, $options: 'i' },//regrex es la funcionalidad de buscar patrones en sitios de la base de datos, la opcion i indica que no le des importancia a las mayusculas y minisculas 
+      address: { $regex:  normalizedTerm, $options: 'i' },//regrex es la funcionalidad de buscar patrones en sitios de la base de datos, la opcion i indica que no le des importancia a las mayusculas y minisculas 
       offer,
       furnished,
       parking,
       type,
 
     })
+      .collation({ locale: 'es', strength: 1 })
       .sort({ [sort]: order })
       .limit(limit)
       .skip(startIndex);//si es 0 empezaremos desde el principio pero si es otro nuemro empezaremos desde ahin ,, para eso sirve el skip
