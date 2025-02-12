@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { removeDiacritics } from "../utils/removeDiacritics.js";
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -68,6 +69,7 @@ const userSchema = new mongoose.Schema({
   location: { // Nuevo campo: Ubicación para mostrar la ubicacion donde esta bsucando compañeros
     type: String,
   },
+  locationNoAccent: { type: String },
   isNewUser: {
     type: Boolean,
     default: true  // Al crear, la cuenta es "nueva"
@@ -75,6 +77,13 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true }
 );
+
+userSchema.pre('save', function (next) {
+  if (this.location) {
+    this.locationNoAccent = removeDiacritics(this.location.toLowerCase());
+  }
+  next();
+});
 
 const User = mongoose.model('User', userSchema);
 export default User;  

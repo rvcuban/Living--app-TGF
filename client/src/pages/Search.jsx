@@ -91,6 +91,7 @@ export default function Search() {
           const res = await fetch(`/api/user/get?${searchQuery}`);
           const data = await res.json();
           console.log('Usuarios recibidos:', data.data); // Log para depuración
+          console.log("Término normalizado:", data.normalizedSearchTerm);
           if (data.length > 8) {
             setShowMore(true);
           } else {

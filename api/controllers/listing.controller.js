@@ -58,7 +58,7 @@ export const updateListing = async (req, res, next) => {
 
     // Si el listado no se encuentra, devolver un error 404
     if (!updatedListing) {
-      return next(errorHandle(404, 'Listing not found'));
+      return next(errorHandle(404, 'Listing not found')); 
     }
 
     // Responder con el listado actualizado

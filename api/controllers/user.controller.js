@@ -2,6 +2,7 @@ import { errorHandle } from "../utils/error.js";
 import User from '../models/user.model.js';
 import Listing from "../models/listing.model.js";
 import bcryptjs from 'bcryptjs';
+import { removeDiacritics } from "../utils/removeDiacritics.js";
 
 export const test = (req, res) => {
   res.json({
@@ -33,14 +34,14 @@ export const updateUser = async (req, res, next) => {
           password: req.body.password,
           avatar: req.body.avatar,
           phone: req.body.phone,
-          dateOfBirth: req.body. dateOfBirth,
+          dateOfBirth: req.body.dateOfBirth,
           address: req.body.address,
           gender: req.body.gender,
           documentos: req.body.documentos,
-          favoritos:req.body.favoritos,
+          favoritos: req.body.favoritos,
           preferences: req.body.preferences,
           lookingForRoommate: req.body.lookingForRoommate,
-          location:req.body.location    
+          location: req.body.location
         },
       },
       { new: true }//retorna si si se a hcho el upate con nueva informacion
@@ -132,11 +133,14 @@ export const getUsers = async (req, res, next) => {
     } = req.query;
 
     const filter = {};
+    let normalizedLocation = "";
 
     // Búsqueda por término (username, bio, etc.)
     if (searchTerm) {
+       
       filter.$or = [
-        { username: { $regex: searchTerm, $options: 'i' } },
+        { location: { $regex: searchTerm, $options: 'i' } },
+        
         // Añade más campos si es necesario
       ];
     }
@@ -169,10 +173,13 @@ export const getUsers = async (req, res, next) => {
       const badgesArray = badges.split(',').map((badge) => badge.trim());
       filter.badges = { $all: badgesArray };
     }
-
+    
+ 
     if (location) {
       // Filtrar por ubicación exacta 
-      filter.location = { $regex: location, $options: 'i' };
+      
+    
+      filter.locationNoAccent = { $regex: normalizedLocation, $options: 'i' };
     }
 
     // Ordenamiento
@@ -181,6 +188,7 @@ export const getUsers = async (req, res, next) => {
 
     // Consulta a la base de datos
     const users = await User.find(filter)
+      .collation({ locale: 'es', strength: 1 })
       .sort(sortOptions)
       .limit(limit)
       .skip(startIndex)
@@ -194,6 +202,7 @@ export const getUsers = async (req, res, next) => {
       success: true,
       data: users,
       total,
+      normalizedSearchTerm: normalizedLocation,
       message: users.length > 0 ? undefined : 'No se encontraron usuarios.',
     });
   } catch (error) {
