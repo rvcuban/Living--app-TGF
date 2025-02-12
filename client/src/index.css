@@ -117,4 +117,4 @@ modal {
   content:none !important;
 } /* me gusto esta solucion para remover el logo de google :Sometimes, the "Powered by Google" image can be obscured by, clash with, or be inconsistent with the styles that you put on the autocomplete list. In these cases, it is desirable to replace the image with styled text.
 
-The image itself is defined in an :after psuedo-element. All you have to is replace the content and font-size rules. Make sure that the text you use credits Google and be sure to set a font size because it's set to zero by default.*/
+The image itself is defined in an :after psuedo-element. All you have to is replace the content and font-size rules. Make sure that the text you use credits Google and be sure to set a font size because it's set to zero by defaultdddd.*/
