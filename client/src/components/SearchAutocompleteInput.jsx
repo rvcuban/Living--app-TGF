@@ -13,7 +13,9 @@ export default function SearchAutocompleteInput({
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY_AUTOCOMPLETE,
     libraries,
-    id: "google-map-script" // Asegúrate de usar el mismo id en todas las llamadas
+    language: 'es', // Fuerza el idioma español
+    region: 'ES',   // Establece la región en España
+    id: "google-map-script" // DEBO usar el mismo id en todas las llamadas
   });
 
   const [localValue, setLocalValue] = useState(value || '');
