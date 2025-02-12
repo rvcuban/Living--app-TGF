@@ -1,11 +1,12 @@
 // src/pages/MyProperties.jsx
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { FaEnvelope, FaUsers, FaEdit } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaEnvelope, FaUsers,  FaEdit, FaPlus } from 'react-icons/fa';
 
 export default function MyProperties() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Obtener las propiedades del usuario al cargar el componente
@@ -76,6 +77,13 @@ export default function MyProperties() {
   return (
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-3xl font-semibold mb-6">Mis Propiedades</h1>
+      <button
+          onClick={() => navigate('/create-listing')}
+          className="flex items-center bg-blue-500 text-white px-4 py-2 m-2 rounded-md shadow-md hover:bg-blue-600 transition"
+        >
+          <FaPlus className="mr-2" />
+          Añadir Propiedad
+        </button>
       {properties.length > 0 ? (
         <ul className="space-y-4">
           {properties.map((property) => (

@@ -23,10 +23,10 @@ import Message from './models/message.model.js'; // Te lo muestro luego
 dotenv.config();
 
 
-
+console.log("Cadena de conexión:", process.env.MONGO);
 mongoose.
-    connect(process.env.MONGO)// ESTO ES PARA SETEAR LA CONTRASEÑA COMO VARIABLE DE ENTORNO
-
+    connect(process.env.MONGO,)// ESTO ES PARA SETEAR LA CONTRASEÑA COMO VARIABLE DE ENTORNO
+      
     .then(() => {// compruebo que he conectado correctamente con la abse de datos 
 
         console.log('Connected to MongoDB!');

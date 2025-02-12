@@ -43,7 +43,6 @@ const listingSchema = new mongoose.Schema(
     },
     trastero: {
       type: Boolean,
-      required: true,
     },
     type: {
       type: String,
@@ -84,7 +83,7 @@ const listingSchema = new mongoose.Schema(
       }
     ],
     applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Application' }],
-    capacity: { type: Number, required: true }, // Total de miembros permitidos
+    capacity: { type: Number }, // Total de miembros permitidos
 
     residentesActuales: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isvisible: {
@@ -96,8 +95,6 @@ const listingSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-
 
 
 const Listing = mongoose.model('Listing', listingSchema);

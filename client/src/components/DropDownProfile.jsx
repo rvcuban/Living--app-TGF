@@ -18,6 +18,7 @@ import {
 export default function DropDownProfile({ onOptionSelect }) {
 
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const fileRef = useRef(null);
     const { currentUser, loading, error } = useSelector((state) => state.user);
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -44,7 +45,7 @@ export default function DropDownProfile({ onOptionSelect }) {
                 window.location.reload(false);
             }, 300); // Retraso de 300 ms para asegurar la redirección
         } catch (error) {
-            dispatch(deleteUserFailure(data.message));
+            dispatch(deleteUserFailure(error.message));
             setIsSigningOut(false);
         }
     };

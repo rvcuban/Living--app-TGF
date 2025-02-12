@@ -54,7 +54,9 @@ export default function UserItem({ user }) {
             </div>
 
             <div className="ml-4">
-            <p className="text-sm text-gray-700 mt-1">Buscando en: {location}</p> {/* Nueva línea para ubicación */}
+            <p className="text-sm text-gray-700 mt-1">
+            Buscando en: {location ? location : "No especificada"}
+              </p> {/* Nueva línea para ubicación */}
             </div>
 
 

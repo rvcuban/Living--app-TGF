@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import GooglePlacesAutocomplete from "./GooglePlacesAutocomplete";
 import { useDispatch } from "react-redux";
 import { updateUserSuccess } from "../redux/user/userSlice"; 
+import SearchAutocompleteInput from "./SearchAutocompleteInput";
 
 export default function CompleteProfileModal({
   visible = false,
@@ -74,7 +75,7 @@ export default function CompleteProfileModal({
           isNewUser: false
         })
       });
-
+ 
 
       if (!res.ok) {
         console.error("Error HTTP:", res.status, res.statusText);
@@ -167,7 +168,7 @@ export default function CompleteProfileModal({
             <span className="block text-xs text-gray-400 mb-1">
               (Dónde buscas o alquilas)
             </span>
-            <GooglePlacesAutocomplete />
+            <SearchAutocompleteInput />
           </div>
 
           {/* Buscando compañero */}

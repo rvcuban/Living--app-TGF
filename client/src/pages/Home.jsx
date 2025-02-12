@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import CompleteProfileModal from "../components/CompleteProfileModal";
 
-
+import SearchAutocompleteInput from "../components/SearchAutocompleteInput";
 
 export default function Home() {
 
@@ -130,11 +130,12 @@ export default function Home() {
           onSubmit={handleSubmit}
           className="relative bg-white shadow-lg rounded-full p-1 w-full max-w-xl flex items-center mx-auto"
         >
-          <input
-            placeholder="Buscar destinos..."
-            className="bg-transparent focus:outline-none w-full sm:w-64 px-4 py-3 text-gray-600 rounded-full"
+            <SearchAutocompleteInput
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(value) => setSearchTerm(value)}
+            onSelectPlace={(value) => setSearchTerm(value)}
+            placeholder="Buscar destinos..."
+            inputClassName="bg-transparent focus:outline-none w-full sm:w-64 px-4 py-3 text-gray-600 rounded-full"
           />
           <button
             type="submit"
