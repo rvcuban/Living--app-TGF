@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
@@ -14,6 +14,46 @@ import {
 } from 'react-icons/fa';
 import UserReviewModal from '../components/UserReviewModal';
 
+// Componente simple para pestañas
+function Tabs({ tabs, defaultTab, children }) {
+    const [activeTab, setActiveTab] = useState(defaultTab);
+    const tabContainerRef = useRef(null);
+
+    // Cuando activeTab cambia, se desplaza el botón activo a la vista.
+    useEffect(() => {
+        const activeButton = tabContainerRef.current.querySelector('.active-tab');
+        if (activeButton) {
+            activeButton.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        }
+    }, [activeTab]);
+
+    return (
+        <div>
+            {/* Contenedor de pestañas con desplazamiento horizontal */}
+            <div ref={tabContainerRef} className="flex overflow-x-auto whitespace-nowrap border-b scrollbar-hide">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-shrink-0 py-2 px-4 font-medium transition-colors focus:outline-none ${
+                            activeTab === tab
+                                ? 'active-tab border-blue-500 text-blue-500 border-b-2'
+                                : 'border-transparent text-gray-500 hover:text-blue-500'
+                        }`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </div>
+            <div className="mt-4">
+                {React.Children.toArray(children).find(
+                    (child) => child.props.value === activeTab
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function PublicProfile() {
     const { userId } = useParams();
     const { currentUser } = useSelector((state) => state.user);
@@ -21,11 +61,7 @@ export default function PublicProfile() {
     const [user, setUser] = useState(null);
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    // Estado para saber la relación de compañeros
-    // Puede ser: 'none' (sin solicitud), 'pending', 'accepted', 'self' (el mismo user)
-    const [buddyStatus, setBuddyStatus] = useState('none');
-
+    const [buddyStatus, setBuddyStatus] = useState('none'); // 'none', 'pending', 'accepted', 'self'
     const [showReviewModal, setShowReviewModal] = useState(false);
     const navigate = useNavigate();
 
@@ -51,6 +87,7 @@ export default function PublicProfile() {
                 // 2) Reseñas
                 const resReviews = await fetch(`/api/userreview/${userId}`);
                 const dataReviews = await resReviews.json();
+                console.log("Respuesta del endpoint de reseñas:", dataReviews);
                 if (dataReviews.success) {
                     setReviews(dataReviews.reviews);
                 } else {
@@ -62,8 +99,6 @@ export default function PublicProfile() {
         };
 
         const fetchBuddyStatus = async () => {
-            // Llamar a un endpoint que devuelva la relación
-            // Solo si currentUser existe y no es el mismo user
             if (!currentUser || currentUser._id === userId) {
                 if (currentUser && currentUser._id === userId) {
                     setBuddyStatus('self');
@@ -78,7 +113,6 @@ export default function PublicProfile() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    // data.status = 'none' | 'pending' | 'accepted'
                     setBuddyStatus(data.status);
                 }
             } catch (error) {
@@ -94,7 +128,6 @@ export default function PublicProfile() {
         ]).finally(() => setLoading(false));
     }, [userId, currentUser]);
 
-    // Lógica de envío de solicitud
     const handleBeMyRoommate = async () => {
         if (!currentUser) {
             toast.info('Necesitas iniciar sesión para enviar una solicitud.');
@@ -102,9 +135,8 @@ export default function PublicProfile() {
             return;
         }
         if (buddyStatus === 'pending' || buddyStatus === 'accepted') {
-            return; // Evita reenviar la solicitud
+            return;
         }
-
         try {
             const res = await fetch('/api/roommate', {
                 method: 'POST',
@@ -115,10 +147,9 @@ export default function PublicProfile() {
                 body: JSON.stringify({ receiverId: userId }),
             });
             const data = await res.json();
-
             if (data.success) {
                 toast.success('Solicitud de compañero enviada.');
-                setBuddyStatus('pending'); // Cambiamos a 'pending'
+                setBuddyStatus('pending');
             } else {
                 toast.error(data.message || 'No se pudo enviar la solicitud.');
             }
@@ -140,17 +171,8 @@ export default function PublicProfile() {
         );
     }
 
-    // Desestructurar user
-    const {
-        username,
-        avatar,
-        shortBio,
-        preferences,
-        badges,
-        verified,
-        reliability,
-        averageRating,
-    } = user;
+    // Desestructurar datos del usuario
+    const { username, avatar, shortBio, preferences, badges, verified, averageRating } = user;
 
     const getScheduleIcon = (schedule) => {
         switch (schedule) {
@@ -170,10 +192,7 @@ export default function PublicProfile() {
         return (
             <div className="flex flex-wrap gap-2 mt-3">
                 {badgesList.map((badge, index) => (
-                    <span
-                        key={`badge-${index}`}
-                        className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full"
-                    >
+                    <span key={`badge-${index}`} className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-sm px-2 py-1 rounded-full">
                         <FaMedal className="text-yellow-500" />
                         {badge}
                     </span>
@@ -186,37 +205,167 @@ export default function PublicProfile() {
         const stars = [];
         for (let i = 0; i < 5; i++) {
             stars.push(
-                <FaStar
-                    key={`star-${i}`}
-                    className={i < Math.round(ratingValue) ? 'text-yellow-400' : 'text-gray-300'}
-                />
+                <FaStar key={`star-${i}`} className={i < Math.round(ratingValue) ? 'text-yellow-400' : 'text-gray-300'} />
             );
         }
         return stars;
     };
 
-
-
     const handleReviewCreated = (newReview) => {
-        // 1) Actualizar la lista de reseñas local
         setReviews((prev) => [newReview, ...prev]);
-      
-        // 2) Calcular el nuevo promedio de estrellas
         const totalRating = (user.averageRating * reviews.length) + newReview.rating;
         const newAverage = totalRating / (reviews.length + 1);
-      
-        // 3) Calcular la nueva cantidad de reseñas
-        const newReviewsCount = reviews.length + 1;  // sumamos la nueva reseña
-      
-        // 4) Actualizar el estado del usuario
+        const newReviewsCount = reviews.length + 1;
         setUser((prevUser) => ({
-          ...prevUser,
-          averageRating: newAverage,      // la nueva media calculada
-          reviewsCount: newReviewsCount,  // la nueva cantidad
+            ...prevUser,
+            averageRating: newAverage,
+            reviewsCount: newReviewsCount,
         }));
-      };
-      
-    
+    };
+
+    // Funciones para renderizar cada pestaña
+    const renderAboutTab = () => (
+        <div className="p-4">
+            {user.shortBio ? (
+                <p className="text-gray-700">{user.shortBio}</p>
+            ) : (
+                <p className="text-gray-700">No hay información sobre el usuario.</p>
+            )}
+            <div className="mt-4">
+                <p className="text-gray-600">
+                    <strong>Ubicación:</strong> {user.location || 'No especificada'}
+                </p>
+                <p className="text-gray-600">
+                    <strong>Preferencias:</strong>{' '}
+                    {user.preferences ? (
+                        <>
+                            {user.preferences.pets ? 'Acepta mascotas. ' : 'No acepta mascotas. '}
+                            {user.preferences.smoker ? 'Fumador. ' : 'No fumador. '}
+                            {user.preferences.schedule ? `Horario: ${user.preferences.schedule}` : ''}
+                        </>
+                    ) : (
+                        'Sin preferencias definidas.'
+                    )}
+                </p>
+            </div>
+        </div>
+    );
+
+    const renderInterestsTab = () => (
+        <div className="p-4 flex flex-wrap gap-2">
+            {user.interests && user.interests.length > 0 ? (
+                user.interests.map((interest, idx) => (
+                    <span key={idx} className="bg-gray-200 px-2 py-1 rounded-full text-sm">
+                        {interest}
+                    </span>
+                ))
+            ) : (
+                <p className="text-gray-500">No se han definido intereses.</p>
+            )}
+        </div>
+    );
+
+    const renderReviewsTab = () => {
+        console.log('Reseñas cargadas:', reviews);
+        const totalReviews = reviews ? reviews.length : 0;
+        const averageRatingDynamic =
+            totalReviews > 0
+                ? (reviews.reduce((acc, review) => acc + review.rating, 0) / totalReviews).toFixed(1)
+                : null;
+
+        return (
+            <div className="p-4">
+                {/* Sección de calificación global */}
+                <div className="flex items-center mb-4">
+                    <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <FaStar
+                                key={star}
+                                className={
+                                    star <= Math.round(averageRatingDynamic || 0)
+                                        ? 'w-5 h-5 text-yellow-400'
+                                        : 'w-5 h-5 text-gray-300'
+                                }
+                            />
+                        ))}
+                    </div>
+                    <span className="ml-2 text-gray-600">
+                        {averageRatingDynamic
+                            ? `${averageRatingDynamic} de 5 (${totalReviews} valoraciones)`
+                            : 'Sin valoraciones'}
+                    </span>
+                </div>
+
+                {/* Lista de reseñas */}
+                {totalReviews > 0 ? (
+                    <ul className="space-y-4">
+                        {reviews.map((review) => (
+                            <li key={review._id} className="border-b pb-3">
+                                <div className="flex items-start">
+                                    <img
+                                        src={review.author?.avatar || '/default-profile.png'}
+                                        alt="avatar"
+                                        className="w-8 h-8 rounded-full mr-3"
+                                    />
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <p className="font-semibold text-gray-800">
+                                                {review.author?.username || 'Usuario Anónimo'}
+                                            </p>
+                                            <div className="flex items-center">
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <FaStar
+                                                        key={star}
+                                                        className={
+                                                            star <= Math.round(review.rating)
+                                                                ? 'w-5 h-5 text-yellow-400'
+                                                                : 'w-5 h-5 text-gray-300'
+                                                        }
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <p className="text-gray-600 mt-1">
+                                            {review.comment || 'Sin comentario'}
+                                        </p>
+                                        <span className="text-xs text-gray-400">
+                                            {new Date(review.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-gray-500">Aún no hay reseñas para este perfil.</p>
+                )}
+
+                {/* Botón para abrir el modal de crear reseña */}
+                <div className="mt-4 text-center">
+                    <button
+                        onClick={() => setShowReviewModal(true)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                    >
+                        Escribir reseña
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderGalleryTab = () => (
+        <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {user.gallery && user.gallery.length > 0 ? (
+                user.gallery.map((imgUrl, idx) => (
+                    <div key={idx} className="aspect-square rounded-lg overflow-hidden">
+                        <img src={imgUrl} alt={`Galería ${idx}`} className="object-cover w-full h-full" />
+                    </div>
+                ))
+            ) : (
+                <p className="text-gray-500">No hay imágenes en la galería.</p>
+            )}
+        </div>
+    );
 
     return (
         <div className="max-w-4xl mx-auto p-4">
@@ -250,31 +399,22 @@ export default function PublicProfile() {
                     </div>
                     <span className="ml-1 text-gray-500 text-sm">({user.reviewsCount || 0})</span>
                 </div>
-
                 {/* Preferencias de convivencia */}
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sah-primary w-full">
                     <div className="flex items-center gap-2 justify-center">
                         <FaDog className="text-xl" />
-                        <span>
-                            {preferences?.pets ? 'Amo/acepto mascotas' : 'No acepto mascotas'}
-                        </span>
+                        <span>{preferences?.pets ? 'Amo/acepto mascotas' : 'No acepto mascotas'}</span>
                     </div>
                     <div className="flex items-center gap-2 justify-center">
                         <FaSmoking className="text-xl" />
-                        <span>
-                            {preferences?.smoker ? 'Fumador' : 'No fumador'}
-                        </span>
+                        <span>{preferences?.smoker ? 'Fumador' : 'No fumador'}</span>
                     </div>
                     <div className="flex items-center gap-2 justify-center">
                         {getScheduleIcon(preferences?.schedule)}
-                        <span>
-                            {preferences?.schedule ? `Horario: ${preferences.schedule}` : 'Horario no especificado'}
-                        </span>
+                        <span>{preferences?.schedule ? `Horario: ${preferences.schedule}` : 'Horario no especificado'}</span>
                     </div>
                 </div>
-
                 <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-center">
-                    {/* Botón "Sé mi compañero" */}
                     {currentUser && currentUser._id !== userId && buddyStatus !== 'self' && (
                         <>
                             {buddyStatus === 'none' && (
@@ -303,8 +443,6 @@ export default function PublicProfile() {
                             )}
                         </>
                     )}
-
-                    {/* Botón Enviar Mensaje */}
                     <Link
                         to={`/chat?otherUserId=${userId}&prefilled=Hola,he visto tu perfil y `}
                         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
@@ -314,58 +452,14 @@ export default function PublicProfile() {
                 </div>
             </div>
 
-            {/* Reseñas que ha recibido */}
-            <div className="mt-6 bg-white shadow-md p-4 rounded-lg">
-                <h3 className="text-xl font-semibold text-gray-700 mb-3">
-                    Reseñas de {username}
-                </h3>
-                {/* Botón para abrir modal de reseña */}
-                <div className="mt-4 mb-2">
-                    <button
-                        onClick={() => setShowReviewModal(true)}
-                        className="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-                    >
-                        Escribir reseña
-                    </button>
-                </div>
-
-                {reviews && reviews.length > 0 ? (
-                    <ul className="space-y-4">
-                        {reviews.map((review, idx) => (
-                            <li
-                                key={review._id || `review-${idx}`}
-                                className="border-b pb-3 last:border-b-0 last:pb-0"
-                            >
-                                <div className="flex items-start">
-                                    <img
-                                        src={review.author?.avatar || '/default-profile.png'}
-                                        alt="autor avatar"
-                                        className="w-8 h-8 rounded-full mr-3"
-                                    />
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between">
-                                            <p className="font-semibold text-slate-800">
-                                                {review.author?.username || 'Usuario Anónimo'}
-                                            </p>
-                                            <div className="flex items-center">
-                                                {renderStars(review.rating)}
-                                            </div>
-                                        </div>
-                                        <p className="text-gray-600 mt-1">
-                                            {review.comment || 'Sin comentario'}
-                                        </p>
-                                        <span className="text-xs text-gray-400">
-                                            {new Date(review.createdAt).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-gray-500">Aún no hay reseñas para este perfil.</p>
-                )}
-
+            {/* Tabs Section */}
+            <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden">
+                <Tabs tabs={['Sobre mí', 'Intereses', 'Opiniones', 'Galería']} defaultTab="Sobre mí">
+                    <div value="Sobre mí">{renderAboutTab()}</div>
+                    <div value="Intereses">{renderInterestsTab()}</div>
+                    <div value="Opiniones">{renderReviewsTab()}</div>
+                    <div value="Galería">{renderGalleryTab()}</div>
+                </Tabs>
                 <UserReviewModal
                     visible={showReviewModal}
                     onClose={() => setShowReviewModal(false)}
@@ -375,14 +469,12 @@ export default function PublicProfile() {
                 />
             </div>
 
-            {/* CTA para enviar mensaje */}
-            <div className="mt-6 bg-white shadow-md p-4 rounded-lg">
+            {/* CTA Section */}
+            <div className="mt-6 bg-white shadow-md rounded-lg text-center p-4">
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">
                     ¿Quieres contactar con {username}?
                 </h3>
-                <p className="text-gray-600">
-                    Puedes enviar un mensaje si deseas más información.
-                </p>
+                <p className="text-gray-600">Puedes enviar un mensaje si deseas más información.</p>
                 <Link
                     to={`/messages/${userId}`}
                     className="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"

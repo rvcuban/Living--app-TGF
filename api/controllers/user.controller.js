@@ -27,29 +27,18 @@ export const updateUser = async (req, res, next) => {
     const updatedUser = await User.findByIdAndUpdate(  //metodo para hacer el update
       req.params.id,//le pasamos el id apra saber que usario vamos a hacer update
       {
-        $set: {// el metodo sett se utiliza para comprobar si hay lgun cambio en el campo , si no lo hay ddeja el que estaba (de esta manera si el usaurio solo queire 
-          username: req.body.username, //cambiar la photo o la contrraseña no es ncesario reeescribir todo u obteneer errores)
-
-          email: req.body.email,
-          password: req.body.password,
-          avatar: req.body.avatar,
-          phone: req.body.phone,
-          dateOfBirth: req.body.dateOfBirth,
-          address: req.body.address,
-          gender: req.body.gender,
-          documentos: req.body.documentos,
-          favoritos: req.body.favoritos,
-          preferences: req.body.preferences,
-          lookingForRoommate: req.body.lookingForRoommate,
-          location: req.body.location
-        },
+        $set: { ...req.body }
       },
       { new: true }//retorna si si se a hcho el upate con nueva informacion
     );
 
     const { password, ...rest } = updatedUser._doc;//separamos la contraseña del resto 
 
-    res.status(200).json(rest); // eenviamos el json con la ifnormacion 
+    res.status(200).json({
+      success: true,
+      data: rest, 
+      message: "Perfil actualizado correctamente."
+    }); // eenviamos el json con la ifnormacion 
   } catch (error) {
     next(error);
   }
@@ -228,6 +217,30 @@ export const updateSetNewUser = async (req, res, next) => {
       success: true,
       data: updated,
       message: "Usuario actualizado correctamente."
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+export const setUserIsNewFalse = async (req, res, next) => {
+  try {
+    // Verifica si el usuario que hace la petición tiene permisos:
+    // if (req.user.id !== req.params.id) { ... }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { isNewUser: false } },
+      { new: true }
+    );
+    
+    return res.status(200).json({
+      success: true,
+      data: updatedUser,
+      message: 'isNewUser actualizado a false',
     });
   } catch (error) {
     next(error);

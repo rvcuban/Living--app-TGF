@@ -28,7 +28,11 @@ export default function OAuth() {
       });
       const data = await res.json();
       dispatch(signInSuccess(data));
-      navigate('/');
+      if (data.isNewUser) {
+        navigate('/onboarding'); 
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.log('could not sign in with google', error);
     }

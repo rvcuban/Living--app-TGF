@@ -4,7 +4,7 @@ import { FaSearch } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import { useSelector } from "react-redux";
-import CompleteProfileModal from "../components/CompleteProfileModal";
+
 
 import SearchAutocompleteInput from "../components/SearchAutocompleteInput";
 
@@ -13,7 +13,7 @@ export default function Home() {
 
   const [searchTerm, setSearchTerm] = useState('');// me permite esccribir en la barra de search(valor inicial empty string)
   const navigate = useNavigate(); //inicilizamos el use-navegador para poder redirigir al usuario
-  const [operation, setOperation] = useState('rent'); // 'rent' o 'share'
+  const [operation, setOperation] = useState('share'); // 'rent' o 'share'
   const location = useLocation();
 
 
@@ -22,13 +22,6 @@ export default function Home() {
   // Obtenemos el user de Redux
   const { currentUser } = useSelector((state) => state.user);
 
-
-  useEffect(() => {
-    // Si user existe y user.isNew === true => mostrar modal
-    if (currentUser && currentUser.isNewUser) {
-      setShowCompleteModal(true);
-    }
-  }, [currentUser]);
 
 
   // este es codigo replicado de la header (deberia crear una funcion aparte que se use ene los dos sitios para evitar repetir codigo)
@@ -112,7 +105,7 @@ export default function Home() {
               className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium ${operation === 'rent' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
                 }`}
             >
-              Alquilar
+              Alquilar 
             </button>
             <button
               type="button"

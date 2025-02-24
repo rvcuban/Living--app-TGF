@@ -117,8 +117,8 @@ useEffect(() => {
             <Link to='/'>
               <h1 className='font-bold text-sm sm:text-xl flex items-center'>
                 <img src={logo} alt='Logo' className='cursor-pointer h-8 w-8 mr-2' />
-                <span className='text-black'>Top</span>
-                <span className='text-red-700'>Secret</span>
+                <span className='text-black'>Wiki</span>
+                <span className='text-red-700'>Home</span>
               </h1>
             </Link>
           )}

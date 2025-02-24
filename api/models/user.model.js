@@ -74,6 +74,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true  // Al crear, la cuenta es "nueva"
   },
+  // NUEVOS CAMPOS PARA CONTENIDO DINÁMICO EN EL PERFIL
+  shortBio: { type: String, default: '' },
+  interests: { type: [String], default: [] },
+  gallery: { type: [String], default: [] },
 
 }, { timestamps: true }
 );

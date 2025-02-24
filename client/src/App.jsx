@@ -27,6 +27,8 @@ import PublicProfile from "./pages/PublicProfile";
 import Chat from "./pages/Chat";
 import MyBuddies from "./pages/MyBuddies";
 
+import Onboarding from './components/Onboarding';
+
 
 export default function App() {
   return (<BrowserRouter>
@@ -44,6 +46,7 @@ export default function App() {
          <Route path="/user/:userId/public" element={<PublicProfile />} />
 
       <Route element={<PrivateRoute />}>
+        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/profile/*" element={<Profile />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/create-listing" element={<CreateListing />} />

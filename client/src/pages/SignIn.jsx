@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { signInStart, signInSuccess, signInFailure } from "../redux/user/userSlice";
 import OAuth from "../components/OAuth";
-import CompleteProfileModal from "../components/CompleteProfileModal";
+
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
@@ -20,12 +20,7 @@ export default function SignIn() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
 
-  useEffect(() => {
-    if (currentUser && !currentUser.phone) {
-      setShowCompleteModal(true);
-    }
-  }, [currentUser]);
-
+ 
   const handleModalClose = () => {
     setShowCompleteModal(false);
   };
@@ -59,13 +54,20 @@ export default function SignIn() {
           body: JSON.stringify(formData),
         });
       const data = await res.json();
+      console.log("Backend response =>", data);
       if (data.success === false) {
         dispatch(signInFailure(data.message));
         return;
 
       }
       dispatch(signInSuccess(data));
-      navigate('/');//usamos esto apra que una vez que se ha creado el usaurio sin errores navegar ahsta la mpapgina de inicio de sesion
+
+      console.log(data);
+      if (data.isNewUser) {
+        navigate('/onboarding'); 
+      } else {
+        navigate('/');
+      }//usamos esto apra que una vez que se ha creado el usaurio sin errores navegar ahsta la mpapgina de inicio de sesion
       // posiblemente en un futuro lo cambie por navegar directamente dentro del eprfil paara mejorar la experiencia de ususario 
     } catch (error) {
       dispatch(signInFailure(error.message))
@@ -103,12 +105,6 @@ export default function SignIn() {
       </div>
 
 
-      <CompleteProfileModal
-        visible={showCompleteModal}
-        currentUser={currentUser}
-        onClose={handleModalClose}
-        onComplete={handleModalComplete}
-      />
 
     </div>
 

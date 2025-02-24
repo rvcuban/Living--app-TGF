@@ -34,7 +34,12 @@ export const signin = async (req, res, next) => {
 
         res.cookie('access_token', token, { httpOnly: true }) //aqui creamos la cookie para dejar autentificao el usaurio en nuestra web , el primer parametro es el nombre el segundo el toiken y lo tercero e para no permitir acceso e aplicaciones de tercero y hacer la cookie mas segura 
             .status(200) //devolvemos un nstatus 200 de forma que todo a ido correcto 
-            .json(rest); // un json con la informaciond el usaurio validado
+            .json({
+              success: true,
+              message: "Login exitoso",
+              user: rest, // <-- aquí van los datos del usuario
+              isNewUser: ValidUser.isNewUser // <-- aquí el flag de nuevo usuario
+            });
     } catch (error) {
         next(error);
     }
@@ -69,7 +74,12 @@ export const google = async (req, res, next) => {
       res
         .cookie('access_token', token, { httpOnly: true })
         .status(200)
-        .json(rest);
+        .json({
+          success: true,
+          message: "Login exitoso",
+          user: rest,
+          isNewUser: ValidUser.isNewUser,
+        });
     }
   } catch (error) {
     next(error);
