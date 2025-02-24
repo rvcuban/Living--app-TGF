@@ -5,14 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 // Importa tus componentes base
 import Step from "../components/step";
-import Layout from '../components/layout';
-import TextField from '../components/TextField';
-import Checkbox from '../components/Chexbox';
-import NextButton from '../components/next-button';
-import BackButton from '../components/back-button';
-import BubbleSelector from '../components/BubbleSelector';
-import MultiBubbleSelector from '../components/MultiBubbleSelector';
-import GoogleLocationField from '../components/GoogleLocationField';
+import Layout from "../components/layout";
+import TextField from "../components/TextField";
+import Checkbox from "../components/Chexbox";
+import NextButton from "../components/next-button";
+import BackButton from "../components/back-button";
+import BubbleSelector from "../components/BubbleSelector";
+import MultiBubbleSelector from "../components/MultiBubbleSelector";
+import GoogleLocationField from "../components/GoogleLocationField";
 
 import { MultiStep } from "../multi-steps/multi-step";
 
