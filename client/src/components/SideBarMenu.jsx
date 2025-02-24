@@ -1,22 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useRef, useState, useEffect } from 'react'; // para la imagen
-import { NavLink } from 'react-router-dom';
+
 
 
 export default function SideBarMenu({ setActiveSection, currentUser, toggleSidebar }) {
   const fileRef = useRef(null);
-
+  const navigate = useNavigate();
   // Controla la visibilidad del sidebar en dispositivos móviles
 
 
   // Menú lateral con secciones
   const menuItems = [
-    { id: 'ProfileContent', name: 'Mi Perfil', path: '/profile', icon: 'icon-classname' },
+    { id: 'ProfileContent', name: 'Mi info', path: '/profile', icon: 'icon-classname' },
+    { id: 'ProfileContent2', name: 'Mi Perfil Público', path: '/profile/public', icon: 'icon-classname' },
     { id: 'saved-searches', name: 'Búsquedas Guardadas', path: '/profile/saved-searches', icon: 'icon-classname' },
     { id: 'Aplications', name: 'Mis Solicitudes', path: '/profile/aplications', icon: 'icon-classname' },
     { id: 'payments', name: 'Pagos', path: '/profile/payments', icon: 'icon-classname' },
     { id: 'reviews', name: 'Mis Reseñas', path: '/profile/reviews', icon: 'icon-classname' },
-    { id: 'documents', name: 'Mis Documentos', path: '/profile/documents', icon: 'icon-classname' },
+    //{ id: 'documents', name: 'Mis Documentos', path: '/profile/documents', icon: 'icon-classname' },
  
   ];
 
@@ -24,6 +25,7 @@ export default function SideBarMenu({ setActiveSection, currentUser, toggleSideb
   const handleMenuClick = (item) => {
     setActiveSection(item.id);
     toggleSidebar(); // Cierra el menú hamburguesa en móviles al hacer clic en una opción
+    navigate(item.path);
   };
 
 

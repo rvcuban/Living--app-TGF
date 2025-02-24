@@ -47,7 +47,9 @@ export default function App() {
 
       <Route element={<PrivateRoute />}>
         <Route path="/onboarding" element={<Onboarding />} />
+        
         <Route path="/profile/*" element={<Profile />} />
+        
         <Route path="/chat" element={<Chat />} />
         <Route path="/create-listing" element={<CreateListing />} />
         <Route path="/update-listing/:listingId" element={<UpdateListing />} />

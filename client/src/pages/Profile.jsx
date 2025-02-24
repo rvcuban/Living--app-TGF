@@ -29,8 +29,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 
 import { toast } from 'react-toastify'; // Importar toast
-
-
+import PublicProfileEdit from "../components/PublicProfileEdit";
 
 
 
@@ -257,7 +256,8 @@ export default function Profile() {
          
           <Route path="profile" element={<ProfileContent />} />
           <Route path="applications" element={<Aplications />} />
-          
+          {/* NUEVA RUTA: para editar el perfil público */}
+          <Route path="public" element={<PublicProfileEdit />} />
         </Routes>
 
       </div>
