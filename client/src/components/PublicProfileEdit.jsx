@@ -63,6 +63,9 @@ function Tabs({ tabs, defaultTab, children }) {
   );
 }
 
+
+
+
 /** Componente para editar el perfil público (modo edición permanente).
  * Permite modificar la información básica, preferencias, intereses y galería.
  * En la pestaña "Galería", permite seleccionar múltiples videos para eliminarlos.
@@ -82,6 +85,7 @@ export default function PublicProfileEdit() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   // Para la eliminación múltiple de videos
   const [selectedVideos, setSelectedVideos] = useState([]);
+  const mediaRef = useRef(null);
 
   useEffect(() => {
     // Definimos el ID a utilizar: si viene en la URL, lo usamos; sino, usamos el id del currentUser
@@ -245,14 +249,7 @@ export default function PublicProfileEdit() {
     }));
   };
 
-  const handleAddImage = (imageUrl) => {
-    if (!imageUrl) return;
-    console.log("Añadiendo imagen:", imageUrl);
-    setEditUser((prev) => ({
-      ...prev,
-      gallery: [...(prev.gallery || []), imageUrl],
-    }));
-  };
+  
 
   const handleRemoveImage = (imageUrl) => {
     console.log("Eliminando imagen:", imageUrl);
@@ -262,14 +259,7 @@ export default function PublicProfileEdit() {
     }));
   };
 
-  const handleAddVideo = (videoUrl) => {
-    if (!videoUrl) return;
-    console.log("Añadiendo video:", videoUrl);
-    setEditUser((prev) => ({
-      ...prev,
-      videos: [...(prev.videos || []), videoUrl],
-    }));
-  };
+  
 
   const handleRemoveVideo = (videoUrl) => {
     console.log("Eliminando video:", videoUrl);
@@ -297,6 +287,68 @@ export default function PublicProfileEdit() {
       videos: prev.videos.filter((url) => !selectedVideos.includes(url)),
     }));
     setSelectedVideos([]);
+  };
+  const handleAddImage = (downloadURL) => {
+    console.log("Añadiendo imagen:", downloadURL);
+    setEditUser((prev) => ({
+      ...prev,
+      gallery: [...(prev.gallery || []), downloadURL],
+    }));
+  };
+
+  const handleAddVideo = (downloadURL) => {
+    console.log("Añadiendo video:", downloadURL);
+    setEditUser((prev) => ({
+      ...prev,
+      videos: [...(prev.videos || []), downloadURL],
+    }));
+  };
+
+  // Función unificada para subir media (imagen o video)
+  const uploadMedia = (file, mediaType) => {
+    return new Promise((resolve, reject) => {
+      const { getStorage, ref, uploadBytesResumable, getDownloadURL } = require('firebase/storage');
+      const storage = getStorage(app);
+      const fileName = new Date().getTime() + "_" + file.name;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          // Puedes mostrar el progreso si lo deseas
+        },
+        (error) => {
+          toast.error(`Error al subir ${mediaType}.`);
+          reject(error);
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            if (mediaType === "image") {
+              handleAddImage(downloadURL);
+            } else if (mediaType === "video") {
+              handleAddVideo(downloadURL);
+            }
+            toast.success(`${mediaType === "image" ? "Imagen" : "Video"} subida correctamente.`);
+            resolve(downloadURL);
+          }).catch(reject);
+        }
+      );
+    });
+  };
+
+  // Handler para el input unificado de media
+  const handleMediaSelect = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith("image/")) {
+        await uploadMedia(file, "image");
+      } else if (file.type.startsWith("video/")) {
+        await uploadMedia(file, "video");
+      }
+    }
+    e.target.value = ""; // Limpiar el input
   };
 
   // Guardar cambios en el backend
@@ -424,104 +476,58 @@ export default function PublicProfileEdit() {
 
   // Pestaña "Galería" – Edición de imágenes y videos (con selección múltiple para videos)
   const renderGalleryTab = () => {
-    // Aquí siempre estamos en modo edición en este componente
+    const imagesArray = (editUser.gallery || []).map((url) => ({ type: 'image', url }));
+    const videosArray = (editUser.videos || []).map((url) => ({ type: 'video', url }));
+    // Unificamos ambos arrays
+    const mediaItems = [...imagesArray, ...videosArray];
+
     return (
       <div className="p-4 space-y-4">
-        {/* Sección de imágenes */}
-        <p className="font-semibold">Galería de Imágenes</p>
-        <div className="flex flex-wrap gap-2">
-          {(editUser.gallery || []).map((imgUrl) => (
-            <div key={imgUrl} className="relative w-20 h-28 bg-black">
-              <img
-                src={imgUrl}
-                alt="gallery"
-                className="absolute inset-0 object-cover w-full h-full"
-              />
-              <button
-                className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded"
-                onClick={() => handleRemoveImage(imgUrl)}
-              >
-                x
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="mt-2 flex gap-2">
+        {/* Botón unificado para añadir media */}
+        <div className="flex gap-2">
           <input
-            type="text"
-            id="newImageUrl"
-            placeholder="URL de imagen"
-            className="border p-1 rounded mr-2 w-64"
+            type="file"
+            ref={mediaRef}
+            accept="image/*, video/*"
+            multiple
+            hidden
+            onChange={handleMediaSelect}
           />
           <button
-            onClick={() => {
-              const val = document.getElementById('newImageUrl').value.trim();
-              if (val) handleAddImage(val);
-              document.getElementById('newImageUrl').value = '';
-            }}
-            className="bg-blue-500 text-white px-2 py-1 rounded"
+            type="button"
+            onClick={() => mediaRef.current && mediaRef.current.click()}
+            className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition"
           >
-            Añadir imagen
+            Añadir media
           </button>
         </div>
-
-        {/* Sección de videos */}
-        <p className="font-semibold mt-4">Videos</p>
-        <div className="flex flex-wrap gap-2">
-          {(editUser.videos || []).map((vidUrl) => {
-            const isSelected = selectedVideos.includes(vidUrl);
-            return (
-              <div
-                key={vidUrl}
-                className={`relative w-20 h-36 bg-black border-2 ${
-                  isSelected ? 'border-blue-500' : 'border-transparent'
-                }`}
-                onClick={() => handleToggleVideoSelection(vidUrl)}
-              >
-                <video
-                  src={vidUrl}
-                  preload="metadata"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <button
-                  className="absolute top-0 right-0 bg-red-600 text-white px-1 rounded"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveVideo(vidUrl);
-                  }}
-                >
-                  x
-                </button>
-              </div>
-            );
-          })}
+        {/* Grid unificado de media */}
+        <div className="p-4 grid grid-cols-3 gap-1 sm:gap-2 md:gap-3">
+      {mediaItems.map((item, idx) => (
+        <div
+          key={idx}
+          className="relative aspect-[9/16] overflow-hidden rounded bg-black"
+        >
+          {item.type === 'image' ? (
+            <img
+              src={item.url}
+              alt={`media-${idx}`}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <video
+              poster={item.poster}
+              preload="metadata"
+              className="absolute inset-0 w-full h-full object-cover"
+              controls
+            >
+              <source src={item.url} type="video/mp4" />
+              Tu navegador no soporta la reproducción de video.
+            </video>
+          )}
         </div>
-        {selectedVideos.length > 0 && (
-          <button
-            onClick={handleRemoveSelectedVideos}
-            className="mt-2 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
-          >
-            Eliminar videos seleccionados
-          </button>
-        )}
-        <div className="mt-2 flex gap-2">
-          <input
-            type="text"
-            id="newVideoUrl"
-            placeholder="URL de video"
-            className="border p-1 rounded mr-2 w-64"
-          />
-          <button
-            onClick={() => {
-              const val = document.getElementById('newVideoUrl').value.trim();
-              if (val) handleAddVideo(val);
-              document.getElementById('newVideoUrl').value = '';
-            }}
-            className="bg-blue-500 text-white px-2 py-1 rounded"
-          >
-            Añadir video
-          </button>
-        </div>
+      ))}
+    </div>
       </div>
     );
   };
