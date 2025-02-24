@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 // Importa tus componentes base
 import Step from "../components/step";
-import Layout from "../components/layout";
+import Layout from "../components/Layout";
 import TextField from "../components/TextField";
 import Checkbox from "../components/Chexbox";
 import NextButton from "../components/next-button";
