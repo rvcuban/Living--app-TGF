@@ -394,6 +394,7 @@ export default function PublicProfile() {
                 />
               ) : (
                 <video
+                  preload="metadata"
                   className="absolute inset-0 w-full h-full object-cover"
                   controls
                 >
