@@ -78,6 +78,7 @@ const userSchema = new mongoose.Schema({
   shortBio: { type: String, default: '' },
   interests: { type: [String], default: [] },
   gallery: { type: [String], default: [] },
+  videos: { type: [String], default: [] }, // <-- Nuevo campo para videos
 
 }, { timestamps: true }
 );

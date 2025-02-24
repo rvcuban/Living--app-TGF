@@ -246,3 +246,45 @@ export const setUserIsNewFalse = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const updateUserVideos = async (req, res, next) => {
+  // Verificar que el usuario autenticado es el mismo que se quiere actualizar
+  if (req.user.id !== req.params.id) {
+    return next(errorHandle(401, 'You can only update your own videos!'));
+  }
+
+  try {
+    // Obtenemos el usuario actual
+    const currentUser = await User.findById(req.params.id).lean();
+
+    // Obtenemos los nuevos videos enviados en el request
+    // Se espera que req.body.videos sea un array de URLs de video
+    const newVideos = req.body.videos;
+    if (!Array.isArray(newVideos)) {
+      return next(errorHandle(400, 'Videos must be an array.'));
+    }
+
+    // Fusionamos los videos nuevos con los ya existentes (si hay)
+    const updatedVideos = [
+      ...(currentUser.videos || []),
+      ...newVideos,
+    ];
+
+    // Actualizamos solo el campo videos
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { videos: updatedVideos } },
+      { new: true }
+    );
+
+    const { password, ...rest } = updatedUser._doc;
+    res.status(200).json({
+      success: true,
+      data: rest,
+      message: "Videos updated successfully."
+    });
+  } catch (error) {
+    next(error);
+  }
+};

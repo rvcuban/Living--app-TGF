@@ -23,11 +23,19 @@ import { toast } from 'react-toastify'; // Importar toastimport { toast } from '
 
 function ProfileContent() {
   const fileRef = useRef(null);
+  const videoRef = useRef(null); // para videos
   const { currentUser, loading, error } = useSelector((state) => state.user);
   const [file, setFile] = useState(undefined);
+  const [videoFile, setVideoFile] = useState(undefined); // estado para video
+  const [videoPerc, setVideoPerc] = useState(0);
   const [filePerc, setFilePerc] = useState(0);//iniciamos un estado para la barra de porcentaje cuando queremos subir una foto 
   const [fileUploadError, setFileUploadError] = useState(false); //control de errores para cuano subimos la foto
-  const [formData, setFormData] = useState({});
+  const [videoUploadError, setVideoUploadError] = useState(false);
+
+  const [formData, setFormData] = useState({ 
+    avatar: currentUser.avatar || "",
+    videos: []  // aquí se guardarán las URLs de los videos subidos
+  });
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState({
@@ -108,6 +116,62 @@ function ProfileContent() {
     );
   };
 
+
+  useEffect(() => {
+    if (videoFile) {
+      handleVideoUpload(videoFile);
+    }
+  }, [videoFile]);
+
+  const handleVideoUpload = (file) => {
+    const storage = getStorage(app);
+    const fileName = new Date().getTime() + "_" + file.name;
+    const storageRef = ref(storage, fileName);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+  
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setVideoPerc(Math.round(progress));
+      },
+      (error) => {
+        setVideoUploadError(true);
+        toast.error("Error al subir el video. Inténtalo de nuevo.");
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          // Hacer una llamada al endpoint para actualizar los videos
+          fetch(`/api/user/${currentUser._id}/videos`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // Agrega tu token si es necesario en los headers, o se maneja en el middleware verifyToken
+            },
+            body: JSON.stringify({ videos: [downloadURL] }), // Enviamos el nuevo video en un array
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success) {
+                // Actualiza el estado si es necesario, por ejemplo:
+                setFormData((prev) => ({
+                  ...prev,
+                  videos: data.data.videos,
+                }));
+                toast.success("Video subido y actualizado correctamente.");
+              } else {
+                toast.error(data.message || "Error al actualizar videos.");
+              }
+            })
+            .catch((error) => {
+              toast.error("Error al actualizar videos.");
+            });
+        });
+      }
+    );
+  };
+
+  
   //basado en el id del input extraemos los cambios y los guardamos en el formData
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -212,77 +276,83 @@ function ProfileContent() {
   return (
     <div className=''>
       {/* Contenido principal */}
-        <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
-        <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-          <input
-            onChange={(e) => setFile(e.target.files[0])}
-            type="file"
-            ref={fileRef}
-            hidden
-            accept='image/*'
+      <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
+      <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
+        <input
+          onChange={(e) => setFile(e.target.files[0])}
+          type="file"
+          ref={fileRef}
+          hidden
+          accept='image/*'
+        />
+
+        <div className="flex justify-center">
+          <img onClick={() => fileRef.current.click()}
+            src={formData.avatar || currentUser.avatar}
+            alt="profile"
+            className='object-cover rounded-full w-20 h-20 cursor-pointer '
           />
 
-          <div className="flex justify-center">
-            <img onClick={() => fileRef.current.click()}
-              src={formData.avatar || currentUser.avatar}
-              alt="profile"
-              className='object-cover rounded-full w-20 h-20 cursor-pointer '
-            />
+        </div>
+    
 
-          </div>
-        {/*
-          <input type="text" placeholder='username' defaultValue={currentUser.username} id='username' className='border p-3 rounded-lg' onChange={handleChange} />
-          <input type="email" placeholder='email' defaultValue={currentUser.email} id='email' className='border p-3 rounded-lg' onChange={handleChange} />
-          <input type="password" placeholder='password' onChange={handleChange} id='password' className='border p-3 rounded-lg' />
-        
-          <button disabled={loading}
-            className='bg-slate-700 text-white rounded-lg p-3 uppercase hover:opacity-95 disabled:opacity-80'>
-            {loading ? ' Loading...' : 'Update'}
+        <input
+          type="file"
+          ref={videoRef}
+          hidden
+          accept="video/*"
+          onChange={(e) => setVideoFile(e.target.files[0])}
+        />
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => videoRef.current.click()}
+            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition"
+          >
+            Subir Video de Presentación
           </button>
-        */ }
-
-
-         
-        </form>
-
-        <ProfileInfo currentUser={currentUser} className="w-full" />
-
-        <div className='flex justify-between mt-5'>
-          <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
-          <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>Sign out</span>
         </div>
 
-        {userListings && userListings.length > 0 && (
-          <div className='flex flex-col gap-4'>
-            <h1 className='text-center mt-7 text-2xl font-semibold'>
-              Your Listings
-            </h1>
-            {userListings.map((listing) => (
-              <div
-                key={listing._id}
-                className='border rounded-lg p-3 flex justify-between items-center gap-4'
-              >
-                <Link to={`/listing/${listing._id}`}>
-                  <img
-                    src={listing.imageUrls[0]}
-                    alt='listing cover'
-                    className='h-16 w-16 object-contain'
-                  />
+      </form>
+
+      <ProfileInfo currentUser={currentUser} className="w-full" />
+
+      <div className='flex justify-between mt-5'>
+        <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>Delete account</span>
+        <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>Sign out</span>
+      </div>
+
+      {userListings && userListings.length > 0 && (
+        <div className='flex flex-col gap-4'>
+          <h1 className='text-center mt-7 text-2xl font-semibold'>
+            Your Listings
+          </h1>
+          {userListings.map((listing) => (
+            <div
+              key={listing._id}
+              className='border rounded-lg p-3 flex justify-between items-center gap-4'
+            >
+              <Link to={`/listing/${listing._id}`}>
+                <img
+                  src={listing.imageUrls[0]}
+                  alt='listing cover'
+                  className='h-16 w-16 object-contain'
+                />
+              </Link>
+              <Link className='text-slate-700 font-semibold hover:underline truncate flex-1' to={`/listing/${listing._id}`}>
+                <p>{listing.name}</p>
+              </Link>
+              <div className='flex flex-col'>
+                <button onClick={() => handleListingDelete(listing._id)} className='text-red-700 uppercase'>Delete</button>
+                <Link to={`/update-listing/${listing._id}`}>
+                  <button className='text-green-700 uppercase'>Edit</button>
                 </Link>
-                <Link className='text-slate-700 font-semibold hover:underline truncate flex-1' to={`/listing/${listing._id}`}>
-                  <p>{listing.name}</p>
-                </Link>
-                <div className='flex flex-col'>
-                  <button onClick={() => handleListingDelete(listing._id)} className='text-red-700 uppercase'>Delete</button>
-                  <Link to={`/update-listing/${listing._id}`}>
-                    <button className='text-green-700 uppercase'>Edit</button>
-                  </Link>
-                </div>
               </div>
-            ))}
-          </div>
-        )}
-      
+            </div>
+          ))}
+        </div>
+      )}
+
 
     </div>
   );

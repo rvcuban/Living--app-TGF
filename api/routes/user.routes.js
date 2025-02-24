@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteUser, getUserListings, test, updateUser ,getUser,getPublicProfile,getUsers,updateSetNewUser,setUserIsNewFalse} from "../controllers/user.controller.js";
+import { deleteUser, getUserListings, test, updateUser ,getUser,getPublicProfile,getUsers,updateSetNewUser,setUserIsNewFalse,updateUserVideos} from "../controllers/user.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 const router = express.Router();
 
@@ -20,6 +20,8 @@ router.post('/update_setnewuser/:id',verifyToken,updateSetNewUser);
 
 router.get('/listings/:id', verifyToken, getUserListings)
 router.get('/:id', getUser)
+// Ruta para actualizar videos del usuario
+router.post('/:id/videos', verifyToken, updateUserVideos);
 
 
 
