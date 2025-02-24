@@ -274,9 +274,9 @@ function ProfileContent() {
   };
 
   return (
-    <div className=''>
+       <div className="bg-white shadow-md rounded-lg p-6 flex flex-col items-center">
       {/* Contenido principal */}
-      <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
+      <h1 className="p-4 space-y-4 w-full max-w-full mx-auto">Profile</h1>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <input
           onChange={(e) => setFile(e.target.files[0])}

@@ -56,13 +56,13 @@ export default function DropDownProfile({ onOptionSelect }) {
         <div className='absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50'>
             <ul className='flex flex-col gap-1'>
                 <li>
-                    <Link to='/profile' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'>
+                    <Link to='/profile/public' className='block px-4 py-2 text-gray-700 hover:bg-gray-100'>
                         Perfil
                     </Link>
                 </li>
                 <li>
-                    <Link to='/saved-searches' className='block px-4 py-2 text-gray-700 hover:bg-gray-100' onClick={onOptionSelect}>
-                        Búsquedas Guardadas
+                    <Link to='/profile' className='block px-4 py-2 text-gray-700 hover:bg-gray-100' onClick={onOptionSelect}>
+                        Mis Datos
                     </Link>
                 </li>
                 <li>
