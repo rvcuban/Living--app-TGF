@@ -81,10 +81,14 @@ export default function PublicProfileEdit() {
 
   const [showReviewModal, setShowReviewModal] = useState(false);
 
+  
+
   // Lista de videos seleccionados para eliminación
   const [selectedVideos, setSelectedVideos] = useState([]);
   // Referencia para el <input> de subida de media
   const mediaRef = useRef(null);
+
+  const [videoPerc, setVideoPerc] = useState(0);
 
   // Efecto para cargar info
   useEffect(() => {
@@ -241,7 +245,13 @@ export default function PublicProfileEdit() {
       const downloadURL = await new Promise((resolve, reject) => {
         uploadTask.on(
           'state_changed',
-          () => {},
+          (snapshot) => {
+            // Para videos, actualizamos el progreso
+            
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setVideoPerc(Math.round(progress));
+            
+        },
           (err) => reject(err),
           () => {
             getDownloadURL(uploadTask.snapshot.ref)
@@ -457,6 +467,19 @@ export default function PublicProfileEdit() {
           )}
         </div>
 
+         {/* Barra de progreso para subida de video */}
+         {videoPerc > 0 && videoPerc < 100 && (
+          <div className="w-full mt-2">
+            <div className="bg-gray-200 h-2 rounded">
+              <div
+                className="bg-blue-500 h-2 rounded"
+                style={{ width: `${videoPerc}%`, transition: 'width 0.3s ease-in-out' }}
+              ></div>
+            </div>
+            <p className="text-sm text-center mt-1">Subiendo video: {videoPerc}%</p>
+          </div>
+        )}
+
         {/* Mostrar items en grid */}
         {mediaItems.length === 0 ? (
           <p className="text-gray-500">No hay imágenes ni videos en la galería.</p>
@@ -494,7 +517,7 @@ export default function PublicProfileEdit() {
                       preload="none"
                       controls
                       controlsList="nodownload"
-                      poster="https://via.placeholder.com/300x500?text=Video" 
+                      
                       className="absolute inset-0 w-full h-full object-cover"
                     >
                       <source src={item.url} type="video/mp4" />
