@@ -384,7 +384,7 @@ export default function PublicProfile() {
           {mediaItems.map((item, idx) => (
             <div
               key={idx}
-              className="relative aspect-square overflow-hidden rounded bg-black"
+              className="relative aspect-[9/16] overflow-hidden rounded bg-black"
             >
               {item.type === 'image' ? (
                 <img
