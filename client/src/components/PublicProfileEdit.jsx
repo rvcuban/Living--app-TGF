@@ -18,6 +18,8 @@ import {
   updateUserSuccess,
   updateUserFailure,
 } from '../redux/user/userSlice';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { app } from '../firebase'; // Ajusta la importación de tu configuración Firebase
 
 /** Componente Tabs para manejar las pestañas */
 function Tabs({ tabs, defaultTab, children }) {
@@ -33,6 +35,7 @@ function Tabs({ tabs, defaultTab, children }) {
 
   return (
     <div>
+      {/* Barra de pestañas */}
       <div
         ref={tabContainerRef}
         className="flex overflow-x-auto whitespace-nowrap border-b scrollbar-hide"
@@ -40,10 +43,7 @@ function Tabs({ tabs, defaultTab, children }) {
         {tabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => {
-              console.log("Cambiando pestaña a:", tab);
-              setActiveTab(tab);
-            }}
+            onClick={() => setActiveTab(tab)}
             className={`flex-shrink-0 py-2 px-4 font-medium transition-colors focus:outline-none ${
               activeTab === tab
                 ? 'active-tab border-blue-500 text-blue-500 border-b-2'
@@ -55,20 +55,18 @@ function Tabs({ tabs, defaultTab, children }) {
         ))}
       </div>
       <div className="mt-4">
-        {React.Children.toArray(children).find(
-          (child) => child.props.value === activeTab
-        )}
+        {
+          React.Children.toArray(children)
+            .find((child) => child.props.value === activeTab)
+        }
       </div>
     </div>
   );
 }
 
-
-
-
-/** Componente para editar el perfil público (modo edición permanente).
- * Permite modificar la información básica, preferencias, intereses y galería.
- * En la pestaña "Galería", permite seleccionar múltiples videos para eliminarlos.
+/** Ejemplo de componente para editar el perfil público (siempre en modo edición).
+ *  Incluye “Sobre mí”, “Galería” (con subida de imágenes/videos y selección múltiple para borrado),
+ *  y “Opiniones” (solo lectura).
  */
 export default function PublicProfileEdit() {
   const { userId } = useParams();
@@ -80,32 +78,31 @@ export default function PublicProfileEdit() {
   const [editUser, setEditUser] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  // buddyStatus no se usa en edición
-  const [buddyStatus] = useState('none');
+
   const [showReviewModal, setShowReviewModal] = useState(false);
-  // Para la eliminación múltiple de videos
+
+  // Lista de videos seleccionados para eliminación
   const [selectedVideos, setSelectedVideos] = useState([]);
+  // Referencia para el <input> de subida de media
   const mediaRef = useRef(null);
 
+  // Efecto para cargar info
   useEffect(() => {
-    // Definimos el ID a utilizar: si viene en la URL, lo usamos; sino, usamos el id del currentUser
     const effectiveId = userId || currentUser?._id;
-    console.log("EffectiveId para cargar perfil:", effectiveId);
     if (!effectiveId) {
       toast.error('No se pudo determinar el usuario a cargar.');
       setLoading(false);
       return;
     }
 
+    // 1) Perfil público
     const fetchPublicProfile = async () => {
       try {
         const res = await fetch(`/api/user/public-profile/${effectiveId}`);
         const data = await res.json();
-        console.log("Respuesta de public-profile:", data);
         if (data.success) {
           setUser(data.user);
           setEditUser(structuredClone(data.user));
-          console.log("User cargado:", data.user);
         } else {
           toast.error(data.message || 'Error al cargar el perfil público.');
         }
@@ -115,11 +112,11 @@ export default function PublicProfileEdit() {
       }
     };
 
+    // 2) Reseñas
     const fetchUserReviews = async () => {
       try {
         const resReviews = await fetch(`/api/userreview/${effectiveId}`);
         const dataReviews = await resReviews.json();
-        console.log("Respuesta de user reviews:", dataReviews);
         if (dataReviews.success) {
           setReviews(dataReviews.reviews);
         } else {
@@ -132,19 +129,14 @@ export default function PublicProfileEdit() {
 
     setLoading(true);
     Promise.all([fetchPublicProfile(), fetchUserReviews()])
-      .finally(() => {
-        setLoading(false);
-        console.log("Loading finalizado. user:", user, " editUser:", editUser);
-      });
+      .finally(() => setLoading(false));
   }, [userId, currentUser]);
 
   if (loading) {
-    console.log("Mostrando loading...");
     return <p className="text-center mt-8 text-2xl">Cargando...</p>;
   }
 
   if (!user) {
-    console.log("User es null");
     return (
       <p className="text-center mt-8 text-2xl text-red-500">
         Perfil no encontrado.
@@ -152,24 +144,21 @@ export default function PublicProfileEdit() {
     );
   }
 
-  // Desestructuramos datos del usuario original
-  const { username, avatar, shortBio, preferences, badges } = user;
-  console.log("Datos del usuario:", { username, avatar, shortBio, preferences, badges });
+  const { username, avatar, shortBio, badges } = user;
 
-  // Helper: obtener icono según horario
-  const getScheduleIcon = (schedule) => {
-    switch (schedule) {
-      case 'diurno':
-        return <FaSun className="text-xl" />;
-      case 'nocturno':
-        return <FaMoon className="text-xl" />;
-      case 'flexible':
-        return <FaCloudSun className="text-xl" />;
-      default:
-        return null;
+  // Helpers para rating y medallas (puedes adaptarlos a tu gusto)
+  const renderStars = (ratingValue) => {
+    const stars = [];
+    for (let i = 0; i < 5; i++) {
+      stars.push(
+        <FaStar
+          key={`star-${i}`}
+          className={i < Math.round(ratingValue) ? 'text-yellow-400' : 'text-gray-300'}
+        />
+      );
     }
+    return stars;
   };
-
   const renderBadges = (badgesList = []) => {
     if (!badgesList.length) return null;
     return (
@@ -187,42 +176,11 @@ export default function PublicProfileEdit() {
     );
   };
 
-  const renderStars = (ratingValue) => {
-    const stars = [];
-    for (let i = 0; i < 5; i++) {
-      stars.push(
-        <FaStar
-          key={`star-${i}`}
-          className={i < Math.round(ratingValue) ? 'text-yellow-400' : 'text-gray-300'}
-        />
-      );
-    }
-    return stars;
-  };
-
-  const handleReviewCreated = (newReview) => {
-    setReviews((prev) => [newReview, ...prev]);
-    const totalRating = (user.averageRating * reviews.length) + newReview.rating;
-    const newAverage = totalRating / (reviews.length + 1);
-    const newReviewsCount = reviews.length + 1;
-    setUser((prevUser) => ({
-      ...prevUser,
-      averageRating: newAverage,
-      reviewsCount: newReviewsCount,
-    }));
-  };
-
-  // --- Handlers para modo edición ---
+  // Manejadores para About
   const handleEditChange = (field, value) => {
-    console.log(`Cambiando ${field} a:`, value);
-    setEditUser((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setEditUser((prev) => ({ ...prev, [field]: value }));
   };
-
   const handlePrefChange = (field, value) => {
-    console.log(`Cambiando preferencia ${field} a:`, value);
     setEditUser((prev) => ({
       ...prev,
       preferences: {
@@ -231,56 +189,102 @@ export default function PublicProfileEdit() {
       },
     }));
   };
-
   const handleAddInterest = (interest) => {
     if (!interest) return;
-    console.log("Añadiendo interés:", interest);
     setEditUser((prev) => ({
       ...prev,
       interests: [...(prev.interests || []), interest],
     }));
   };
-
   const handleRemoveInterest = (interest) => {
-    console.log("Eliminando interés:", interest);
     setEditUser((prev) => ({
       ...prev,
       interests: prev.interests.filter((i) => i !== interest),
     }));
   };
 
-  
-
+  // Manejadores de imagen y video en “editUser”
+  const handleAddImage = (url) => {
+    setEditUser((prev) => ({
+      ...prev,
+      gallery: [...(prev.gallery || []), url],
+    }));
+  };
+  const handleAddVideo = (url) => {
+    setEditUser((prev) => ({
+      ...prev,
+      videos: [...(prev.videos || []), url],
+    }));
+  };
   const handleRemoveImage = (imageUrl) => {
-    console.log("Eliminando imagen:", imageUrl);
     setEditUser((prev) => ({
       ...prev,
       gallery: prev.gallery.filter((url) => url !== imageUrl),
     }));
   };
-
-  
-
   const handleRemoveVideo = (videoUrl) => {
-    console.log("Eliminando video:", videoUrl);
     setEditUser((prev) => ({
       ...prev,
       videos: prev.videos.filter((url) => url !== videoUrl),
     }));
-    setSelectedVideos((prev) => prev.filter((url) => url !== videoUrl));
+    setSelectedVideos((prev) => prev.filter((v) => v !== videoUrl));
   };
 
+  // Subida de archivos (imágenes o videos) a Firebase
+  const uploadMedia = async (file) => {
+    try {
+      const storage = getStorage(app);
+      const fileName = new Date().getTime() + '_' + file.name;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      const downloadURL = await new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          () => {},
+          (err) => reject(err),
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then(resolve)
+              .catch(reject);
+          }
+        );
+      });
+
+      // Detectar si es imagen o video
+      if (file.type.startsWith('image/')) {
+        handleAddImage(downloadURL);
+        toast.success('Imagen subida correctamente.');
+      } else if (file.type.startsWith('video/')) {
+        handleAddVideo(downloadURL);
+        toast.success('Video subido correctamente.');
+      }
+    } catch (err) {
+      console.error('Error subiendo archivo:', err);
+      toast.error('Error subiendo archivo.');
+    }
+  };
+
+  // Evento al seleccionar archivos
+  const handleMediaSelect = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    for (let i = 0; i < files.length; i++) {
+      await uploadMedia(files[i]);
+    }
+    // Limpia el input para permitir volver a abrir
+    e.target.value = '';
+  };
+
+  // Lógica para seleccionar/deseleccionar videos para borrado
   const handleToggleVideoSelection = (videoUrl) => {
-    console.log("Toggle selection de video:", videoUrl);
-    setSelectedVideos((prev) =>
-      prev.includes(videoUrl)
-        ? prev.filter((url) => url !== videoUrl)
-        : [...prev, videoUrl]
-    );
+    if (selectedVideos.includes(videoUrl)) {
+      setSelectedVideos((prev) => prev.filter((url) => url !== videoUrl));
+    } else {
+      setSelectedVideos((prev) => [...prev, videoUrl]);
+    }
   };
-
   const handleRemoveSelectedVideos = () => {
-    console.log("Eliminando videos seleccionados:", selectedVideos);
     if (selectedVideos.length === 0) return;
     setEditUser((prev) => ({
       ...prev,
@@ -288,256 +292,230 @@ export default function PublicProfileEdit() {
     }));
     setSelectedVideos([]);
   };
-  const handleAddImage = (downloadURL) => {
-    console.log("Añadiendo imagen:", downloadURL);
-    setEditUser((prev) => ({
-      ...prev,
-      gallery: [...(prev.gallery || []), downloadURL],
-    }));
-  };
 
-  const handleAddVideo = (downloadURL) => {
-    console.log("Añadiendo video:", downloadURL);
-    setEditUser((prev) => ({
-      ...prev,
-      videos: [...(prev.videos || []), downloadURL],
-    }));
-  };
-
-  // Función unificada para subir media (imagen o video)
-  const uploadMedia = (file, mediaType) => {
-    return new Promise((resolve, reject) => {
-      const { getStorage, ref, uploadBytesResumable, getDownloadURL } = require('firebase/storage');
-      const storage = getStorage(app);
-      const fileName = new Date().getTime() + "_" + file.name;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          // Puedes mostrar el progreso si lo deseas
-        },
-        (error) => {
-          toast.error(`Error al subir ${mediaType}.`);
-          reject(error);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            if (mediaType === "image") {
-              handleAddImage(downloadURL);
-            } else if (mediaType === "video") {
-              handleAddVideo(downloadURL);
-            }
-            toast.success(`${mediaType === "image" ? "Imagen" : "Video"} subida correctamente.`);
-            resolve(downloadURL);
-          }).catch(reject);
-        }
-      );
-    });
-  };
-
-  // Handler para el input unificado de media
-  const handleMediaSelect = async (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      if (file.type.startsWith("image/")) {
-        await uploadMedia(file, "image");
-      } else if (file.type.startsWith("video/")) {
-        await uploadMedia(file, "video");
-      }
-    }
-    e.target.value = ""; // Limpiar el input
-  };
-
-  // Guardar cambios en el backend
+  // Guardar cambios en backend
   const handleSaveEdits = async () => {
     if (!currentUser) return;
     try {
       dispatch(updateUserStart());
       const effectiveId = currentUser?._id || user?._id;
-      console.log("Guardando cambios para el usuario con id:", effectiveId);
       const res = await fetch(`/api/user/update/${effectiveId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editUser),
       });
       const data = await res.json();
-      console.log("Respuesta de updateUser:", data);
       if (data.success) {
-        toast.success('Perfil público actualizado.');
         dispatch(updateUserSuccess(data));
+        toast.success('Perfil público actualizado.');
+        // Actualizamos la info local
         setUser(data.data);
+        setEditUser(data.data);
       } else {
         dispatch(updateUserFailure(data.message || 'Error'));
         toast.error(data.message || 'Error al actualizar tu perfil público.');
       }
-    } catch (error) {
-      console.error("Error en handleSaveEdits:", error);
-      dispatch(updateUserFailure(error.message));
+    } catch (err) {
+      dispatch(updateUserFailure(err.message));
       toast.error('Error de conexión al actualizar el perfil público.');
     }
   };
 
-  // --- Renderizado de las pestañas ---
+  /** Renders: secciones de las Tabs */
 
-  // Pestaña "Sobre mí" – Edición de información básica, preferencias e intereses
-  const renderAboutTab = () => (
-    <div className="p-4 space-y-4">
-      <div>
-        <label className="block font-semibold text-gray-700">Biografía:</label>
-        <textarea
-          rows={3}
-          className="border rounded w-full p-2"
-          value={editUser.shortBio || ''}
-          onChange={(e) => handleEditChange('shortBio', e.target.value)}
-        />
-      </div>
-      <div>
-        <label className="block font-semibold text-gray-700">Ubicación:</label>
-        <input
-          type="text"
-          className="border rounded w-full p-2"
-          value={editUser.location || ''}
-          onChange={(e) => handleEditChange('location', e.target.value)}
-        />
-      </div>
-      <div>
-        <p className="font-semibold text-gray-700">Preferencias:</p>
-        <label className="flex items-center gap-2 mt-2">
-          <input
-            type="checkbox"
-            checked={editUser.preferences?.pets || false}
-            onChange={(e) => handlePrefChange('pets', e.target.checked)}
+  // Sobre mí
+  const renderAboutTab = () => {
+    return (
+      <div className="p-4 space-y-4">
+        {/* Biografía */}
+        <div>
+          <label className="block font-semibold text-gray-700">Biografía:</label>
+          <textarea
+            rows={3}
+            className="border rounded w-full p-2"
+            value={editUser.shortBio || ''}
+            onChange={(e) => handleEditChange('shortBio', e.target.value)}
           />
-          Acepta mascotas
-        </label>
-        <label className="flex items-center gap-2 mt-2">
-          <input
-            type="checkbox"
-            checked={editUser.preferences?.smoker || false}
-            onChange={(e) => handlePrefChange('smoker', e.target.checked)}
-          />
-          Fumador
-        </label>
-        <div className="mt-2">
-          <span>Horario:</span>{' '}
-          <select
-            value={editUser.preferences?.schedule || ''}
-            onChange={(e) => handlePrefChange('schedule', e.target.value)}
-            className="border p-1 rounded"
-          >
-            <option value="diurno">Diurno</option>
-            <option value="nocturno">Nocturno</option>
-            <option value="flexible">Flexible</option>
-          </select>
         </div>
-      </div>
-      <div>
-        <p className="font-semibold text-gray-700">Mis intereses</p>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {(editUser.interests || []).map((interest) => (
-            <span
-              key={interest}
-              className="bg-gray-200 px-2 py-1 rounded-full text-sm flex items-center"
-            >
-              {interest}
-              <button
-                className="ml-2 text-red-500"
-                onClick={() => handleRemoveInterest(interest)}
-              >
-                x
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="mt-2 flex gap-2">
+        {/* Ubicación */}
+        <div>
+          <label className="block font-semibold text-gray-700">Ubicación:</label>
           <input
             type="text"
-            id="newInterest"
-            placeholder="Nuevo interés..."
-            className="border rounded p-1"
+            className="border rounded w-full p-2"
+            value={editUser.location || ''}
+            onChange={(e) => handleEditChange('location', e.target.value)}
           />
-          <button
-            onClick={() => {
-              const val = document.getElementById('newInterest').value.trim();
-              if (val) handleAddInterest(val);
-              document.getElementById('newInterest').value = '';
-            }}
-            className="bg-blue-500 text-white px-2 py-1 rounded"
-          >
-            Añadir
-          </button>
+        </div>
+        {/* Preferencias */}
+        <div>
+          <p className="font-semibold text-gray-700">Preferencias:</p>
+          <label className="flex items-center gap-2 mt-2">
+            <input
+              type="checkbox"
+              checked={editUser.preferences?.pets || false}
+              onChange={(e) => handlePrefChange('pets', e.target.checked)}
+            />
+            Acepta mascotas
+          </label>
+          <label className="flex items-center gap-2 mt-2">
+            <input
+              type="checkbox"
+              checked={editUser.preferences?.smoker || false}
+              onChange={(e) => handlePrefChange('smoker', e.target.checked)}
+            />
+            Fumador
+          </label>
+          <div className="mt-2">
+            <span>Horario:</span>{' '}
+            <select
+              value={editUser.preferences?.schedule || ''}
+              onChange={(e) => handlePrefChange('schedule', e.target.value)}
+              className="border p-1 rounded"
+            >
+              <option value="diurno">Diurno</option>
+              <option value="nocturno">Nocturno</option>
+              <option value="flexible">Flexible</option>
+            </select>
+          </div>
+        </div>
+        {/* Intereses */}
+        <div>
+          <p className="font-semibold text-gray-700">Mis intereses</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {(editUser.interests || []).map((interest) => (
+              <span
+                key={interest}
+                className="bg-gray-200 px-2 py-1 rounded-full text-sm flex items-center"
+              >
+                {interest}
+                <button
+                  className="ml-2 text-red-500"
+                  onClick={() => handleRemoveInterest(interest)}
+                >
+                  x
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              id="newInterest"
+              placeholder="Nuevo interés..."
+              className="border rounded p-1"
+            />
+            <button
+              onClick={() => {
+                const val = document.getElementById('newInterest').value.trim();
+                if (val) handleAddInterest(val);
+                document.getElementById('newInterest').value = '';
+              }}
+              className="bg-blue-500 text-white px-2 py-1 rounded"
+            >
+              Añadir
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  // Pestaña "Galería" – Edición de imágenes y videos (con selección múltiple para videos)
+  // Galería
   const renderGalleryTab = () => {
+    // Unificamos imágenes y videos
     const imagesArray = (editUser.gallery || []).map((url) => ({ type: 'image', url }));
     const videosArray = (editUser.videos || []).map((url) => ({ type: 'video', url }));
-    // Unificamos ambos arrays
     const mediaItems = [...imagesArray, ...videosArray];
 
     return (
       <div className="p-4 space-y-4">
-        {/* Botón unificado para añadir media */}
+        {/* Botón subir media (imágenes o videos) */}
         <div className="flex gap-2">
           <input
             type="file"
             ref={mediaRef}
-            accept="image/*, video/*"
+            accept="image/*,video/*"
             multiple
             hidden
             onChange={handleMediaSelect}
           />
           <button
-            type="button"
-            onClick={() => mediaRef.current && mediaRef.current.click()}
+            onClick={() => mediaRef.current?.click()}
             className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 transition"
           >
             Añadir media
           </button>
-        </div>
-        {/* Grid unificado de media */}
-        <div className="p-4 grid grid-cols-3 gap-1 sm:gap-2 md:gap-3">
-      {mediaItems.map((item, idx) => (
-        <div
-          key={idx}
-          className="relative aspect-[9/16] overflow-hidden rounded bg-black"
-        >
-          {item.type === 'image' ? (
-            <img
-              src={item.url}
-              alt={`media-${idx}`}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <video
-              poster={item.poster}
-              preload="metadata"
-              className="absolute inset-0 w-full h-full object-cover"
-              controls
+          {/* Botón para eliminar videos seleccionados (si hay) */}
+          {selectedVideos.length > 0 && (
+            <button
+              onClick={handleRemoveSelectedVideos}
+              className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 transition"
             >
-              <source src={item.url} type="video/mp4" />
-              Tu navegador no soporta la reproducción de video.
-            </video>
+              Eliminar videos seleccionados
+            </button>
           )}
         </div>
-      ))}
-    </div>
+
+        {/* Mostrar items en grid */}
+        {mediaItems.length === 0 ? (
+          <p className="text-gray-500">No hay imágenes ni videos en la galería.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-1 sm:gap-2 md:gap-3">
+            {mediaItems.map((item, idx) => {
+              const isVideo = item.type === 'video';
+              // Para videos, comprobamos si está seleccionado
+              const isSelected = isVideo && selectedVideos.includes(item.url);
+
+              return (
+                <div
+                  key={idx}
+                  className={`relative aspect-[9/16] overflow-hidden rounded bg-black cursor-pointer border-2 ${
+                    isSelected ? 'border-blue-500' : 'border-transparent'
+                  }`}
+                  onClick={() => {
+                    if (isVideo) {
+                      // Toggle selección solo en videos
+                      handleToggleVideoSelection(item.url);
+                    }
+                  }}
+                >
+                  {item.type === 'image' ? (
+                    <img
+                      src={item.url}
+                      alt={`media-${idx}`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <video
+                      // Atributos para mejorar experiencia en móvil
+                      playsInline
+                      webkit-playsinline="true"
+                      preload="none"
+                      controls
+                      controlsList="nodownload"
+                      poster="https://via.placeholder.com/300x500?text=Video" 
+                      className="absolute inset-0 w-full h-full object-cover"
+                    >
+                      <source src={item.url} type="video/mp4" />
+                      Tu navegador no soporta la reproducción de video.
+                    </video>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
 
-  // Pestaña "Opiniones" – Solo lectura
+  // Opiniones
   const renderReviewsTab = () => {
-    const totalReviews = reviews ? reviews.length : 0;
+    const totalReviews = reviews.length;
     const averageRatingDynamic =
       totalReviews > 0
-        ? (reviews.reduce((acc, review) => acc + review.rating, 0) / totalReviews).toFixed(1)
+        ? (reviews.reduce((acc, rev) => acc + rev.rating, 0) / totalReviews).toFixed(1)
         : null;
 
     return (
@@ -577,11 +555,11 @@ export default function PublicProfileEdit() {
                         {review.author?.username || 'Usuario Anónimo'}
                       </p>
                       <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((star) => (
+                        {[1, 2, 3, 4, 5].map((s) => (
                           <FaStar
-                            key={star}
+                            key={s}
                             className={
-                              star <= Math.round(review.rating)
+                              s <= Math.round(review.rating)
                                 ? 'w-5 h-5 text-yellow-400'
                                 : 'w-5 h-5 text-gray-300'
                             }
@@ -615,11 +593,10 @@ export default function PublicProfileEdit() {
     );
   };
 
-  console.log("Renderizando PublicProfileEdit. user:", user, " editUser:", editUser, " selectedVideos:", selectedVideos);
-
+  /** Render principal */
   return (
     <div className="max-w-4xl mx-auto p-4">
-      {/* CABECERA CON AVATAR E INFORMACIÓN BÁSICA */}
+      {/* Encabezado */}
       <div className="bg-white shadow-md rounded-lg p-6 flex flex-col items-center">
         <img
           src={avatar || '/default-profile.png'}
@@ -628,16 +605,23 @@ export default function PublicProfileEdit() {
         />
         <div className="flex flex-col items-center sm:text-center">
           <h2 className="text-2xl font-bold text-slate-700">{username || 'User'}</h2>
-          
+          {renderBadges(badges)}
         </div>
-        {renderBadges(badges)}
-        <p className="text-gray-800 mt-4 text-center italic">{user.shortBio}</p>
+        {shortBio && (
+          <p className="text-gray-800 mt-4 text-center italic">
+            {shortBio}
+          </p>
+        )}
         <div className="mt-4 flex items-center gap-2">
           <span className="text-slate-700 font-medium">Valoración:</span>
-          <div className="flex items-center">{renderStars(user.averageRating || 0)}</div>
-          <span className="ml-1 text-gray-500 text-sm">({user.reviewsCount || 0})</span>
+          <div className="flex items-center">
+            {renderStars(user.averageRating || 0)}
+          </div>
+          <span className="ml-1 text-gray-500 text-sm">
+            ({user.reviewsCount || 0})
+          </span>
         </div>
-        {/* Botones para guardar o descartar cambios */}
+        {/* Botones de guardar/cancelar */}
         <div className="mt-4 flex gap-2">
           <button
             onClick={handleSaveEdits}
@@ -646,10 +630,7 @@ export default function PublicProfileEdit() {
             Guardar
           </button>
           <button
-            onClick={() => {
-              console.log("Cancelando cambios, restaurando editUser a:", user);
-              setEditUser(structuredClone(user));
-            }}
+            onClick={() => setEditUser(structuredClone(user))}
             className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition"
           >
             Cancelar
@@ -657,19 +638,33 @@ export default function PublicProfileEdit() {
         </div>
       </div>
 
-      {/* Sección de pestañas */}
+      {/* Tabs */}
       <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden">
         <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí">
           <div value="Sobre mí">{renderAboutTab()}</div>
           <div value="Galería">{renderGalleryTab()}</div>
           <div value="Opiniones">{renderReviewsTab()}</div>
         </Tabs>
+
+        {/* Modal de reseña */}
         <UserReviewModal
           visible={showReviewModal}
           onClose={() => setShowReviewModal(false)}
           targetUserId={userId}
           currentUserToken={currentUser?.token}
-          onReviewCreated={handleReviewCreated}
+          // Actualizar la lista local de reseñas si se crea una nueva
+          onReviewCreated={(newReview) => {
+            setReviews((prev) => [newReview, ...prev]);
+            // Recalc average rating
+            const totalReviews = reviews.length + 1;
+            const sumRatings = (user.averageRating * reviews.length) + newReview.rating;
+            const newAverage = sumRatings / totalReviews;
+            setUser((prevU) => ({
+              ...prevU,
+              averageRating: newAverage,
+              reviewsCount: totalReviews,
+            }));
+          }}
         />
       </div>
     </div>
