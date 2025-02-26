@@ -92,7 +92,7 @@ export default function Search() {
           const data = await res.json();
           console.log('Usuarios recibidos:', data.data); // Log para depuración
           console.log("Término normalizado:", data.normalizedSearchTerm);
-          if (data.length > 8) {
+          if (data.data && data.data.length > 8) {
             setShowMore(true);
           } else {
             setShowMore(false);
@@ -198,17 +198,28 @@ export default function Search() {
   };
 
   const onShowMoreClick = async () => {
-    const numberOfListings = listings.length;
-    const startIndex = numberOfListings;
     const urlParams = new URLSearchParams(location.search);
-    urlParams.set('startIndex', startIndex);
-    const searchQuery = urlParams.toString();
-    const res = await fetch(`/api/listing/get?${searchQuery}`);
-    const data = await res.json();
-    if (data.length < 9) {
-      setShowMore(false);
+    if (operation === 'rent') {
+      const startIndex = listings.length;
+      urlParams.set('startIndex', startIndex);
+      const searchQuery = urlParams.toString();
+      const res = await fetch(`/api/listing/get?${searchQuery}`);
+      const data = await res.json();
+      if (data.length < 9) {
+        setShowMore(false);
+      }
+      setListings([...listings, ...data]);
+    } else if (operation === 'share') {
+      const startIndex = users.length;
+      urlParams.set('startIndex', startIndex);
+      const searchQuery = urlParams.toString();
+      const res = await fetch(`/api/user/get?${searchQuery}`);
+      const data = await res.json();
+      if (data.data && data.data.length < 9) {
+        setShowMore(false);
+      }
+      setUsers([...users, ...(data.data || [])]);
     }
-    setListings([...listings, ...data]);
   };
 
   console.log('Estado operation:', operation);
