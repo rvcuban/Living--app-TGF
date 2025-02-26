@@ -36,8 +36,8 @@ function Tabs({ tabs, defaultTab, children }) {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`flex-shrink-0 py-2 px-4 font-medium transition-colors focus:outline-none ${activeTab === tab
-                                ? 'active-tab border-blue-500 text-blue-500 border-b-2'
-                                : 'border-transparent text-gray-500 hover:text-blue-500'
+                            ? 'active-tab border-blue-500 text-blue-500 border-b-2'
+                            : 'border-transparent text-gray-500 hover:text-blue-500'
                             }`}
                     >
                         {tab}
@@ -225,50 +225,84 @@ export default function PublicProfile() {
     // Funciones para renderizar cada pestaña
     const renderAboutTab = () => (
         <div className="p-4">
-          {/* Información básica “Sobre mí” */}
-          {user.shortBio ? (
-            <p className="text-gray-700">{user.shortBio}</p>
-          ) : (
-            <p className="text-gray-700">No hay información sobre el usuario.</p>
-          )}
-    
-          <div className="mt-4">
-            <p className="text-gray-600">
-              <strong>Buscando compi en:</strong> {user.location || 'No especificada'}
-            </p>
-            <p className="text-gray-600">
-              <strong>Preferencias:</strong>{' '}
-              {user.preferences ? (
-                <>
-                  {user.preferences.pets ? 'Acepta mascotas. ' : 'No acepta mascotas. '}
-                  {user.preferences.smoker ? 'Fumador. ' : 'No fumador. '}
-                  {user.preferences.schedule ? `Horario: ${user.preferences.schedule}` : ''}
-                </>
-              ) : (
-                'Sin preferencias definidas.'
-              )}
-            </p>
-          </div>
-    
-          {/* Información de los intereses (lo que había en renderInterestsTab) */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Mis intereses</h3>
-            <div className="flex flex-wrap gap-2">
-              {user.interests && user.interests.length > 0 ? (
-                user.interests.map((interest, idx) => (
-                  <span key={idx} className="bg-gray-200 px-2 py-1 rounded-full text-sm">
-                    {interest}
-                  </span>
-                ))
-              ) : (
-                <p className="text-gray-500">No se han definido intereses.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      );
+            {/* Información básica “Sobre mí” */}
+            {user.shortBio ? (
+                <p className="text-gray-700">{user.shortBio}</p>
+            ) : (
+                <p className="text-gray-700">No hay información sobre el usuario.</p>
+            )}
 
-    
+            <div className="mt-4">
+                <p className="text-gray-600">
+                    <strong>Buscando compi en:</strong> {user.location || 'No especificada'}
+                </p>
+                <p className="text-gray-600">
+                    <strong>Preferencias:</strong>{' '}
+                    {user.preferences ? (
+                        <>
+                            {user.preferences.pets ? 'Acepta mascotas. ' : 'No acepta mascotas. '}
+                            {user.preferences.smoker ? 'Fumador. ' : 'No fumador. '}
+                            {user.preferences.schedule ? `Horario: ${user.preferences.schedule}` : ''}
+                        </>
+                    ) : (
+                        'Sin preferencias definidas.'
+                    )}
+                </p>
+            </div>
+
+            {/* Información de los intereses (lo que había en renderInterestsTab) */}
+            <div className="mt-6">
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">Mis intereses</h3>
+                <div className="flex flex-wrap gap-2">
+                    {user.interests && user.interests.length > 0 ? (
+                        user.interests.map((interest, idx) => (
+                            <span key={idx} className="bg-gray-200 px-2 py-1 rounded-full text-sm">
+                                {interest}
+                            </span>
+                        ))
+                    ) : (
+                        <p className="text-gray-500">No se han definido intereses.</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
+    // Dentro de tu componente PublicProfile, agrega la siguiente función:
+
+     // Función para iniciar o reanudar una conversación
+     const handleStartChat = async () => {
+        if (!currentUser) {
+          toast.info('Debes iniciar sesión para enviar mensajes.');
+          navigate('/sign-in');
+          return;
+        }
+        try {
+          const res = await fetch('/api/chat/start', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${currentUser.token}`,
+            },
+            body: JSON.stringify({
+              receiverId: userId,
+              content: "Hola, he visto tu perfil y...", // mensaje predefinido
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            // Redirige a la conversación recién iniciada (o existente)
+            navigate(`/chat/${data.conversationId}`);
+          } else {
+            toast.error(data.message || 'Error al iniciar la conversación.');
+          }
+        } catch (error) {
+          toast.error(error.message);
+        }
+      };
+
+
+
 
     const renderReviewsTab = () => {
         console.log('Reseñas cargadas:', reviews);
@@ -361,51 +395,51 @@ export default function PublicProfile() {
     const renderGalleryTab = () => {
         // 1. Combinar ambos arrays en uno
         const imagesArray = (user.gallery || []).map((url) => ({
-          type: 'image',
-          url,
+            type: 'image',
+            url,
         }));
         const videosArray = (user.videos || []).map((url) => ({
-          type: 'video',
-          url,
+            type: 'video',
+            url,
         }));
         const mediaItems = [...imagesArray, ...videosArray];
-    
+
         // 2. Si no hay nada, mensaje
         if (!mediaItems.length) {
-          return (
-            <div className="p-4">
-              <p className="text-gray-500">No hay imágenes ni videos en la galería.</p>
-            </div>
-          );
+            return (
+                <div className="p-4">
+                    <p className="text-gray-500">No hay imágenes ni videos en la galería.</p>
+                </div>
+            );
         }
-         // 3. Rejilla estilo TikTok
-    return (
-        <div className="p-4 grid grid-cols-3 gap-1 sm:gap-2 md:gap-3">
-          {mediaItems.map((item, idx) => (
-            <div
-              key={idx}
-              className="relative aspect-[9/16] overflow-hidden rounded bg-black"
-            >
-              {item.type === 'image' ? (
-                <img
-                  src={item.url}
-                  alt={`media-${idx}`}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              ) : (
-                <video
-                  preload="metadata"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  controls
-                >
-                  <source src={item.url} type="video/mp4" />
-                  Tu navegador no soporta la reproducción de video.
-                </video>
-              )}
+        // 3. Rejilla estilo TikTok
+        return (
+            <div className="p-4 grid grid-cols-3 gap-1 sm:gap-2 md:gap-3">
+                {mediaItems.map((item, idx) => (
+                    <div
+                        key={idx}
+                        className="relative aspect-[9/16] overflow-hidden rounded bg-black"
+                    >
+                        {item.type === 'image' ? (
+                            <img
+                                src={item.url}
+                                alt={`media-${idx}`}
+                                className="absolute inset-0 w-full h-full object-cover"
+                            />
+                        ) : (
+                            <video
+                                preload="metadata"
+                                className="absolute inset-0 w-full h-full object-cover"
+                                controls
+                            >
+                                <source src={item.url} type="video/mp4" />
+                                Tu navegador no soporta la reproducción de video.
+                            </video>
+                        )}
+                    </div>
+                ))}
             </div>
-          ))}
-        </div>
-      );
+        );
     }; // <--- CERRAR AQUÍ la función
 
     return (
@@ -484,18 +518,18 @@ export default function PublicProfile() {
                             )}
                         </>
                     )}
-                    <Link
-                        to={`/chat?otherUserId=${userId}&prefilled=Hola,he visto tu perfil y `}
+                    <button
+                        onClick={handleStartChat}
                         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
                     >
                         Enviar Mensaje
-                    </Link>
+                    </button>
                 </div>
             </div>
 
             {/* Tabs Section */}
             <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden">
-                <Tabs tabs={['Sobre mí', 'Galería','Opiniones']} defaultTab="Sobre mí">
+                <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí">
                     <div value="Sobre mí">{renderAboutTab()}</div>
                     <div value="Galería">{renderGalleryTab()}</div>
                     <div value="Opiniones">{renderReviewsTab()}</div>
@@ -515,12 +549,13 @@ export default function PublicProfile() {
                     ¿Quieres contactar con {username}?
                 </h3>
                 <p className="text-gray-600">Puedes enviar un mensaje si deseas más información.</p>
-                <Link
-                    to={`/messages/${userId}`}
-                    className="inline-block mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                <button
+                    onClick={handleStartChat}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
                 >
                     Enviar Mensaje
-                </Link>
+                </button>
+
             </div>
         </div>
     );

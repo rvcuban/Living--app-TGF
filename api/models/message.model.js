@@ -7,9 +7,13 @@ const MessageSchema = new mongoose.Schema({
     required: true,
   },
   user: {
-    // Referencia al User
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User', // Referencia al modelo User
+    required: true,
+  },
+  conversationId: {
+    type: String, // o podrías usar ObjectId si creas un modelo "Conversation"
+    required: true,
   },
 }, { timestamps: true });
 

@@ -29,6 +29,9 @@ import MyBuddies from "./pages/MyBuddies";
 
 import Onboarding from './components/Onboarding';
 
+import ChatList from './pages/ChatList';
+import ChatConversation from './pages/ChatConversation';
+
 
 export default function App() {
   return (<BrowserRouter>
@@ -50,7 +53,8 @@ export default function App() {
         
         <Route path="/profile/*" element={<Profile />} />
         
-        <Route path="/chat" element={<Chat />} />
+        <Route path="/chat" element={<ChatList />} />
+        <Route path="/chat/:conversationId" element={<ChatConversation />} />
         <Route path="/create-listing" element={<CreateListing />} />
         <Route path="/update-listing/:listingId" element={<UpdateListing />} />
         <Route path="/my-properties" element={<MyProperties />} /> 

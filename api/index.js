@@ -9,6 +9,7 @@ import reviewRouter from './routes/review.routes.js';
 import applicationRouter from './routes/application.route.js';
 import userReviewRouter from './routes/userReview.route.js';
 import roomMateRouter from './routes/roomMate.routes.js';
+import messageRouter from './routes/message.route.js';
 
 import path from 'path';
 
@@ -57,6 +58,7 @@ app.use('/api/review', reviewRouter);
 app.use('/api/userreview', userReviewRouter);
 app.use('/api/applications', applicationRouter);
 app.use('/api/roommate', roomMateRouter);
+app.use('/api/chat', messageRouter);
 
 
 app.use(express.static(path.join(__dirname, '/client/dist')));
