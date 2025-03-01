@@ -61,7 +61,7 @@ export const updateListing = async (req, res, next) => {
       return next(errorHandle(404, 'Listing not found')); 
     }
 
-    // Responder con el listado actualizado
+    // Responder con el listado actualizado 
     res.status(200).json(updatedListing);
   } catch (error) {
     // Si ocurre algún otro error, pasarlo al middleware de errores

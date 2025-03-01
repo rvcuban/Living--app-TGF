@@ -29,7 +29,7 @@ import MyBuddies from "./pages/MyBuddies";
 
 import Onboarding from './components/Onboarding';
 
-import ChatList from './pages/ChatList';
+import ChatList from "./pages/ChatList";
 import ChatConversation from './pages/ChatConversation';
 
 
