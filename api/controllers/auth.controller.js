@@ -88,7 +88,7 @@ export const google = async (req, res, next) => {
           success: true,
           message: "Login exitoso",
           user: rest,
-          isNewUser: ValidUser.isNewUser,
+          isNewUser: newUser.isNewUser,
         });
     }
   } catch (error) {
