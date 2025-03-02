@@ -169,7 +169,7 @@ useEffect(() => {
               />
             ) : (
               <Link to='/sign-in' className="text-slate-700 hover:underline">
-                Sign In
+                Iniciar Sesion
               </Link>
             )}
             {openProfile && <DropDownProfile />}

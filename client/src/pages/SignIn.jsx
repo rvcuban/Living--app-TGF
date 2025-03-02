@@ -76,41 +76,62 @@ export default function SignIn() {
   };
 
   return (
-    <div>
-
-
-      <div className='p-3 max-w-lg mx-auto'>
-        <h1 className='text-3xl text-center font-semibold my-7 '>Welcome to TFGStartup</h1>
-        <p className="text-gray-400 text-center mb-6">Iniciar sesion</p>
-
-        <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-          <input type="text" placeholder='email' className='border p-3 rounded-lg' id='email' onChange={handleChange} />
-          <input type="text" placeholder='password' className='border p-3 rounded-lg' id='password' onChange={handleChange} />
-          <button disabled={loading} className='bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80'>
-            {loading ? 'Loading...' : 'Iniciar Sesion'}
-          </button>
-          <div className="text-center">
-            <p className="text-gray-600">o</p>
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 px-4 pt-6">
+      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md">
+        <h1 className="text-3xl font-semibold text-center text-gray-900 mb-6">
+          Bienvenido a TFGStartup
+        </h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              placeholder="you@example.com"
+              required
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
+            />
           </div>
-          <OAuth />
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              id="password"
+              placeholder="********"
+              required
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full   py-3 px-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition disabled:opacity-75 font-medium"
+          >
+            {loading ? "Cargando..." : "Iniciar Sesión"}
+          </button>
         </form>
-        <div className='flex gap-2 mt-5'>
-          <p>No tienes una cuenta?</p>
-
-          <Link to={"/sign-up"}>
-            <span className="text-blue-700">Registrate </span>
-          </Link>
+        <div className="my-6 flex items-center">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="mx-3 text-gray-500 text-sm">O</span>
+          <div className="flex-grow border-t border-gray-300"></div>
         </div>
-        {error && <p className="text-red-500 mt-5">{error} </p>}
+        <div className="flex justify-center">
+          <OAuth />
+        </div>
+        <p className="mt-6 text-center text-sm text-gray-600">
+          ¿No tienes cuenta?{" "}
+          <Link to="/sign-up" className="text-indigo-600 hover:underline">
+            Regístrate
+          </Link>
+        </p>
+        {error && <p className="mt-4 text-center text-sm text-red-500">{error}</p>}
       </div>
-
-
-
     </div>
-
-
-
   );
-
-
 }
