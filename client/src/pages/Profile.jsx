@@ -235,29 +235,27 @@ export default function Profile() {
 
   return (
     <div className={`flex ${isMobile ? 'flex-col' : 'h-screen'}`}>
-  
+   <div className="container mx-auto flex flex-col md:flex-row ">
     {/* Sidebar para pantallas grandes o móviles cuando está abierto */}
-    {!isMobile || isSidebarOpen ? (
-      <SideBarMenu
-        setActiveSection={setActiveSection}
-        currentUser={currentUser}
-        toggleSidebar={toggleSidebar}
-      />
-    ) : null}
+    {(!isMobile || isSidebarOpen) && (
+          <div className="md:w-1/4">
+            <SideBarMenu
+              currentUser={currentUser}
+              toggleSidebar={toggleSidebar}
+              setActiveSection={setActiveSection}
+            />
+          </div>
+        )}
 
       {/* Contenido principal */}
-      <div
-        className={`${isMobile ? 'block w-full pl-5 pr-5 pb-5' : 'flex-grow mt-16 w-full max-w-7xl mx-auto px-4 p-5'} bg-white shadow-lg rounded-lg overflow-y-hidden min-h-screen`}
-      >
-
-        {renderContent()}
+      <div className="flex-grow md:w-3/4 mt-4 md:mt-16 px-4 p-5 bg-white rounded-lg ">
 
         <Routes>
-         
-          <Route path="profile" element={<ProfileContent />} />
-          <Route path="applications" element={<Aplications />} />
-          {/* NUEVA RUTA: para editar el perfil público */}
+          {/* La ruta por defecto (índice) muestra ProfileContent */}
+          <Route index element={<ProfileContent />} />
+          {/* Ruta para editar el perfil público */}
           <Route path="public" element={<PublicProfileEdit />} />
+          {/* Otras rutas pueden añadirse aquí */}
         </Routes>
 
       </div>
@@ -265,7 +263,7 @@ export default function Profile() {
       <div>
         
       </div>
-      
+      </div>
     </div>
   );
 

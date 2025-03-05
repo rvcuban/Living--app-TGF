@@ -15,6 +15,10 @@ const MessageSchema = new mongoose.Schema({
     type: String, // o podrías usar ObjectId si creas un modelo "Conversation"
     required: true,
   },
+  read: { 
+    type: Boolean, 
+    default: false 
+  }
 }, { timestamps: true });
 
 export default mongoose.model('Message', MessageSchema);

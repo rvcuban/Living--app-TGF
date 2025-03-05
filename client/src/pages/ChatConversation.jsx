@@ -1,5 +1,5 @@
 // src/pages/ChatConversation.jsx
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -9,7 +9,7 @@ import { FaArrowLeft, FaStar } from 'react-icons/fa';
 export default function ChatConversation() {
   const { conversationId } = useParams();
   const navigate = useNavigate();
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser } = useSelector(state => state.user);
 
   const [messages, setMessages] = useState([]);
   const [msgContent, setMsgContent] = useState('');
@@ -18,11 +18,13 @@ export default function ChatConversation() {
   const socketRef = useRef(null);
   const bottomRef = useRef(null);
 
-  // Conectamos al socket y nos unimos a la sala (conversationId)
+  // Conectarse al socket y unirse a la sala (conversationId)
+  // Conectarse al socket y unirse a la sala (conversationId)
   useEffect(() => {
     if (!currentUser || !conversationId) return;
 
-    socketRef.current = io('http://localhost:5000', {
+    // Make sure socketRef is properly initialized
+    socketRef.current = io({
       auth: {
         userId: currentUser._id,
         userName: currentUser.username,
@@ -32,9 +34,7 @@ export default function ChatConversation() {
     socketRef.current.emit('joinRoom', conversationId);
 
     socketRef.current.on('chat message', (newMsg) => {
-      if (newMsg.conversationId === conversationId) {
-        setMessages((prev) => [...prev, newMsg]);
-      }
+      setMessages(prev => [...prev, newMsg]);
     });
 
     return () => {
@@ -44,9 +44,9 @@ export default function ChatConversation() {
 
   // Obtener información del partner a partir del conversationId
   useEffect(() => {
-    if (!currentUser || !conversationId) return;
+    if (!currentUser || !conversationId || !conversationId.includes('_')) return;
     const ids = conversationId.split('_');
-    const partnerId = ids.find((id) => id !== currentUser._id.toString());
+    const partnerId = ids.find(id => id !== String(currentUser._id));
     if (partnerId) {
       const fetchPartner = async () => {
         try {
@@ -68,16 +68,21 @@ export default function ChatConversation() {
     if (!currentUser || !conversationId) return;
     const fetchMessages = async () => {
       try {
+        console.log(`Fetching messages for conversation: ${conversationId}`);
         const res = await fetch(`/api/chat/messages/${conversationId}`, {
           headers: { Authorization: `Bearer ${currentUser.token}` },
         });
         const data = await res.json();
+        console.log('Messages response:', data);
+        
         if (data.success && Array.isArray(data.messages)) {
+          console.log(`Loaded ${data.messages.length} messages`);
           setMessages(data.messages);
         } else {
           toast.error('Error al cargar mensajes');
         }
       } catch (error) {
+        console.error('Error fetching messages:', error);
         toast.error('Error al cargar mensajes');
       }
     };
@@ -89,37 +94,41 @@ export default function ChatConversation() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Enviar mensaje
+  // Enviar mensaje (usamos claves "user" y "conversationId")
   const handleSend = (e) => {
     e.preventDefault();
-    if (!msgContent.trim()) return;
+    if (!msgContent.trim() || !currentUser) return;
+    
+    // Make sure userId is explicitly included
     const newMsg = {
-      // No necesitamos enviar _id (el backend lo asignará)
       content: msgContent.trim(),
-      // Enviamos el ID del usuario actual como userId
       userId: currentUser._id,
-      // Y el conversationId (que es el room al que nos unimos)
-      roomId: conversationId,
+      userName: currentUser.username,
+      roomId: conversationId
     };
+    
+    console.log("Sending message:", newMsg); // Add this debugging line
+    
     if (socketRef.current) {
       socketRef.current.emit('chat message', newMsg);
     }
-    // Actualizamos localmente para mostrar el mensaje inmediatamente
-    setMessages((prev) => [
+    
+    setMessages(prev => [
       ...prev,
       {
         ...newMsg,
         user: { _id: currentUser._id, username: currentUser.username },
         createdAt: new Date().toISOString(),
         _id: Date.now().toString(),
-      },
+      }
     ]);
     setMsgContent('');
   };
 
+
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto sm:my-4 sm:shadow-lg sm:rounded-lg">
-      {/* Cabecera: Botón de volver y nombre del partner */}
+    <div className="flex flex-col h-screen max-w-2xl mx-auto sm:my-4 sm:shadow-lg sm:rounded-lg relative">
+      {/* Cabecera: botón para volver y nombre del partner */}
       <header className="flex items-center p-3 border-b bg-white sm:rounded-t-lg">
         <button
           onClick={() => navigate('/chat')}
@@ -132,10 +141,9 @@ export default function ChatConversation() {
           Chat con {partner ? partner.username : '...'}
         </h2>
       </header>
-  
-      {/* Área de mensajes */}
+      {/* Área de mensajes (scrollable) */}
       <main className="flex-1 p-4 overflow-y-auto bg-gray-50">
-        {messages.map((m) => {
+        {messages.map(m => {
           const isMine = m.user && m.user._id === currentUser._id;
           return (
             <div key={m._id} className={`mb-2 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
@@ -148,20 +156,16 @@ export default function ChatConversation() {
         })}
         <div ref={bottomRef} />
       </main>
-  
-      {/* Formulario para enviar mensaje */}
-      <form onSubmit={handleSend} className="p-3 border-t flex items-center bg-white sm:rounded-b-lg">
+      {/* Formulario de envío fijo */}
+      <form onSubmit={handleSend} className="sticky bottom-0 z-10 p-3 border-t flex items-center bg-white">
         <input
           type="text"
           className="flex-1 border rounded-full px-3 py-2 mr-2 focus:outline-none"
           placeholder="Escribe un mensaje..."
           value={msgContent}
-          onChange={(e) => setMsgContent(e.target.value)}
+          onChange={e => setMsgContent(e.target.value)}
         />
-        <button
-          type="submit"
-          className="bg-pink-500 text-white px-4 py-2 rounded-full hover:bg-pink-600"
-        >
+        <button type="submit" className="bg-pink-500 text-white px-4 py-2 rounded-full hover:bg-pink-600">
           Enviar
         </button>
       </form>

@@ -1,3 +1,4 @@
+// controllers/message.controller.js
 import mongoose from 'mongoose';
 import Message from '../models/message.model.js';
 import User from '../models/user.model.js';
@@ -13,46 +14,51 @@ const generateConversationId = (id1, id2) => {
 
 /**
  * getConversations
- * Devuelve la lista de conversaciones del usuario autenticado.
+ * Devuelve la lista de conversaciones del usuario autenticado y además calcula
+ * la cantidad de mensajes no leídos (usando la propiedad "read" en cada mensaje).
  */
 export const getConversations = async (req, res, next) => {
   try {
-    // Usamos req.user.id (ya que verifyToken establece la propiedad 'id')
-    const userId = req.user.id;
+    const userId = req.user.id; // Se asume que verifyToken asigna 'id' en req.user
 
-    // Buscar todos los mensajes en los que el usuario participe.
+    // Buscar todos los mensajes que tengan en su conversationId al usuario
     const messages = await Message.find({
-      $or: [
-        { user: userId },
-        { conversationId: { $regex: userId } } // El conversationId contiene ambos IDs ordenados.
-      ]
+      conversationId: { $regex: userId }
     }).lean();
 
-    // Extraer los IDs de conversación (IDs compuestos) y determinar el "otro" usuario.
+    // Mapear la cantidad de mensajes no leídos (de otro usuario)
+    const unreadMap = new Map();
+    messages.forEach((msg) => {
+      if (msg.user.toString() !== userId && msg.read === false) {
+        const ids = msg.conversationId.split('_');
+        const partnerId = ids[0] === userId ? ids[1] : ids[0];
+        unreadMap.set(partnerId, (unreadMap.get(partnerId) || 0) + 1);
+      }
+    });
+
+    // Crear un mapa de conversación (un único registro por partner)
     const conversationMap = new Map();
     messages.forEach((msg) => {
       const ids = msg.conversationId.split('_');
-      // Determinar el partnerId comparando con el userId actual.
       const partnerId = ids[0] === userId ? ids[1] : ids[0];
       if (!conversationMap.has(partnerId)) {
         conversationMap.set(partnerId, { conversationId: msg.conversationId, partnerId });
       }
     });
-
-    // Convertir los IDs de los partners a un arreglo
     const partnerIds = Array.from(conversationMap.keys());
 
-    // Buscar la información de los usuarios (partners)
+    // Buscar la información de cada partner
     const partners = await User.find({ _id: { $in: partnerIds } })
       .select('username avatar')
       .lean();
 
-    // Formatear la respuesta con la información necesaria
+    // Formatear la respuesta
     const conversations = partners.map((partner) => ({
       conversationId: generateConversationId(userId, partner._id),
       userId: partner._id.toString(),
       username: partner.username,
       avatar: partner.avatar,
+      unreadCount: unreadMap.get(partner._id.toString()) || 0,
     }));
 
     return res.json({ success: true, conversations });
@@ -64,14 +70,13 @@ export const getConversations = async (req, res, next) => {
 
 /**
  * startConversation
- * Inicia o reanuda una conversación entre el usuario autenticado y otro receptor.
- * Se espera recibir en req.body:
- *  - receiverId: el ID del usuario receptor.
- *  - content (opcional): mensaje inicial.
+ * Inicia (o reanuda) una conversación entre el usuario autenticado y otro receptor.
+ * Se espera en req.body:
+ *   - receiverId: ID del usuario receptor.
+ *   - content (opcional): mensaje inicial.
  */
 export const startConversation = async (req, res, next) => {
   try {
-    // Usamos req.user.id en lugar de req.user._id
     const senderId = req.user.id;
     const { receiverId, content } = req.body;
 
@@ -82,10 +87,9 @@ export const startConversation = async (req, res, next) => {
       return next(errorHandle(400, 'No puedes iniciar una conversación contigo mismo.'));
     }
 
-    // Generar el conversationId único
     const conversationId = generateConversationId(senderId, receiverId);
 
-    // Verificar si ya existe algún mensaje con este conversationId
+    // Si ya existe un mensaje con este conversationId, la conversación ya existe
     const existingMsg = await Message.findOne({ conversationId });
     if (existingMsg) {
       return res.status(200).json({
@@ -95,11 +99,12 @@ export const startConversation = async (req, res, next) => {
       });
     }
 
-    // Crear un mensaje inicial (puede ser vacío o con contenido prellenado)
+    // Crear mensaje inicial (puede estar vacío)
     const newMessage = await Message.create({
       content: content && content.trim() ? content.trim() : '',
       user: senderId,
       conversationId,
+      read: false,
     });
 
     return res.status(201).json({
@@ -116,20 +121,95 @@ export const startConversation = async (req, res, next) => {
 
 /**
  * getMessages
- * Retorna los mensajes de una conversación específica.
+ * Retorna los mensajes de una conversación específica, ordenados cronológicamente
+ * y poblados con la información del usuario remitente.
  */
 export const getMessages = async (req, res, next) => {
   try {
     const { conversationId } = req.params;
-
+    console.log(`Fetching messages for conversation: ${conversationId}`);
+    
     const messages = await Message.find({ conversationId })
-      .populate('user', 'username avatar')
       .sort({ createdAt: 1 })
-      .lean();
-
-    return res.json({ success: true, messages });
+      .populate('user', 'username avatar');
+    
+    console.log(`Found ${messages.length} messages`);
+    
+    return res.status(200).json({
+      success: true,
+      messages
+    });
   } catch (error) {
-    console.error('Error al obtener mensajes:', error);
-    return next(errorHandle(500, 'Error al obtener mensajes'));
+    console.error('Error fetching messages:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener mensajes'
+    });
   }
 };
+
+
+// Add this new function for socket operations
+export const saveMessageFromSocket = async (messageData) => {
+  try {
+    // Validate required fields
+    if (!messageData.content) {
+      throw new Error('Message content is required');
+    }
+    
+    if (!messageData.user) {
+      throw new Error('User ID is required');
+    }
+    
+    if (!messageData.conversationId) {
+      throw new Error('Conversation ID is required');
+    }
+    
+    // Ensure user is a valid ObjectId if it's a string
+    const userId = typeof messageData.user === 'string' && mongoose.Types.ObjectId.isValid(messageData.user) 
+      ? new mongoose.Types.ObjectId(messageData.user) 
+      : messageData.user;
+    
+    // Create the message
+    const newMessage = await Message.create({
+      content: messageData.content,
+      user: userId,
+      conversationId: messageData.conversationId
+    });
+    
+    return newMessage;
+  } catch (error) {
+    console.error('Error saving message:', error);
+    throw error;
+  }
+};
+
+// Add REST API endpoint controller
+export const saveMessage = async (req, res, next) => {
+  try {
+    const { content, conversationId } = req.body;
+    
+    if (!content || !conversationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Content and conversationId are required'
+      });
+    }
+    
+    const newMessage = await Message.create({
+      content,
+      user: req.user.id,
+      conversationId
+    });
+    
+    return res.status(201).json({
+      success: true,
+      message: newMessage
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Your existing controller functions...
+

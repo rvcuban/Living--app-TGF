@@ -645,7 +645,18 @@ export default function PublicProfileEdit() {
           </span>
         </div>
         {/* Botones de guardar/cancelar */}
-        <div className="mt-4 flex gap-2">
+       
+      </div>
+
+      {/* Tabs */}
+      <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden">
+        <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí">
+          <div value="Sobre mí">{renderAboutTab()}</div>
+          <div value="Galería">{renderGalleryTab()}</div>
+          <div value="Opiniones">{renderReviewsTab()}</div>
+        </Tabs>
+
+        <div className="mt-6 mb-6 ml-4 flex gap-4">
           <button
             onClick={handleSaveEdits}
             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -659,15 +670,6 @@ export default function PublicProfileEdit() {
             Cancelar
           </button>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden">
-        <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí">
-          <div value="Sobre mí">{renderAboutTab()}</div>
-          <div value="Galería">{renderGalleryTab()}</div>
-          <div value="Opiniones">{renderReviewsTab()}</div>
-        </Tabs>
 
         {/* Modal de reseña */}
         <UserReviewModal

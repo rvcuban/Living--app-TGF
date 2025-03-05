@@ -32,7 +32,8 @@ export default function Chat() {
   useEffect(() => {
     if (!currentUser) return;
 
-    socketRef.current = io('http://localhost:5000', {
+    socketRef.current = io({
+      path: '/socket.io',  // Add this if needed
       auth: {
         userId: currentUser._id,
         userName: currentUser.username,

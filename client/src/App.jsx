@@ -31,6 +31,7 @@ import Onboarding from './components/Onboarding';
 
 import ChatList from "./pages/ChatList";
 import ChatConversation from './pages/ChatConversation';
+import Footer from "./components/Footer";
 
 
 export default function App() {
@@ -45,19 +46,19 @@ export default function App() {
 
       <Route path="/listing/:listingId" element={<Listing />} />
 
-         {/* Ruta para el perfil público de un usuario */}
-         <Route path="/user/:userId/public" element={<PublicProfile />} />
+      {/* Ruta para el perfil público de un usuario */}
+      <Route path="/user/:userId/public" element={<PublicProfile />} />
 
       <Route element={<PrivateRoute />}>
         <Route path="/onboarding" element={<Onboarding />} />
-        
+
         <Route path="/profile/*" element={<Profile />} />
-        
+
         <Route path="/chat" element={<ChatList />} />
         <Route path="/chat/:conversationId" element={<ChatConversation />} />
         <Route path="/create-listing" element={<CreateListing />} />
         <Route path="/update-listing/:listingId" element={<UpdateListing />} />
-        <Route path="/my-properties" element={<MyProperties />} /> 
+        <Route path="/my-properties" element={<MyProperties />} />
         <Route path="/aplications" element={<Aplications />} />
         <Route path="/my_aplications" element={<MyApplications />} />
         <Route path="/listing/:listingId/applications" element={<PropertyApplications />} />
@@ -72,8 +73,9 @@ export default function App() {
       <Route path="/" element={<Home />} />
 
     </Routes>
+    <Footer />
     <ToastContainer /> {/* Contenedor de notificaciones */}
   </BrowserRouter>
-  
+
   )
 }
