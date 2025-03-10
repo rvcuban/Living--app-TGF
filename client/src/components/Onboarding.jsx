@@ -26,7 +26,7 @@ export default function Onboarding() {
             pets: values.mascotas
           },
         };
-        const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        const res = await api(`/user/update/${currentUser._id}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

@@ -183,7 +183,7 @@ export const schema = [
             resolver={zodResolver(
               z.object({
                 username: z.string().min(1, 'Nombre de usuario requerido'),
-                bio: z.string().min(1, 'La descripción es requerida'),
+                bio: z.string().default(''),
               })
             )}
           >

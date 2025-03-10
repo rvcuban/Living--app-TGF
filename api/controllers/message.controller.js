@@ -17,54 +17,86 @@ const generateConversationId = (id1, id2) => {
  * Devuelve la lista de conversaciones del usuario autenticado y además calcula
  * la cantidad de mensajes no leídos (usando la propiedad "read" en cada mensaje).
  */
+/**
+ * getConversations
+ * Devuelve la lista de conversaciones del usuario autenticado y además calcula
+ * la cantidad de mensajes no leídos (usando la propiedad "read" en cada mensaje).
+ */
 export const getConversations = async (req, res, next) => {
   try {
-    const userId = req.user.id; // Se asume que verifyToken asigna 'id' en req.user
+    const userId = req.user.id;
+    
 
-    // Buscar todos los mensajes que tengan en su conversationId al usuario
-    const messages = await Message.find({
-      conversationId: { $regex: userId }
-    }).lean();
-
-    // Mapear la cantidad de mensajes no leídos (de otro usuario)
-    const unreadMap = new Map();
-    messages.forEach((msg) => {
-      if (msg.user.toString() !== userId && msg.read === false) {
-        const ids = msg.conversationId.split('_');
-        const partnerId = ids[0] === userId ? ids[1] : ids[0];
-        unreadMap.set(partnerId, (unreadMap.get(partnerId) || 0) + 1);
+    // First, find all conversations where the user is involved
+    const messages = await Message.aggregate([
+      // Find messages that include this user's ID in the conversationId
+      { 
+        $match: { 
+          conversationId: { $regex: userId } 
+        } 
+      },
+      // Sort by date descending (newest first)
+      { $sort: { createdAt: -1 } },
+      // Group by conversationId to get the last message
+      {
+        $group: {
+          _id: "$conversationId",
+          lastMessage: { $first: "$content" },
+          lastMessageDate: { $first: "$createdAt" },
+          lastMessageSender: { $first: "$user" }
+        }
       }
+    ]);
+    
+    // For each conversation, get the partner info and unread count
+    const conversationsWithDetails = await Promise.all(
+      messages.map(async (conv) => {
+        // Extract partner ID from conversation ID
+        const ids = conv._id.split('_');
+        const partnerId = ids.find(id => id !== String(userId));
+        
+        // Get partner info
+        let partner = null;
+        try {
+          const partnerInfo = await User.findById(partnerId).select('username avatar');
+          if (partnerInfo) {
+            partner = {
+              _id: partnerInfo._id,
+              username: partnerInfo.username,
+              avatar: partnerInfo.avatar
+            };
+          }
+        } catch (err) {
+          console.error(`Error fetching partner info for ${partnerId}:`, err);
+        }
+        
+        // Count unread messages
+        const unreadCount = await Message.countDocuments({
+          conversationId: conv._id,
+          user: { $ne: userId },
+          read: false
+        });
+        
+        return {
+          _id: conv._id,
+          lastMessage: conv.lastMessage,
+          lastMessageDate: conv.lastMessageDate,
+          partner,
+          unreadCount
+        };
+      })
+    );
+    
+    return res.status(200).json({
+      success: true,
+      conversations: conversationsWithDetails
     });
-
-    // Crear un mapa de conversación (un único registro por partner)
-    const conversationMap = new Map();
-    messages.forEach((msg) => {
-      const ids = msg.conversationId.split('_');
-      const partnerId = ids[0] === userId ? ids[1] : ids[0];
-      if (!conversationMap.has(partnerId)) {
-        conversationMap.set(partnerId, { conversationId: msg.conversationId, partnerId });
-      }
-    });
-    const partnerIds = Array.from(conversationMap.keys());
-
-    // Buscar la información de cada partner
-    const partners = await User.find({ _id: { $in: partnerIds } })
-      .select('username avatar')
-      .lean();
-
-    // Formatear la respuesta
-    const conversations = partners.map((partner) => ({
-      conversationId: generateConversationId(userId, partner._id),
-      userId: partner._id.toString(),
-      username: partner.username,
-      avatar: partner.avatar,
-      unreadCount: unreadMap.get(partner._id.toString()) || 0,
-    }));
-
-    return res.json({ success: true, conversations });
   } catch (error) {
-    console.error('Error al obtener conversaciones:', error);
-    return next(errorHandle(500, 'Error al obtener conversaciones'));
+    console.error('Error getting conversations:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener conversaciones'
+    });
   }
 };
 
@@ -211,5 +243,30 @@ export const saveMessage = async (req, res, next) => {
   }
 };
 
-// Your existing controller functions...
-
+export const markMessagesAsRead = async (req, res, next) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+    
+    // Actualizar todos los mensajes en esta conversación donde el usuario no es el remitente
+    const result = await Message.updateMany(
+      { 
+        conversationId,
+        user: { $ne: userId }, // Mensajes no enviados por el usuario actual
+        read: false // Solo mensajes no leídos
+      },
+      { read: true }
+    );
+    
+    console.log(`Marked ${result.modifiedCount} messages as read in conversation ${conversationId}`);
+    
+    return res.status(200).json({
+      success: true,
+      modifiedCount: result.modifiedCount,
+      message: 'Mensajes marcados como leídos'
+    });
+  } catch (error) {
+    console.error('Error al marcar mensajes como leídos:', error);
+    return next(errorHandle(500, 'Error al marcar mensajes como leídos'));
+  }
+};

@@ -47,7 +47,7 @@ export default function Header() {
     setOpenProfile(false);
     setOpenPropertyMenu(false);
   };
-  
+
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -88,16 +88,16 @@ export default function Header() {
     const searchQuery = urlParams.toString(); // convertimos en sring porque peuden existir numeros y otras cosas º
     navigate(`/search?${searchQuery}`); // redirigimos a la url de la busqueda 
 
-};
+  };
 
-useEffect(() => {
+  useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const searchTermFromUrl = urlParams.get('searchTerm');
     if (searchTermFromUrl) { // si existe algun search term en la url seteamos el estado en ese srearchterm from url asi conservamos la bsuqueda de la pagina anterior 
-        setSearchTerm(searchTermFromUrl);
+      setSearchTerm(searchTermFromUrl);
     }
 
-}, [location.search])
+  }, [location.search])
 
 
 
@@ -106,9 +106,9 @@ useEffect(() => {
   return (
     <header className='bg-slate-50 shadow-md relative z-50'>
       <div className='flex justify-between items-center max-w-6xl mx-auto p-3'>
-      
+
         {/* Lado izquierdo: Logo o Menú Hamburguesa */}
-        <div className='flex items-center'>
+        {/*<div className='flex items-center'>
           {isMobile ? (
             <button onClick={handleMobileMenuToggle}>
               <FaBars className='text-2xl text-gray-700' />
@@ -122,22 +122,32 @@ useEffect(() => {
               </h1>
             </Link>
           )}
+        </div>*/}
+
+        <div className='flex items-center'>
+          <Link to='/'>
+            <h1 className='font-bold text-sm sm:text-xl flex items-center'>
+              <img src={logo} alt='Logo' className='cursor-pointer h-8 w-8 mr-2' />
+              <span className='text-black'>Wiki</span>
+              <span className='text-red-700'>Home</span>
+            </h1>
+          </Link>
         </div>
 
-       {/* formulario en el centro */}
+        {/* formulario en el centro */}
         <form onSubmit={handleSubmit} className='bg-slate-100  p-3 rounded-lg flex items-center' >
-                    <input
-                        type="text"
-                        placeholder='Search...'
-                        className='bg-transparent focus:outline-none w-24 sm:w-64'
-                        value={searchTerm} //valor inical el de searchterm
-                        onChange={(e) => setSearchTerm(e.target.value)} //trackerar los cambios
-                    />
-                    <button>
-                        <FaSearch className='text-slate-500' />
-                    </button>
+          <input
+            type="text"
+            placeholder='Search...'
+            className='bg-transparent focus:outline-none w-24 sm:w-64'
+            value={searchTerm} //valor inical el de searchterm
+            onChange={(e) => setSearchTerm(e.target.value)} //trackerar los cambios
+          />
+          <button>
+            <FaSearch className='text-slate-500' />
+          </button>
 
-                </form>
+        </form>
 
         {/* Lado derecho: Icono de perfil o Sign In */}
         <div className='flex items-center'>
@@ -149,7 +159,7 @@ useEffect(() => {
               <li>
                 <Link to='/chat' className="text-slate-700 hover:underline">Mis Chats</Link>
               </li>
-              <li className='relative' ref={propertyMenuRef}>
+             {/*  <li className='relative' ref={propertyMenuRef}>
                 <button
                   className="text-slate-700 hover:underline focus:outline-none"
                   onClick={handlePropertyClick}
@@ -157,7 +167,7 @@ useEffect(() => {
                   Mis propiedades
                 </button>
                 {openPropertyMenu && <DropDownProperty />}
-              </li>
+              </li>*/}
             </ul>
           )}
           <div className='relative ml-4' ref={dropdownRef}>
@@ -208,9 +218,9 @@ useEffect(() => {
                   >
                     Añade tu propiedad
                   </button>
-                  
+
                   {openPropertyMenu && <DropDownProperty />}
-                  
+
                 </li>
                 {currentUser ? (
                   <>
