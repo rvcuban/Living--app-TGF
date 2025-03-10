@@ -4,17 +4,47 @@ import { errorHandle } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 
 export const signup = async (req, res, next) => {
-
-    const { username, email, password } = req.body;
-    const hashedPassword = bcryptjs.hashSync(password, 10); //usamos bcrypt for haas the password
-    const newUser = new User({ username, email, password: hashedPassword });
-    try {
-        await newUser.save();
-        res.status(201).json('user creted succesfull');
-    } catch (error) {
-        next(error);
+  try {
+    const { email, password, generateUsername } = req.body;
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return next(errorHandle(400, 'El email ya está registrado'));
     }
-
+    
+    // Generate a username if requested
+    let username;
+    if (generateUsername) {
+      // Generate a random username based on email or use a username generator
+      username = email.split('@')[0] + Math.floor(Math.random() * 10000);
+      
+      // Make sure username is unique
+      const usernameExists = await User.findOne({ username });
+      if (usernameExists) {
+        username = email.split('@')[0] + Math.floor(Math.random() * 100000);
+      }
+    } else if (!req.body.username) {
+      return next(errorHandle(400, 'El nombre de usuario es obligatorio'));
+    } else {
+      username = req.body.username;
+    }
+    
+    // Hash password
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+    
+    // Create new user
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+    });
+    
+    await newUser.save();
+    res.status(201).json({ success: true, message: 'Usuario creado correctamente' });
+  } catch (error) {
+    next(error);
+  }
 };
 
 
