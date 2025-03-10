@@ -34,7 +34,45 @@ import ChatConversation from './pages/ChatConversation';
 import Footer from "./components/Footer";
 
 
+import { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { jwtDecode } from 'jwt-decode';
+import { tokenExpired } from './redux/user/userSlice';
+import { toast } from 'react-toastify';
+
+
 export default function App() {
+
+  const { currentUser } = useSelector(state => state.user);
+  const dispatch = useDispatch();
+  
+  useEffect(() => {
+    // Check token expiration periodically
+    if (currentUser?.token) {
+      const checkTokenExpiration = () => {
+        try {
+          const decoded = jwtDecode(currentUser.token);
+          if (decoded.exp * 1000 < Date.now()) {
+            toast.info('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+            dispatch(tokenExpired());
+          }
+        } catch (error) {
+          console.error('Error checking token expiration:', error);
+        }
+      };
+      
+      // Check once when component mounts
+      checkTokenExpiration();
+      
+      // Then set up interval to check periodically
+      const interval = setInterval(checkTokenExpiration, 5 * 60 * 1000); // Check every 5 minutes
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentUser, dispatch]);
+
+
+
   return (<BrowserRouter>
     <Header />
     <Routes>

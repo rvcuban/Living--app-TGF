@@ -29,7 +29,7 @@ export default function DropDownProfile({ onOptionSelect }) {
         setIsSigningOut(true);
         try {
             dispatch(signOutUserStart());
-            const res = await fetch('/api/auth/signout');
+            const res = await api('/auth/signout');
             const data = await res.json();
             if (data.success === false) {
                 dispatch(deleteUserFailure(data.message));

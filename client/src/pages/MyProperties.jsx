@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaUsers,  FaEdit, FaPlus } from 'react-icons/fa';
+import api from '../utils/apiFetch';
 
 export default function MyProperties() {
   const [properties, setProperties] = useState([]);
@@ -10,10 +11,10 @@ export default function MyProperties() {
 
   useEffect(() => {
     // Obtener las propiedades del usuario al cargar el componente
-    fetch('/api/listing/user', {
+    api('/listing/user', {
       credentials: 'include',
     })
-      .then((response) => response.json())
+      .then((response) => response.data())
       .then((data) => {
         if (data.success !== false) {
           const fetchedProperties = data; // 'data' es el arreglo de propiedades
