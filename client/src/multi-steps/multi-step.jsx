@@ -47,7 +47,7 @@ export function MultiStep({
     >
       <motion.div
         key={step}
-        inert={animate ? true : undefined}
+        inert={animate ? "true" : undefined}
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0, transition: { duration: 0.2 } }}
         exit={{ opacity: 0, x: -50, transition: { duration: 0.2 } }}

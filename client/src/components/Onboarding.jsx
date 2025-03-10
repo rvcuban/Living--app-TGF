@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 import { schema } from "../schemas/formitySchema";
 import { updateUserSuccess } from "../redux/user/userSlice";
+import api from "../utils/apiFetch";
 
 export default function Onboarding() {
   const dispatch = useDispatch();

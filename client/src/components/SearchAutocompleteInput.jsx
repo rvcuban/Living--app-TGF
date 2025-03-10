@@ -14,7 +14,7 @@ export default function SearchAutocompleteInput({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY_AUTOCOMPLETE,
     libraries,
     language: 'es', // Fuerza el idioma español
-    region: 'ES',   // Establece la región en España
+    //region: 'ES',   // Establece la región en España
     id: "google-map-script" // DEBO usar el mismo id en todas las llamadas
   });
 
@@ -54,7 +54,7 @@ export default function SearchAutocompleteInput({
       onLoad={onLoad}
       onPlaceChanged={onPlaceChanged}
       options={{
-        componentRestrictions: { country: 'es' },
+        componentRestrictions: { country: ['es','mx'] },
         fields: ['address_components', 'formatted_address', 'geometry', 'name'],
       }}
     >
