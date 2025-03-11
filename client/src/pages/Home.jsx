@@ -27,9 +27,9 @@ export default function Home() {
   const [recentMatches, setRecentMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    users: 5000,
-    properties: 1200,
-    matches: 850
+    users: 124,
+    properties:  45,
+    matches: 22
   });
 
   const [showBlockedEffect, setShowBlockedEffect] = useState(false);
@@ -181,8 +181,15 @@ export default function Home() {
 
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
               La manera más fácil y segura de encontrar el compañero de piso perfecto
-             
+
             </p>
+
+            {/* Beta indicator */}
+            <div className="flex justify-center items-center">
+              <span className="text-red-500 font-bold text-sm px-3 py-1 bg-red-50 rounded-full border border-red-200 animate-pulse">
+                BETA
+              </span>
+            </div>
 
             {/* Search Options Toggle */}
             {/* Search Options Toggle */}

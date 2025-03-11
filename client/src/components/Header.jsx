@@ -134,7 +134,7 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* formulario en el centro */}
+        {/* formulario en el centro 
         <form onSubmit={handleSubmit} className='bg-slate-100  p-3 rounded-lg flex items-center' >
           <input
             type="text"
@@ -147,7 +147,7 @@ export default function Header() {
             <FaSearch className='text-slate-500' />
           </button>
 
-        </form>
+        </form> */}
 
         {/* Lado derecho: Icono de perfil o Sign In */}
         <div className='flex items-center'>
@@ -172,11 +172,19 @@ export default function Header() {
           )}
           <div className='relative ml-4' ref={dropdownRef}>
             {currentUser ? (
+              <div className="relative group">
               <img
-                className='rounded-full h-7 w-7 object-cover cursor-pointer'
-                src={currentUser.avatar} alt="profile"
+                className="rounded-full h-7 w-7 object-cover cursor-pointer transition-all duration-200
+                           group-hover:scale-110 group-hover:ring-2 group-hover:ring-pink-400"
+                src={currentUser.avatar} 
+                alt="profile"
                 onClick={handleProfileClick}
               />
+              
+              {/* Optional: Small indicator arrow */}
+              <span className="absolute right-0 bottom-0 h-2 w-2 bg-green-500 rounded-full 
+                              border border-white transform translate-x-0.5 translate-y-0.5"></span>
+            </div>
             ) : (
               <Link to='/sign-in' className="text-slate-700 hover:underline">
                 Iniciar Sesion

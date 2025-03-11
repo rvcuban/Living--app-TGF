@@ -1,7 +1,10 @@
 // src/components/SearchAutocompleteInput.jsx
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState ,useEffect} from 'react';
 import { Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 import { libraries } from '../lib/googleAutcompletePlaces';
+import { FaSearch, FaTimes, FaMapMarkerAlt } from 'react-icons/fa';
+
+
 
 export default function SearchAutocompleteInput({
   value,
@@ -44,6 +47,49 @@ export default function SearchAutocompleteInput({
       onChange(e.target.value);
     }
   };
+
+  useEffect(() => {
+    if (isLoaded) {
+      // Add custom styles to the Google autocomplete dropdown
+      const style = document.createElement('style');
+      style.textContent = `
+        .pac-container {
+          border-radius: 12px;
+          border: none;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          margin-top: 8px;
+          font-family: inherit;
+          overflow: hidden;
+        }
+        .pac-item {
+          padding: 10px 15px;
+          cursor: pointer;
+        }
+        .pac-item:hover {
+          background-color: #f3f4f6;
+        }
+        .pac-item-selected {
+          background-color: #eff6ff;
+        }
+        .pac-icon {
+          color: #3b82f6;
+        }
+        .pac-item-query {
+          font-weight: 500;
+          color: #111827;
+        }
+        .pac-matched {
+          font-weight: 600;
+          color: #3b82f6;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
+  }, [isLoaded]);
 
   if (!isLoaded) {
     return <input type="text" disabled placeholder="Cargando Google..." />;
