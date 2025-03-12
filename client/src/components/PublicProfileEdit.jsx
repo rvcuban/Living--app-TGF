@@ -22,7 +22,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { app } from '../firebase'; // Ajusta la importación de tu configuración Firebase
 
 /** Componente Tabs para manejar las pestañas */
-function Tabs({ tabs, defaultTab, children ,className = ''}) {
+function Tabs({ tabs, defaultTab, children, className = '' }) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const tabContainerRef = useRef(null);
 
@@ -44,8 +44,8 @@ function Tabs({ tabs, defaultTab, children ,className = ''}) {
               onClick={() => setActiveTab(tab)}
               className={`
                 px-4 py-2 text-sm sm:text-base whitespace-nowrap flex-shrink-0
-                ${activeTab === tab 
-                  ? 'border-b-2 border-blue-500 text-blue-600 font-medium' 
+                ${activeTab === tab
+                  ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
                   : 'text-gray-500 hover:text-gray-700'}
               `}
             >
@@ -54,12 +54,12 @@ function Tabs({ tabs, defaultTab, children ,className = ''}) {
           ))}
         </div>
       </div>
-      
+
       {/* Tab content - ensure it takes full width */}
       <div className="w-full">
         {React.Children.map(children, child => {
-          return child.props.value === activeTab 
-            ? React.cloneElement(child, { className: 'w-full' }) 
+          return child.props.value === activeTab
+            ? React.cloneElement(child, { className: 'w-full' })
             : null;
         })}
       </div>
@@ -84,7 +84,7 @@ export default function PublicProfileEdit() {
 
   const [showReviewModal, setShowReviewModal] = useState(false);
 
-  
+
 
   // Lista de videos seleccionados para eliminación
   const [selectedVideos, setSelectedVideos] = useState([]);
@@ -151,10 +151,10 @@ export default function PublicProfileEdit() {
     );
   }
 
-  
+
 
   const { username, avatar, shortBio, badges } = user;
-   
+
   // Helpers para rating y medallas (puedes adaptarlos a tu gusto)
   const renderStars = (ratingValue) => {
     const stars = [];
@@ -252,11 +252,11 @@ export default function PublicProfileEdit() {
           'state_changed',
           (snapshot) => {
             // Para videos, actualizamos el progreso
-            
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setVideoPerc(Math.round(progress));
-            
-        },
+
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setVideoPerc(Math.round(progress));
+
+          },
           (err) => reject(err),
           () => {
             getDownloadURL(uploadTask.snapshot.ref)
@@ -472,8 +472,8 @@ export default function PublicProfileEdit() {
           )}
         </div>
 
-         {/* Barra de progreso para subida de video */}
-         {videoPerc > 0 && videoPerc < 100 && (
+        {/* Barra de progreso para subida de video */}
+        {videoPerc > 0 && videoPerc < 100 && (
           <div className="w-full mt-2">
             <div className="bg-gray-200 h-2 rounded">
               <div
@@ -498,9 +498,8 @@ export default function PublicProfileEdit() {
               return (
                 <div
                   key={idx}
-                  className={`relative aspect-[9/16] overflow-hidden rounded bg-black cursor-pointer border-2 ${
-                    isSelected ? 'border-blue-500' : 'border-transparent'
-                  }`}
+                  className={`relative aspect-[9/16] overflow-hidden rounded bg-black cursor-pointer border-2 ${isSelected ? 'border-blue-500' : 'border-transparent'
+                    }`}
                   onClick={() => {
                     if (isVideo) {
                       // Toggle selección solo en videos
@@ -522,7 +521,7 @@ export default function PublicProfileEdit() {
                       preload="none"
                       controls
                       controlsList="nodownload"
-                      
+
                       className="absolute inset-0 w-full h-full object-cover"
                     >
                       <source src={item.url} type="video/mp4" />
@@ -610,7 +609,7 @@ export default function PublicProfileEdit() {
           <p className="text-gray-500">Aún no hay reseñas para este perfil.</p>
         )}
         <div className="mt-4 text-center">
-          
+
         </div>
       </div>
     );
@@ -645,14 +644,15 @@ export default function PublicProfileEdit() {
           </span>
         </div>
         {/* Botones de guardar/cancelar */}
-       
+
       </div>
 
       {/* Tabs */}
       <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden w-full">
-        <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí"  className="w-full">
-          <div value="Sobre mí">{renderAboutTab()}</div>
+        <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí" className="w-full">
           <div value="Galería">{renderGalleryTab()}</div>
+          <div value="Sobre mí">{renderAboutTab()}</div>
+
           <div value="Opiniones">{renderReviewsTab()}</div>
         </Tabs>
 

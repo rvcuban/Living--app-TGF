@@ -18,11 +18,13 @@ export default function Onboarding() {
   const onReturn = useCallback(
     async (values) => {
       try {
+        const processedBio = values.bio?.trim() || null; //para poder dejar la vio vacia
         const payload = {
           ...values,
           isNewUser: false,
+          bio: processedBio,
           preferences: {
-            schedule: values.schedule, 
+            schedule: values.schedule,
             smoker: values.fumador,
             pets: values.mascotas
           },
@@ -44,7 +46,8 @@ export default function Onboarding() {
           toast.error(data.message || "Error al actualizar el perfil.");
         }
       } catch (error) {
-        toast.error(error.message);
+        toast.error("No se pudo actualizar el perfil. Inténtalo de nuevo.");
+        console.error(error); //  the console error for debugging
       }
     },
     [currentUser, dispatch, navigate]
@@ -58,7 +61,7 @@ export default function Onboarding() {
       <Formity
         schema={schema}
         onReturn={onReturn}
-        // onYield: se ejecuta cuando pasas cada paso, si lo deseas
+      // onYield: se ejecuta cuando pasas cada paso, si lo deseas
       />
     </div>
   );

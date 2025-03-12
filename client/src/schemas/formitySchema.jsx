@@ -50,7 +50,7 @@ export const schema = [
           >
             <Layout
               heading="Paso 1: Ubicación y Horario"
-              description="¿Dónde vives y en qué horario estás más en casa?"
+              description="¿Dónde buscas compi y en qué horario estás más en casa?"
               fields={[
                 <GoogleLocationField
                   key="location"
@@ -183,7 +183,7 @@ export const schema = [
             resolver={zodResolver(
               z.object({
                 username: z.string().min(1, 'Nombre de usuario requerido'),
-                bio: z.string().default(''),
+                bio: z.string().optional().default(''),
               })
             )}
           >
@@ -200,7 +200,7 @@ export const schema = [
                 <TextField
                   key="bio"
                   name="bio"
-                  label="Descripción breve"
+                  label="Descripción breve (opcional)"
                   placeholder="Escribe lo que quieras..."
                 />,
               ]}

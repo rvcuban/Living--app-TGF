@@ -90,7 +90,10 @@ export const google = async (req, res, next) => {
 
         })
         .status(200)
-        .json(rest);
+        .json({
+          ...rest,
+          token // Include the token in response
+        });
     } else {
       const generatedPassword =
         Math.random().toString(36).slice(-8) +
@@ -117,7 +120,8 @@ export const google = async (req, res, next) => {
         .json({
           success: true,
           message: "Login exitoso",
-          user: rest,
+          ...rest,
+          token, // Include token here too
           isNewUser: newUser.isNewUser,
         });
     }

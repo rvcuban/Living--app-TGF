@@ -48,12 +48,12 @@ export default function Profile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [activeSection, setActiveSection] = useState('ProfileContent'); // Estado para la sección activa
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Control de apertura del sidebar en móviles
-
+  
   const dispatch = useDispatch();
 
   console.log(formData);
 
-
+   
   // Detectar si es móvil
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -248,7 +248,7 @@ export default function Profile() {
         )}
 
       {/* Contenido principal */}
-      <div className="flex-grow w-full md:w-3/4 mt-4 md:mt-16 px-0 sm:px-4 p-0 sm:p-5 pb-20 bg-white rounded-lg">
+      <div className="flex-grow w-full md:w-3/4 mt-4 md:mt-16 px-0 sm:px-4 p-0 sm:p-5 pb-20 bg-white rounded-xl">
 
         <Routes>
           {/* La ruta por defecto (índice) muestra ProfileContent */}

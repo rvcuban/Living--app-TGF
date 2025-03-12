@@ -30,11 +30,7 @@ const isTokenExpired = (token) => {
   };
 
 
-const initialState = {
-    currentUser: null,
-    error: null,
-    loading: false,
-};
+const initialState = getInitialState();
 
 
 const userSlice = createSlice({
