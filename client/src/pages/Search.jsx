@@ -17,6 +17,14 @@ export default function Search() {
     sort: 'created_at',
     order: 'desc',
     location: '', // Añadido el campo 'location'
+
+    // User filters
+    schedule: 'all', // 'all', 'manana', 'tarde', 'flexible'
+    smoker: false,
+    pets: false,
+    interests: [], // Array of selected interests
+
+
   });
 
   const [loading, setLoading] = useState(false);
@@ -43,74 +51,86 @@ export default function Search() {
     const operationFromUrl = urlParams.get('operation') || 'rent';
     const locationFromUrl = urlParams.get('location') || '';
 
-    if (
-      searchTermFromUrl ||
-      typeFromUrl ||
-      parkingFromUrl ||
-      furnishedFromUrl ||
-      offerFromUrl ||
-      sortFromUrl ||
-      orderFromUrl||
-      operationFromUrl ||
-      locationFromUrl
-    ) {
-      setSidebardata({
+      // Create base state object
+      let newSidebarData = {
+        ...sidebardata,
         searchTerm: searchTermFromUrl || '',
-        type: typeFromUrl || 'all',
-        parking: parkingFromUrl === 'true' ? true : false,
-        furnished: furnishedFromUrl === 'true' ? true : false,
-        offer: offerFromUrl === 'true' ? true : false,
         sort: sortFromUrl || 'created_at',
         order: orderFromUrl || 'desc',
         location: locationFromUrl || '',
+      };
+      
+      // Add operation-specific parameters
+      if (operationFromUrl === 'rent') {
+        const typeFromUrl = urlParams.get('type');
+        const parkingFromUrl = urlParams.get('parking');
+        const furnishedFromUrl = urlParams.get('furnished');
+        const offerFromUrl = urlParams.get('offer');
         
-      });
-      setOperation(operationFromUrl); // Actualizar estado 'operation'
-    }
-
-    const fetchData = async () => {
-      setLoading(true);
-      setShowMore(false);
-      const searchQuery = urlParams.toString();
-
-      try {
-        if (operationFromUrl === 'rent') {
-          // Buscar en listings
-          const res = await fetch(`/api/listing/get?${searchQuery}`);
-          const data = await res.json();
-          console.log('Listings recibidos:', data);
-          if (data.length > 8) {
-            setShowMore(true);
-          } else {
-            setShowMore(false);
-          }
-          setListings(data);
-          setUsers([]); // Limpiar usuarios
-        } else if (operationFromUrl === 'share') {
-          // Buscar en users
-          const res = await fetch(`/api/user/get?${searchQuery}`);
-          const data = await res.json();
-          console.log('Usuarios recibidos:', data.data); // Log para depuración
-          console.log("Término normalizado:", data.normalizedSearchTerm);
-          if (data.data && data.data.length > 8) {
-            setShowMore(true);
-          } else {
-            setShowMore(false);
-          }
-          setUsers(data.data);
-          console.log(users);
-          setListings([]); // Limpiar listings
-          console.log('Estado users actualizado:', data); // Log adicional
-        }
-      } catch (error) {
-        console.error('Error fetching search results:', error);
-        toast.error('Error al obtener los resultados de búsqueda.');
+        newSidebarData = {
+          ...newSidebarData,
+          type: typeFromUrl || 'all',
+          parking: parkingFromUrl === 'true',
+          furnished: furnishedFromUrl === 'true',
+          offer: offerFromUrl === 'true',
+        };
+      } else {
+        const scheduleFromUrl = urlParams.get('schedule');
+        const smokerFromUrl = urlParams.get('smoker');
+        const petsFromUrl = urlParams.get('pets');
+        const interestsFromUrl = urlParams.get('interests');
+        
+        newSidebarData = {
+          ...newSidebarData,
+          schedule: scheduleFromUrl || 'all',
+          smoker: smokerFromUrl === 'true',
+          pets: petsFromUrl === 'true',
+          interests: interestsFromUrl ? interestsFromUrl.split(',') : [],
+        };
       }
-
-      setLoading(false);
-    };
-    fetchData();
-  }, [location.search]);
+      
+      // Update state
+      setSidebardata(newSidebarData);
+      setOperation(operationFromUrl);
+      
+      const fetchData = async () => {
+        setLoading(true);
+        setShowMore(false);
+        const searchQuery = urlParams.toString();
+  
+        try {
+          if (operationFromUrl === 'rent') {
+            const res = await fetch(`/api/listing/get?${searchQuery}`);
+            const data = await res.json();
+            console.log('Listings recibidos:', data);
+            if (data.length > 8) {
+              setShowMore(true);
+            } else {
+              setShowMore(false);
+            }
+            setListings(data);
+            setUsers([]);
+          } else if (operationFromUrl === 'share') {
+            const res = await fetch(`/api/user/get?${searchQuery}`);
+            const data = await res.json();
+            console.log('Usuarios recibidos:', data.data);
+            if (data.data && data.data.length > 8) {
+              setShowMore(true);
+            } else {
+              setShowMore(false);
+            }
+            setUsers(data.data);
+            setListings([]);
+          }
+        } catch (error) {
+          console.error('Error fetching search results:', error);
+          toast.error('Error al obtener los resultados de búsqueda.');
+        }
+  
+        setLoading(false);
+      };
+      fetchData();
+    }, [location.search]);
 
   /*const fetchListings = async () => {
     setLoading(true);
@@ -126,9 +146,9 @@ export default function Search() {
     setListings(data);
     setLoading(false);
   };
-
+  
   fetchListings();
-}, [location.search]);*/
+  }, [location.search]);*/
 
 
 
@@ -155,7 +175,7 @@ export default function Search() {
       setSidebardata({ ...sidebardata, type: e.target.id });
     }
 
-    if (e.target.id === 'searchTerm' || id === 'location') {
+    if (e.target.id === 'searchTerm' || e.target.id === 'location') {
       setSidebardata({ ...sidebardata, searchTerm: e.target.value });
     }
 
@@ -178,6 +198,42 @@ export default function Search() {
 
       setSidebardata({ ...sidebardata, sort, order });
     }
+
+
+    // User-specific filters
+    if (e.target.id === 'schedule') {
+      setSidebardata({ ...sidebardata, schedule: e.target.value });
+    }
+
+    if (e.target.id === 'smoker' || e.target.id === 'pets') {
+      setSidebardata({
+        ...sidebardata,
+        [e.target.id]: e.target.checked || e.target.checked === 'true' ? true : false,
+      });
+    }
+
+    // For interests (multiple selection)
+    if (e.target.name === 'interests') {
+      const interest = e.target.value;
+      if (e.target.checked) {
+        setSidebardata({
+          ...sidebardata,
+          interests: [...sidebardata.interests, interest]
+        });
+      } else {
+        setSidebardata({
+          ...sidebardata,
+          interests: sidebardata.interests.filter(i => i !== interest)
+        });
+      }
+    }
+
+    // Sort handling (common but with different options)
+    if (e.target.id === 'sort_order') {
+      const sort = e.target.value.split('_')[0] || 'created_at';
+      const order = e.target.value.split('_')[1] || 'desc';
+      setSidebardata({ ...sidebardata, sort, order });
+    }
   };
 
   const handleSubmit = (e) => {
@@ -193,6 +249,21 @@ export default function Search() {
     urlParams.set('location', sidebardata.location);
 
     urlParams.set('operation', operation); // Incluir operación
+
+
+    if (operation === 'rent') {
+      urlParams.set('type', sidebardata.type);
+      urlParams.set('parking', sidebardata.parking);
+      urlParams.set('furnished', sidebardata.furnished);
+      urlParams.set('offer', sidebardata.offer);
+    } else if (operation === 'share') {
+      urlParams.set('schedule', sidebardata.schedule);
+      urlParams.set('smoker', sidebardata.smoker);
+      urlParams.set('pets', sidebardata.pets);
+      if (sidebardata.interests.length > 0) {
+        urlParams.set('interests', sidebardata.interests.join(','));
+      }
+    }
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
   };
@@ -242,94 +313,153 @@ export default function Search() {
       {(showFilters || !isMobile) && (
 
         <div className='p-7  border-b-2 md:border-r-2 md:min-h-screen lg:w-1/4 lg:max-w-xs'>
-          <form onSubmit={handleSubmit} className='flex flex-col gap-8'>
-            <div className='flex items-center gap-2'>
-              <label className='whitespace-nowrap font-semibold'>
-                Search Term:
-              </label>
-              <input
-                type='text'
-                id='searchTerm'
-                placeholder='Search...'
-                className='border rounded-lg p-3 w-full'
-                value={sidebardata.searchTerm}
-                onChange={handleChange}
-              />
-            </div>
-            {/* Filtros específicos según el tipo */}
-            <div className='flex gap-2 flex-col '>
-              <label className='font-semibold'>Tipo:</label>
-              <div className='flex gap-2'>
-                <input
-                  type='checkbox'
-                  id='all'
-                  className='w-5'
-                  onChange={handleChange}
-                  checked={sidebardata.type === 'all'}
-                />
-                <span>Rent & Sale</span>
-              </div>
-              <div className='flex gap-2'>
-                <input
-                  type='checkbox'
-                  id='rent'
-                  className='w-5'
-                  onChange={handleChange}
-                  checked={sidebardata.type === 'rent'}
-                />
-                <span>Rent</span>
-              </div>
-              <div className='flex gap-2'>
-                <input
-                  type='checkbox'
-                  id='sale'
-                  className='w-5'
-                  onChange={handleChange}
-                  checked={sidebardata.type === 'sale'}
-                />
-                <span>Sale</span>
-              </div>
-              <div className='flex gap-2'>
-                <input
-                  type='checkbox'
-                  id='offer'
-                  className='w-5'
-                  onChange={handleChange}
-                  checked={sidebardata.offer}
-                />
-                <span>Offer</span>
-              </div>
-            </div>
+          <form onSubmit={handleSubmit} className='flex flex-col gap-6'>
+            {/* Common search term filter */}
+            
+            {/* Location filter - common for both */}
+           
 
-            <div className='flex gap-2 flex-col '>
-              <label className='font-semibold'>Amenities:</label>
-              <div className='flex gap-2'>
-                <input
-                  type='checkbox'
-                  id='parking'
-                  className='w-5'
-                  onChange={handleChange}
-                  checked={sidebardata.parking}
-                />
-                <span>Parking</span>
-              </div>
-              <div className='flex gap-2'>
-                <input
-                  type='checkbox'
-                  id='furnished'
-                  className='w-5'
-                  onChange={handleChange}
-                  checked={sidebardata.furnished}
-                />
-                <span>Furnished</span>
-              </div>
-            </div>
+            {/* Conditional filters based on operation */}
+            {operation === 'rent' ? (
+              <>
+                {/* Property-specific filters */}
+                <div className='flex gap-2 flex-col'>
+                  <label className='font-semibold'>Tipo:</label>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='all'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.type === 'all'}
+                    />
+                    <span>Todos</span>
+                  </div>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='rent'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.type === 'rent'}
+                    />
+                    <span>Alquiler</span>
+                  </div>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='sale'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.type === 'sale'}
+                    />
+                    <span>Venta</span>
+                  </div>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='offer'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.offer}
+                    />
+                    <span>Ofertas</span>
+                  </div>
+                </div>
 
+                <div className='flex gap-2 flex-col'>
+                  <label className='font-semibold'>Comodidades:</label>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='parking'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.parking}
+                    />
+                    <span>Parking</span>
+                  </div>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='furnished'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.furnished}
+                    />
+                    <span>Amueblado</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* User-specific filters */}
+                <div className='flex gap-2 flex-col'>
+                  <label className='font-semibold'>Horario en casa:</label>
+                  <select
+                    id='schedule'
+                    value={sidebardata.schedule}
+                    onChange={handleChange}
+                    className='border rounded-lg p-2.5'
+                  >
+                    <option value='all'>Todos los horarios</option>
+                    <option value='manana'>Mañanas</option>
+                    <option value='tarde'>Tardes</option>
+                    <option value='flexible'>Flexible</option>
+                  </select>
+                </div>
+
+                <div className='flex gap-2 flex-col'>
+                  <label className='font-semibold'>Preferencias:</label>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='smoker'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.smoker}
+                    />
+                    <span>Fumador</span>
+                  </div>
+                  <div className='flex gap-2'>
+                    <input
+                      type='checkbox'
+                      id='pets'
+                      className='w-5'
+                      onChange={handleChange}
+                      checked={sidebardata.pets}
+                    />
+                    <span>Acepta mascotas</span>
+                  </div>
+                </div>
+
+                <div className='flex gap-2 flex-col'>
+                  <label className='font-semibold'>Intereses:</label>
+                  <div className='grid grid-cols-2 gap-x-2 gap-y-1'>
+                    {['tranquilo', 'fiestas', 'deportes', 'musica', 'Introvertido', 'Extrovertido', 'Artes', 'Videojuegos'].map(interest => (
+                      <div key={interest} className='flex items-center gap-1'>
+                        <input
+                          type='checkbox'
+                          name='interests'
+                          value={interest}
+                          className='w-4 h-4'
+                          onChange={handleChange}
+                          checked={sidebardata.interests.includes(interest)}
+                        />
+                        <span className='text-sm'>{interest}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Sort options - different for each operation */}
             <div className='flex flex-col gap-2'>
               <label className='font-semibold'>Ordenar por:</label>
               <select
                 onChange={handleChange}
-                defaultValue={'created_at_desc'}
+                value={`${sidebardata.sort}_${sidebardata.order}`}
                 id='sort_order'
                 className='border rounded-lg p-3'
               >
@@ -351,7 +481,7 @@ export default function Search() {
               </select>
             </div>
 
-            <button className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-sah-primary-light transition-colors uppercase hover:opacity-95'>
+            <button className='bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors uppercase hover:opacity-95'>
               Buscar
             </button>
           </form>
