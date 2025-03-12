@@ -234,7 +234,7 @@ export default function Profile() {
 
 
   return (
-    <div className={`flex ${isMobile ? 'flex-col' : 'h-screen'}`}>
+    <div className={`flex ${isMobile ? 'flex-col' : 'min-h-screen'}`}>
    <div className="container mx-auto flex flex-col md:flex-row ">
     {/* Sidebar para pantallas grandes o móviles cuando está abierto */}
     {(!isMobile || isSidebarOpen) && (
@@ -248,7 +248,7 @@ export default function Profile() {
         )}
 
       {/* Contenido principal */}
-      <div className="flex-grow md:w-3/4 mt-4 md:mt-16 px-4 p-5 bg-white rounded-lg ">
+      <div className="flex-grow w-full md:w-3/4 mt-4 md:mt-16 px-0 sm:px-4 p-0 sm:p-5 pb-20 bg-white rounded-lg">
 
         <Routes>
           {/* La ruta por defecto (índice) muestra ProfileContent */}

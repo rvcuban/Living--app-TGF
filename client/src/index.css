@@ -127,3 +127,14 @@ The image itself is defined in an :after psuedo-element. All you have to is repl
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Add this to your global CSS file */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

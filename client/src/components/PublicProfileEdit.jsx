@@ -22,7 +22,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/
 import { app } from '../firebase'; // Ajusta la importación de tu configuración Firebase
 
 /** Componente Tabs para manejar las pestañas */
-function Tabs({ tabs, defaultTab, children }) {
+function Tabs({ tabs, defaultTab, children ,className = ''}) {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const tabContainerRef = useRef(null);
 
@@ -34,31 +34,34 @@ function Tabs({ tabs, defaultTab, children }) {
   }, [activeTab]);
 
   return (
-    <div>
-      {/* Barra de pestañas */}
-      <div
-        ref={tabContainerRef}
-        className="flex overflow-x-auto whitespace-nowrap border-b scrollbar-hide"
-      >
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-shrink-0 py-2 px-4 font-medium transition-colors focus:outline-none ${
-              activeTab === tab
-                ? 'active-tab border-blue-500 text-blue-500 border-b-2'
-                : 'border-transparent text-gray-500 hover:text-blue-500'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+    <div className={`w-full ${className}`}>
+      {/* Tab headers - make them fit mobile screens */}
+      <div className="border-b w-full">
+        <div className="flex w-full overflow-x-auto no-scrollbar">
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`
+                px-4 py-2 text-sm sm:text-base whitespace-nowrap flex-shrink-0
+                ${activeTab === tab 
+                  ? 'border-b-2 border-blue-500 text-blue-600 font-medium' 
+                  : 'text-gray-500 hover:text-gray-700'}
+              `}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="mt-4">
-        {
-          React.Children.toArray(children)
-            .find((child) => child.props.value === activeTab)
-        }
+      
+      {/* Tab content - ensure it takes full width */}
+      <div className="w-full">
+        {React.Children.map(children, child => {
+          return child.props.value === activeTab 
+            ? React.cloneElement(child, { className: 'w-full' }) 
+            : null;
+        })}
       </div>
     </div>
   );
@@ -148,8 +151,10 @@ export default function PublicProfileEdit() {
     );
   }
 
-  const { username, avatar, shortBio, badges } = user;
+  
 
+  const { username, avatar, shortBio, badges } = user;
+   
   // Helpers para rating y medallas (puedes adaptarlos a tu gusto)
   const renderStars = (ratingValue) => {
     const stars = [];
@@ -336,7 +341,7 @@ export default function PublicProfileEdit() {
   // Sobre mí
   const renderAboutTab = () => {
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 overflow-y-auto max-h-[70vh]">
         {/* Biografía */}
         <div>
           <label className="block font-semibold text-gray-700">Biografía:</label>
@@ -605,12 +610,7 @@ export default function PublicProfileEdit() {
           <p className="text-gray-500">Aún no hay reseñas para este perfil.</p>
         )}
         <div className="mt-4 text-center">
-          <button
-            onClick={() => setShowReviewModal(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-          >
-            Escribir reseña
-          </button>
+          
         </div>
       </div>
     );
@@ -618,7 +618,7 @@ export default function PublicProfileEdit() {
 
   /** Render principal */
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="max-w-4xl mx-auto p-2 sm:p-4 mb-16 sm:mb-24">
       {/* Encabezado */}
       <div className="bg-white shadow-md rounded-lg p-6 flex flex-col items-center">
         <img
@@ -649,8 +649,8 @@ export default function PublicProfileEdit() {
       </div>
 
       {/* Tabs */}
-      <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden">
-        <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí">
+      <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden w-full">
+        <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí"  className="w-full">
           <div value="Sobre mí">{renderAboutTab()}</div>
           <div value="Galería">{renderGalleryTab()}</div>
           <div value="Opiniones">{renderReviewsTab()}</div>
