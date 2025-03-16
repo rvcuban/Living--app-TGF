@@ -10,7 +10,7 @@ export default function Footer() {
         {/* Logo o nombre de la app */}
         <div className="mb-2 md:mb-0">
           <Link to="/" className="text-xl font-bold hover:underline">
-            WikiHome
+            CompiTrueno
           </Link>
         </div>
         {/* Menú de navegación */}

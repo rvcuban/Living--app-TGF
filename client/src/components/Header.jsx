@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import { useEffect, useState, useRef } from "react";
 import DropDownProfile from "./DropDownProfile";
 import DropDownProperty from "./DropDownProperty";
-import logo from '../assets/logo.jpg';
+import logo from '../assets/logo.svg';
 import { FaSearch } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 
@@ -128,8 +128,8 @@ export default function Header() {
           <Link to='/'>
             <h1 className='font-bold text-sm sm:text-xl flex items-center'>
               <img src={logo} alt='Logo' className='cursor-pointer h-8 w-8 mr-2' />
-              <span className='text-black'>Wiki</span>
-              <span className='text-red-700'>Home</span>
+              <span className='text-black'>Compi</span>
+              <span className='text-blue-400'>Trueno</span>
             </h1>
           </Link>
         </div>

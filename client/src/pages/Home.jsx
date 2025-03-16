@@ -37,7 +37,7 @@ export default function Home() {
 
   const handleRentClick = () => {
     // Show the blocked effect
-    setShowBlockedEffect(true);
+    /* setShowBlockedEffect(true);
     setShowBlockedMessage(true);
 
     // Reset the effect after animation completes
@@ -48,7 +48,8 @@ export default function Home() {
     // Hide the message after a few seconds
     setTimeout(() => {
       setShowBlockedMessage(false);
-    }, 3000);
+    }, 3000); */
+    setOperation('rent');
   };
 
 
@@ -351,7 +352,7 @@ export default function Home() {
       <div className="py-16 bg-blue-50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-            ¿Por qué elegir MyLivingApp?
+            ¿Por qué elegir CompiTrueno.com?
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">

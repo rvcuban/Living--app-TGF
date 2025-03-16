@@ -79,7 +79,7 @@ export default function SignIn() {
     <div className="min-h-screen flex flex-col items-center bg-gray-50 px-4 pt-6">
       <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md">
         <h1 className="text-3xl font-semibold text-center text-gray-900 mb-6">
-          Bienvenido a TFGStartup
+          Bienvenido CompiTrueno
         </h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
