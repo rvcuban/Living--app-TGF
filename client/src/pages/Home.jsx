@@ -219,19 +219,19 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={handleRentClick}
-                  className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium transition-colors group ${operation === 'rent' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
+                  className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium transition-colors group whitespace-nowrap px-2  ${operation === 'rent' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
                     }`}
                 >
-                  <FaHome className="mr-2" /> •••••••
+                  <FaHome className="mr-1.5 flex-shrink-0" /> •••••••
                   <span className="absolute inset-0 bg-transparent group-hover:bg-red-100/20 rounded-full transition-colors"></span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setOperation('share')}
-                  className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium transition-colors ${operation === 'share' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
+                  className={`relative z-10 w-1/2 h-full flex justify-center items-center text-sm font-medium transition-colors group whitespace-nowrap px-2  ${operation === 'share' ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
                     }`}
                 >
-                  <FaUsers className="mr-2" /> Buscar Compi
+                  <FaUsers className="mr-1.5 flex-shrink-0" /> Buscar Compi
                 </button>
               </div>
             </div>
@@ -244,7 +244,7 @@ export default function Home() {
                 value={searchTerm}
                 onChange={(value) => setSearchTerm(value)}
                 onSelectPlace={(value) => setSearchTerm(value)}
-                placeholder={operation === 'rent' ? "¿Dónde quieres alquilar?" : "¿Dónde buscas compañero?"}
+                placeholder={operation === 'rent' ? "¿Dónde quieres alquilar?" : "¿Dónde buscas compi?"}
                 inputClassName="bg-transparent focus:outline-none w-full px-6 py-3.5 text-gray-600 rounded-full"
               />
               <button
