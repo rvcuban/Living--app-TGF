@@ -8,7 +8,7 @@ import DropDownProperty from "./DropDownProperty";
 import logo from '../assets/logo.svg';
 import { FaSearch } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
-
+import BuildingPage from "../pages/BuildingPage";
 
 export default function Header() {
   const { currentUser } = useSelector(state => state.user);

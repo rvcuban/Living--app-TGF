@@ -5,6 +5,7 @@ import About from "./pages/About";
 import SingIn from "./pages/SignIn";
 import Profile from "./pages/Profile";
 
+import BuildingPage from "./pages/BuildingPage";
 
 import Header from "./components/Header";
 import SignUp from "./pages/SignUp";
@@ -45,7 +46,7 @@ export default function App() {
 
   const { currentUser } = useSelector(state => state.user);
   const dispatch = useDispatch();
-  
+
   useEffect(() => {
     // Check token expiration periodically
     if (currentUser?.token) {
@@ -60,13 +61,13 @@ export default function App() {
           console.error('Error checking token expiration:', error);
         }
       };
-      
+
       // Check once when component mounts
       checkTokenExpiration();
-      
+
       // Then set up interval to check periodically
       const interval = setInterval(checkTokenExpiration, 5 * 60 * 1000); // Check every 5 minutes
-      
+
       return () => clearInterval(interval);
     }
   }, [currentUser, dispatch]);
@@ -107,6 +108,8 @@ export default function App() {
         <Route path="/request" element={<RequestContent />} />
 
       </Route>
+      {/* Catch-all route for non-existent pages */}
+      <Route path='*' element={<BuildingPage />} />
 
       <Route path="/" element={<Home />} />
 

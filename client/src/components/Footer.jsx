@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaFacebookF, FaTwitter, FaInstagram } from 'react-icons/fa';
-
+import BuildingPage from '../pages/BuildingPage';
 export default function Footer() {
   return (
     <footer className="bg-gray-800 text-white py-4 mt-8">
