@@ -66,6 +66,7 @@ export default function SignIn() {
       if (data.isNewUser) {
         navigate('/onboarding'); 
       } else {
+        
         navigate('/');
       }//usamos esto apra que una vez que se ha creado el usaurio sin errores navegar ahsta la mpapgina de inicio de sesion
       // posiblemente en un futuro lo cambie por navegar directamente dentro del eprfil paara mejorar la experiencia de ususario 

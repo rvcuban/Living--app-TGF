@@ -176,3 +176,153 @@ export const getRoommateStatus = async (req, res) => {
     });
   }
 };
+
+// NEW: Get sent roommate requests
+export const getSentRoommateRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const sentRequests = await RoomMate.find({ sender: userId })
+      .populate('receiver', 'username avatar')
+      .populate({
+        path: 'receiver',
+        select: 'username avatar'
+      })
+      .sort({ createdAt: -1 });
+    
+    return res.json({
+      success: true,
+      applications: sentRequests.map(req => ({
+        _id: req._id,
+        status: req.status,
+        createdAt: req.createdAt,
+        // Format to match your applications structure
+        applicantId: {
+          _id: req.sender,
+          username: req.sender.username,
+          avatar: req.sender.avatar
+        },
+        listingId: {
+          owner: req.receiver
+        }
+      }))
+    });
+  } catch (error) {
+    console.error('Error getting sent roommate requests:', error);
+    return res.status(500).json({ success: false, message: 'Error al obtener solicitudes enviadas' });
+  }
+};
+
+// NEW: Get received roommate requests
+export const getReceivedRoommateRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const receivedRequests = await RoomMate.find({ receiver: userId })
+      .populate('sender', 'username avatar')
+      .sort({ createdAt: -1 });
+    
+    return res.json({
+      success: true,
+      applications: receivedRequests.map(req => ({
+        _id: req._id,
+        status: req.status,
+        createdAt: req.createdAt,
+        // Format to match your applications structure
+        applicantId: {
+          _id: req.sender._id,
+          username: req.sender.username,
+          avatar: req.sender.avatar
+        },
+        // Add any other fields your frontend expects
+        type: 'roommate'
+      }))
+    });
+  } catch (error) {
+    console.error('Error getting received roommate requests:', error);
+    return res.status(500).json({ success: false, message: 'Error al obtener solicitudes recibidas' });
+  }
+};
+
+//Get my buddies (accepted requests)
+export const getMyBuddies = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Find all accepted buddy requests where I'm either sender or receiver
+    const buddiesAsSender = await RoomMate.find({
+      sender: userId,
+      status: 'accepted'
+    }).populate('receiver', 'username avatar _id');
+
+    const buddiesAsReceiver = await RoomMate.find({
+      receiver: userId,
+      status: 'accepted'
+    }).populate('sender', 'username avatar _id');
+
+    // Format the data to have consistent structure
+    const formattedBuddies = [
+      ...buddiesAsSender.map(buddy => ({
+        _id: buddy._id,
+        createdAt: buddy.createdAt,
+        user: buddy.receiver
+      })),
+      ...buddiesAsReceiver.map(buddy => ({
+        _id: buddy._id,
+        createdAt: buddy.createdAt,
+        user: buddy.sender
+      }))
+    ];
+
+    return res.json({
+      success: true,
+      buddies: formattedBuddies
+    });
+  } catch (error) {
+    console.error('Error getting buddies:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener tus compañeros'
+    });
+  }
+};
+
+// Remove a buddy
+export const removeBuddy = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { buddyId } = req.params;
+
+    const buddyRequest = await RoomMate.findById(buddyId);
+    
+    if (!buddyRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Solicitud de compañero no encontrada'
+      });
+    }
+    
+    // Check if user is part of this buddy relationship
+    if (buddyRequest.sender.toString() !== userId && 
+        buddyRequest.receiver.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para eliminar esta relación de compañeros'
+      });
+    }
+    
+    // Delete the buddy request
+    await RoomMate.findByIdAndDelete(buddyId);
+    
+    return res.json({
+      success: true,
+      message: 'Compañero eliminado correctamente'
+    });
+  } catch (error) {
+    console.error('Error removing buddy:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al eliminar compañero'
+    });
+  }
+};

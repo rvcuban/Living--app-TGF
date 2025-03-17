@@ -6,7 +6,11 @@ import {
   acceptBuddyRequest,
   rejectBuddyRequest,
   getMyBuddyRequests,
-  getRoommateStatus
+  getRoommateStatus,
+  getReceivedRoommateRequests,
+  getSentRoommateRequests,
+  getMyBuddies,
+  removeBuddy,
 } from '../controllers/roomMate.controller.js';
 
 const router = express.Router();
@@ -25,5 +29,11 @@ router.get('/my-requests', verifyToken, getMyBuddyRequests);
 
 // NUEVO ENDPOINT: Obtener estado de compañerismo (none/pending/accepted)
 router.get('/status/:otherUserId', verifyToken, getRoommateStatus);
+
+router.get('/sent', verifyToken, getSentRoommateRequests);
+router.get('/received', verifyToken, getReceivedRoommateRequests);
+
+router.get('/buddies', verifyToken, getMyBuddies);  // Add this new route
+router.post('/remove/:buddyId', verifyToken, removeBuddy);
 
 export default router;
