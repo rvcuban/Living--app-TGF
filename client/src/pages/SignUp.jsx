@@ -2,12 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import OAuth from '../components/OAuth';
 import { FaEnvelope, FaLock } from 'react-icons/fa';
+import { useDispatch } from 'react-redux'; // Add this import
+import { signInSuccess } from '../redux/user/userSlice'; // Add this import
+
 
 export default function SignUp() {
   const [formData, setFormData] = useState({});
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch(); // Redux 
+
 
   const handleChange = (e) => {
     setFormData({
@@ -43,9 +48,10 @@ export default function SignUp() {
         setError(data.message);
         return;
       }
-      
+      dispatch(signInSuccess(data));
       setLoading(false);
-      navigate('/sign-in');
+      navigate('/onboarding');
+
     } catch (error) {
       setLoading(false);
       setError(error.message || 'Error al registrarse. Inténtalo de nuevo.');

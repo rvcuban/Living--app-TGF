@@ -270,36 +270,36 @@ export default function PublicProfile() {
 
     // Dentro de tu componente PublicProfile, agrega la siguiente función:
 
-     // Función para iniciar o reanudar una conversación
-     const handleStartChat = async () => {
+    // Función para iniciar o reanudar una conversación
+    const handleStartChat = async () => {
         if (!currentUser) {
-          toast.info('Debes iniciar sesión para enviar mensajes.');
-          navigate('/sign-in');
-          return;
+            toast.info('Debes iniciar sesión para enviar mensajes.');
+            navigate('/sign-in');
+            return;
         }
         try {
-          const res = await fetch('/api/chat/start', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${currentUser.token}`,
-            },
-            body: JSON.stringify({
-              receiverId: userId,
-              content: "Hola, he visto tu perfil y...", // mensaje predefinido
-            }),
-          });
-          const data = await res.json();
-          if (data.success) {
-            // Redirige a la conversación recién iniciada (o existente)
-            navigate(`/chat/${data.conversationId}`);
-          } else {
-            toast.error(data.message || 'Error al iniciar la conversación.');
-          }
+            const res = await fetch('/api/chat/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${currentUser.token}`,
+                },
+                body: JSON.stringify({
+                    receiverId: userId,
+                    content: "Hola, he visto tu perfil y...", // mensaje predefinido
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Redirige a la conversación recién iniciada (o existente)
+                navigate(`/chat/${data.conversationId}`);
+            } else {
+                toast.error(data.message || 'Error al iniciar la conversación.');
+            }
         } catch (error) {
-          toast.error(error.message);
+            toast.error(error.message);
         }
-      };
+    };
 
 
 
@@ -490,32 +490,37 @@ export default function PublicProfile() {
                     </div>
                 </div>
                 <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-center">
-                    {currentUser && currentUser._id !== userId && buddyStatus !== 'self' && (
+                    {userId !== currentUser?._id && (
                         <>
-                            {buddyStatus === 'none' && (
+                            {!currentUser ? (
                                 <button
                                     onClick={handleBeMyRoommate}
-                                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
                                 >
                                     Sé mi compañero
                                 </button>
-                            )}
-                            {buddyStatus === 'pending' && (
+                            ) : buddyStatus === 'none' ? (
+                                <button
+                                    onClick={handleBeMyRoommate}
+                                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+                                >
+                                    Sé mi compañero
+                                </button>
+                            ) : buddyStatus === 'pending' ? (
                                 <button
                                     disabled
                                     className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
                                 >
                                     Solicitud enviada...
                                 </button>
-                            )}
-                            {buddyStatus === 'accepted' && (
+                            ) : buddyStatus === 'accepted' ? (
                                 <button
                                     disabled
                                     className="bg-green-500 text-white px-4 py-2 rounded cursor-not-allowed"
                                 >
                                     Ya son compañeros
                                 </button>
-                            )}
+                            ) : null}
                         </>
                     )}
                     <button
@@ -529,9 +534,10 @@ export default function PublicProfile() {
 
             {/* Tabs Section */}
             <div className="mt-6 bg-white shadow-md rounded-lg overflow-hidden">
-                <Tabs tabs={['Sobre mí', 'Galería', 'Opiniones']} defaultTab="Sobre mí">
-                    <div value="Sobre mí">{renderAboutTab()}</div>
+                <Tabs tabs={['Galería', 'Sobre mí', 'Opiniones']} defaultTab="Galería">
                     <div value="Galería">{renderGalleryTab()}</div>
+                    <div value="Sobre mí">{renderAboutTab()}</div>
+
                     <div value="Opiniones">{renderReviewsTab()}</div>
                 </Tabs>
                 <UserReviewModal

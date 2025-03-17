@@ -10,75 +10,71 @@ import api from '../utils/apiFetch';
 export default function OAuth() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [auth, setAuth] = useState(null);
-  const [provider, setProvider] = useState(null);
-  
-  // Initialize Firebase Auth on component mount
-  useEffect(() => {
-    const authInstance = getAuth(app);
-    const googleProvider = new GoogleAuthProvider();
-    // Add scopes if needed
-    googleProvider.addScope('email');
-    googleProvider.addScope('profile');
-    
-    setAuth(authInstance);
-    setProvider(googleProvider);
-  }, []);
+  const [isLoading, setIsLoading] = useState(false); // Add this state variable
   
   const handleGoogleClick = async () => {
-    if (isLoading) return; // Prevent multiple clicks
-    
     try {
-      setIsLoading(true);
+      setIsLoading(true); // Set loading state to true when starting
       
-      if (!auth || !provider) {
-        console.error("Firebase auth not initialized");
-        return;
-      }
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
       
-      // Use the pre-initialized auth and provider
+      // Add specific configuration to comply with Google's requirements
+      provider.setCustomParameters({
+        // Force account selection even if one account is available
+        prompt: 'select_account',
+        // Request standard OAuth scopes
+        scope: 'profile email'
+      });
+      
+      // CRITICAL: Use signInWithPopup instead of any redirect or custom flow
       const result = await signInWithPopup(auth, provider);
       
-      // Check if we have the required user data
-      if (!result.user || !result.user.email) {
-        throw new Error("No user data received from Google");
-      }
+      const { displayName, email, photoURL } = result.user;
       
-      // Make the API call
-      const res = await api('/auth/google', {
+      // Send user data to backend
+      const response = await fetch('/api/auth/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: result.user.displayName || '',
-          email: result.user.email,
-          photo: result.user.photoURL || '',
+          name: displayName,
+          email,
+          photo: photoURL,
         }),
+        // Important: Send credentials for cookie handling
+        credentials: 'include'
       });
-
-      // Handle response
-      const data = await res.json();
       
-      if (!data || data.success === false) {
-        throw new Error(data?.message || "Failed to sign in with Google");
+      const data = await response.json();
+      setIsLoading(false); // Set loading to false after request finishes
+      
+      if (data.success === false) {
+        toast.error(data.message || "Error en autenticación con Google");
+        return;
       }
       
       dispatch(signInSuccess(data));
       
-      // Navigate based on user status
       if (data.isNewUser) {
-        navigate('/onboarding'); 
+        navigate('/onboarding');
       } else {
         navigate('/');
       }
       
     } catch (error) {
+      setIsLoading(false); // Set loading to false if there's an error
       console.error("Google sign-in error:", error);
-      alert("Error signing in with Google. Please try again.");
-    } finally {
-      setIsLoading(false);
+      
+      // Specific error message for the disallowed user agent
+      if (error.code === 'auth/disallowed-useragent') {
+        toast.error(
+          "Google no permite iniciar sesión desde este navegador. Por favor usa Chrome, Firefox, Safari o Edge actualizado."
+        );
+      } else {
+        toast.error("Error al iniciar sesión con Google. Por favor intenta de nuevo.");
+      }
     }
   };
   

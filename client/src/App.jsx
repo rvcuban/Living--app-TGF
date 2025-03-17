@@ -89,9 +89,10 @@ export default function App() {
       <Route path="/user/:userId/public" element={<PublicProfile />} />
 
       <Route element={<PrivateRoute />}>
+      <Route path="/profile/*" element={<Profile />} />
         <Route path="/onboarding" element={<Onboarding />} />
 
-        <Route path="/profile/*" element={<Profile />} />
+
 
         <Route path="/chat" element={<ChatList />} />
         <Route path="/chat/:conversationId" element={<ChatConversation />} />

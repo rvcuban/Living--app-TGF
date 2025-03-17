@@ -25,7 +25,7 @@ import ProfileContent from "../components/ProfileContent";
 
 import RequestContent from "../components/RequestContent";
 import Aplications from "./Aplications";
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate,useLocation } from 'react-router-dom';
 
 
 import { toast } from 'react-toastify'; // Importar toast
@@ -35,23 +35,33 @@ import PublicProfileEdit from "../components/PublicProfileEdit";
 
 
 export default function Profile() {
-  const fileRef = useRef(null);
-  const { currentUser, loading, error } = useSelector((state) => state.user);
-  const [file, setFile] = useState(undefined);
-  const [filePerc, setFilePerc] = useState(0);//iniciamos un estado para la barra de porcentaje cuando queremos subir una foto 
-  const [fileUploadError, setFileUploadError] = useState(false); //control de errores para cuano subimos la foto
-  const [formData, setFormData] = useState({});
-  const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [showListingsError, setShowListingsError] = useState(false);
-  const [userListings, setUserListings] = useState([]); //aqui guardamos la infomacion recogida sobre las propiedades del usuerio
+ // Redux
+ const { currentUser, loading, error } = useSelector((state) => state.user);
+ const dispatch = useDispatch();
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [activeSection, setActiveSection] = useState('ProfileContent'); // Estado para la sección activa
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Control de apertura del sidebar en móviles
-  
-  const dispatch = useDispatch();
+ // File upload states
+ const fileRef = useRef(null);
+ const [file, setFile] = useState(undefined);
+ const [filePerc, setFilePerc] = useState(0);
+ const [fileUploadError, setFileUploadError] = useState(false);
+ 
+ // Profile states
+ const [formData, setFormData] = useState({});
+ const [updateSuccess, setUpdateSuccess] = useState(false);
+ const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+ const [activeSection, setActiveSection] = useState('ProfileContent');
+ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+ 
+ // Profile loading states - THESE WERE MISSING
+ const [profileData, setProfileData] = useState(null);
+ const [profileLoading, setProfileLoading] = useState(true);
+ const [profileError, setProfileError] = useState(null);
+ 
+ // Listings states
+ const [showListingsError, setShowListingsError] = useState(false);
+ const [userListings, setUserListings] = useState([]);
 
-  console.log(formData);
+ console.log(formData);
 
    
   // Detectar si es móvil
@@ -78,7 +88,60 @@ export default function Profile() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!currentUser || !currentUser._id) {
+        setProfileError("No hay usuario autenticado");
+        setProfileLoading(false);
+        return;
+      }
+  
+      try {
+        console.log("Fetching profile for user ID:", currentUser._id);
+        
+        // First try the /profile endpoint
+        const res = await fetch(`/api/user/${currentUser._id}`, {
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${currentUser.token || ''}`
+          }
+        });
+  
+        if (!res.ok) {
+          console.log("First endpoint failed, status:", res.status);
+          
+          // If first endpoint fails, try alternative endpoint
+          const altRes = await fetch(`/api/user/profile/${currentUser._id}`, {
+            credentials: 'include',
+            headers: {
+              'Authorization': `Bearer ${currentUser.token || ''}`
+            }
+          });
+          
+          if (!altRes.ok) {
+            throw new Error("No se pudo cargar el perfil del usuario");
+          }
+          
+          const altData = await altRes.json();
+          setProfileData(altData);
+          console.log("Profile loaded from alt endpoint:", altData);
+        } else {
+          const data = await res.json();
+          setProfileData(data);
+          console.log("Profile loaded from main endpoint:", data);
+        }
+        
+        setProfileLoading(false);
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        setProfileError(error.message);
+        toast.error(`Error: ${error.message}`);
+        setProfileLoading(false);
+      }
+    };
+  
+    fetchProfile();
+  }, [currentUser]);
 
 
 
@@ -250,12 +313,10 @@ export default function Profile() {
       {/* Contenido principal */}
       <div className="flex-grow w-full md:w-3/4 mt-4 md:mt-16 px-0 sm:px-4 p-0 sm:p-5 pb-20 bg-white rounded-xl">
 
-        <Routes>
-          {/* La ruta por defecto (índice) muestra ProfileContent */}
-          <Route index element={<ProfileContent />} />
-          {/* Ruta para editar el perfil público */}
+      <Routes>
+          <Route index element={<ProfileContent currentUser={currentUser} />} />
           <Route path="public" element={<PublicProfileEdit />} />
-          {/* Otras rutas pueden añadirse aquí */}
+          <Route path="*" element={<Navigate to="/profile" replace />} />
         </Routes>
 
       </div>

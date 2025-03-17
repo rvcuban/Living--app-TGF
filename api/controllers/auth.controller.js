@@ -6,19 +6,19 @@ import jwt from 'jsonwebtoken';
 export const signup = async (req, res, next) => {
   try {
     const { email, password, generateUsername } = req.body;
-    
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(errorHandle(400, 'El email ya está registrado'));
     }
-    
+
     // Generate a username if requested
     let username;
     if (generateUsername) {
       // Generate a random username based on email or use a username generator
       username = email.split('@')[0] + Math.floor(Math.random() * 10000);
-      
+
       // Make sure username is unique
       const usernameExists = await User.findOne({ username });
       if (usernameExists) {
@@ -29,19 +29,42 @@ export const signup = async (req, res, next) => {
     } else {
       username = req.body.username;
     }
-    
+
     // Hash password
     const hashedPassword = bcryptjs.hashSync(password, 10);
-    
+
     // Create new user
     const newUser = new User({
       username,
       email,
       password: hashedPassword,
+      isNewUser: true,
     });
-    
+
     await newUser.save();
-    res.status(201).json({ success: true, message: 'Usuario creado correctamente' });
+
+    // Generate token
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    // Remove password from response
+    const { password: pass, ...userData } = newUser._doc;
+
+    // Set cookie
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    // Return user data WITH TOKEN and isNewUser flag
+    return res.status(200).json({
+      ...userData,
+      token,
+      isNewUser: true,
+      success: true
+    });
+
   } catch (error) {
     next(error);
   }
@@ -49,50 +72,90 @@ export const signup = async (req, res, next) => {
 
 
 export const signin = async (req, res, next) => {
+  try {
+    console.log("Sign-in attempt:", req.body); // Debug log
 
+    // Check if required fields exist
     const { email, password } = req.body;
-
-    try {
-        const ValidUser = await User.findOne({ email });
-        if (!ValidUser) return next(errorHandle(404, 'User not Found'));
-        const validPassword = bcryptjs.compareSync(password, ValidUser.password);
-        if (!validPassword) return next(errorHandle(401, 'Wrong credentials!'));
-
-        const token = jwt.sign({ id: ValidUser._id }, process.env.JWT_SECRET); // aqui utilizamos una variable de entorno que servira para hashear y encriptar el id de usuario en el token
-        const { password: pass, ...rest } = ValidUser._doc //aqui creamo una variable que separa la contraseña del resto para poder enviarle un json al user 
-        // de que todo esta correcto pero sin enviar la contrraseña aunque este encryptada 
-
-        res.cookie('access_token', token, { httpOnly: true }) //aqui creamos la cookie para dejar autentificao el usaurio en nuestra web , el primer parametro es el nombre el segundo el toiken y lo tercero e para no permitir acceso e aplicaciones de tercero y hacer la cookie mas segura 
-            .status(200) //devolvemos un nstatus 200 de forma que todo a ido correcto 
-            .json({
-              success: true,
-              message: "Login exitoso",
-              user: rest, // <-- aquí van los datos del usuario
-              isNewUser: ValidUser.isNewUser // <-- aquí el flag de nuevo usuario
-            });
-    } catch (error) {
-        next(error);
+    if (!email || !password) {
+      return next(errorHandle(400, 'Todos los campos son obligatorios'));
     }
 
+    // Find the user
+    const validUser = await User.findOne({ email });
+    if (!validUser) {
+      return next(errorHandle(404, 'Usuario no encontrado'));
+    }
+
+    // Compare password safely
+    let validPassword = false;
+    try {
+      validPassword = bcryptjs.compareSync(password, validUser.password);
+    } catch (err) {
+      console.error("Password comparison error:", err);
+      return next(errorHandle(500, 'Error al verificar credenciales'));
+    }
+
+    if (!validPassword) {
+      return next(errorHandle(401, 'Credenciales incorrectas'));
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { id: validUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    // Remove password from response
+    const { password: pass, ...userData } = validUser._doc;
+
+    // Set cookie with error handling
+    try {
+      res.cookie('access_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+    } catch (err) {
+      console.error("Cookie setting error:", err);
+      // Continue even if cookie fails - token is still returned in JSON
+    }
+
+    // Return response
+    return res.status(200).json({
+      ...userData,
+      token,
+      isNewUser: false,
+      success: true
+    });
+
+  } catch (error) {
+    console.error("Signin error:", error);
+    next(errorHandle(500, 'Error interno del servidor'));
+  }
 };
 export const google = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (user) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET,{ expiresIn: '1d' });
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
       const { password: pass, ...rest } = user._doc;
       res
-        .cookie('access_token', token, 
-          { httpOnly: true ,
+        .cookie('access_token', token,
+          {
+            httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000
 
-        })
+          })
         .status(200)
         .json({
           ...rest,
-          token // Include the token in response
+          token, // Include token in the response
+          isNewUser: false
         });
     } else {
       const generatedPassword =
@@ -111,11 +174,12 @@ export const google = async (req, res, next) => {
       const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
       const { password: pass, ...rest } = newUser._doc;
       res
-        .cookie('access_token', token, { 
+        .cookie('access_token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          maxAge: 24 * 60 * 60 * 1000})
+          maxAge: 24 * 60 * 60 * 1000
+        })
         .status(200)
         .json({
           success: true,

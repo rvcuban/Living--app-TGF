@@ -72,82 +72,180 @@ function Tabs({ tabs, defaultTab, children, className = '' }) {
  *  y “Opiniones” (solo lectura).
  */
 export default function PublicProfileEdit() {
-  const { userId } = useParams();
+  //eerores que me apso despues de la primera subida 
+  // Fix #1: Move Redux selector before using currentUser
+  const fullState = useSelector(state => state);
+  console.log("FULL REDUX STATE:", fullState);
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const params = useParams();
+  // Emergency ID recovery from localStorage
+  const storedUserId = localStorage.getItem('lastUserId');
+  const effectiveId = params.userId || currentUser?._id || storedUserId;
+
+
+  // Add a proper check for user authentication
+  useEffect(() => {
+    // If not authenticated and we need authentication
+    if (!currentUser && !params.userId) {
+      console.log("User not authenticated, redirecting...");
+      navigate('/sign-in', { state: { from: '/profile/public' } });
+    }
+
+    // Debug log
+    console.log("PublicProfileEdit initialized with ID:", effectiveId);
+  }, [currentUser, navigate, params.userId, effectiveId]);
+
+
+
+
+  // State variables
   const [user, setUser] = useState(null);
   const [editUser, setEditUser] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [error, setError] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedVideos, setSelectedVideos] = useState([]); // Lista de videos seleccionados para eliminación
+  const [videoPerc, setVideoPerc] = useState(0);
 
 
-
-  // Lista de videos seleccionados para eliminación
-  const [selectedVideos, setSelectedVideos] = useState([]);
   // Referencia para el <input> de subida de media
   const mediaRef = useRef(null);
 
-  const [videoPerc, setVideoPerc] = useState(0);
 
-  // Efecto para cargar info
   useEffect(() => {
-    const effectiveId = userId || currentUser?._id;
+    // Debug log to see what values we have
+    console.log("UserId values:", {
+      userId: params.userId,
+      currentUserId: currentUser?._id
+    });
+
     if (!effectiveId) {
-      toast.error('No se pudo determinar el usuario a cargar.');
+      setError("No se pudo determinar el usuario a cargar.");
       setLoading(false);
       return;
     }
+    // Debug log
+    console.log("PublicProfileEdit - ID Check:", {
+      paramsUserId: params.userId,
+      reduxUserId: currentUser?._id,
+      storedUserId,
+      effectiveId,
+      currentUser: !!currentUser,
+      isAuthenticated: !!effectiveId
+    });
+    if (effectiveId) {
+      localStorage.setItem('lastUserId', effectiveId);
+    }
 
-    // 1) Perfil público
-    const fetchPublicProfile = async () => {
+    const fetchUserData = async () => {
       try {
-        const res = await fetch(`/api/user/public-profile/${effectiveId}`);
+        console.log("Fetching user data for:", effectiveId);
+        
+        const res = await fetch(`/api/user/${effectiveId}`, {
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${currentUser?.token || ''}`
+          }
+        });
+  
+        if (!res.ok) {
+          throw new Error(`Error loading profile: ${res.status}`);
+        }
+        
         const data = await res.json();
-        if (data.success) {
-          setUser(data.user);
-          setEditUser(structuredClone(data.user));
-        } else {
-          toast.error(data.message || 'Error al cargar el perfil público.');
+        console.log("Profile data received:", data);
+        
+        if (!data || !data._id) {
+          throw new Error("Datos de perfil incorrectos o vacíos");
         }
+        
+        // Initialize all necessary fields with defaults if missing
+        const userData = {
+          ...data,
+          shortBio: data.shortBio || '',
+          location: data.location || '',
+          preferences: data.preferences || {
+            pets: false,
+            smoker: false,
+            schedule: 'flexible'
+          },
+          interests: data.interests || [],
+          gallery: data.gallery || [],
+          videos: data.videos || [],
+          badges: data.badges || [],
+          averageRating: data.averageRating || 0,
+          reviewsCount: data.reviewsCount || 0
+        };
+        
+        // IMPORTANT: Set both states at once to avoid race conditions
+        setUser(userData);
+        setEditUser(JSON.parse(JSON.stringify(userData)));
+        
+        // Optional: Fetch reviews
+        try {
+          const resReviews = await fetch(`/api/userreview/${effectiveId}`);
+          if (resReviews.ok) {
+            const dataReviews = await resReviews.json();
+            if (dataReviews.success) {
+              setReviews(dataReviews.reviews || []);
+            }
+          }
+        } catch (reviewError) {
+          console.error("Error fetching reviews:", reviewError);
+          // Non-critical error, don't fail the component
+        }
+        
+        setLoading(false);
       } catch (error) {
-        console.error('Error fetching public profile:', error);
-        toast.error('Error al obtener el perfil público.');
+        console.error("Error fetching user data:", error);
+        setError(error.message || "Error al cargar los datos del perfil");
+        setLoading(false);
       }
     };
+    
+    fetchUserData();
+  }, [effectiveId, currentUser]);
 
-    // 2) Reseñas
-    const fetchUserReviews = async () => {
-      try {
-        const resReviews = await fetch(`/api/userreview/${effectiveId}`);
-        const dataReviews = await resReviews.json();
-        if (dataReviews.success) {
-          setReviews(dataReviews.reviews);
-        } else {
-          toast.info(dataReviews.message || 'No hay reseñas disponibles.');
-        }
-      } catch (error) {
-        console.error('Error fetching user reviews:', error);
-      }
-    };
+  // Fix #7: Add early return with proper fallback UI for errors
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error al cargar perfil</h2>
+          <p className="mb-4 text-gray-700">{error}</p>
+          <p className="mb-6 text-sm text-gray-500">
+            Esto puede ocurrir si es un usuario nuevo. Por favor completa tu perfil para continuar.
+          </p>
 
-    setLoading(true);
-    Promise.all([fetchPublicProfile(), fetchUserReviews()])
-      .finally(() => setLoading(false));
-  }, [userId, currentUser]);
-
-  if (loading) {
-    return <p className="text-center mt-8 text-2xl">Cargando...</p>;
+          <div className="flex flex-col md:flex-row gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Intentar de nuevo
+            </button>
+            <Link to="/" className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+              Volver al inicio
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  if (!user) {
+  // Show loading state
+  if (loading || !user) {
     return (
-      <p className="text-center mt-8 text-2xl text-red-500">
-        Perfil no encontrado.
-      </p>
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+          <p className="text-gray-600 mt-4">Cargando perfil...</p>
+        </div>
+      </div>
     );
   }
 
@@ -310,30 +408,50 @@ export default function PublicProfileEdit() {
 
   // Guardar cambios en backend
   const handleSaveEdits = async () => {
-    if (!currentUser) return;
-    try {
-      dispatch(updateUserStart());
-      const effectiveId = currentUser?._id || user?._id;
-      const res = await fetch(`/api/user/update/${effectiveId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editUser),
-      });
-      const data = await res.json();
-      if (data.success) {
-        dispatch(updateUserSuccess(data));
-        toast.success('Perfil público actualizado.');
-        // Actualizamos la info local
-        setUser(data.data);
-        setEditUser(data.data);
-      } else {
-        dispatch(updateUserFailure(data.message || 'Error'));
-        toast.error(data.message || 'Error al actualizar tu perfil público.');
+    const handleSaveEdits = async () => {
+      // Get ID from multiple sources with more robust fallbacks
+      const userId = params.userId || currentUser?._id || user?._id || localStorage.getItem('lastUserId');
+      
+      if (!userId) {
+        toast.error('No se pudo identificar al usuario. Por favor, inicie sesión de nuevo.');
+        navigate('/sign-in');
+        return;
       }
-    } catch (err) {
-      dispatch(updateUserFailure(err.message));
-      toast.error('Error de conexión al actualizar el perfil público.');
-    }
+      
+      try {
+        dispatch(updateUserStart());
+        
+        // Use the resolved userId directly
+        const res = await fetch(`/api/user/update/${userId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser?.token || ''}`
+          },
+          body: JSON.stringify(editUser),
+          credentials: 'include'
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          // Save the userId for future reference
+          localStorage.setItem('lastUserId', userId);
+          
+          dispatch(updateUserSuccess(data));
+          toast.success('Perfil público actualizado.');
+          // Actualizamos la info local
+          setUser(data);
+          setEditUser(data);
+        } else {
+          dispatch(updateUserFailure(data.message || 'Error'));
+          toast.error(data.message || 'Error al actualizar tu perfil público.');
+        }
+      } catch (err) {
+        console.error('Error saving profile:', err);
+        dispatch(updateUserFailure(err.message));
+        toast.error('Error de conexión al actualizar el perfil público.');
+      }
+    };
   };
 
   /** Renders: secciones de las Tabs */
@@ -354,7 +472,7 @@ export default function PublicProfileEdit() {
         </div>
         {/* Ubicación */}
         <div>
-          <label className="block font-semibold text-gray-700">Ubicación:</label>
+          <label className="block font-semibold text-gray-700">Busco Compi en:</label>
           <input
             type="text"
             className="border rounded w-full p-2"
@@ -675,7 +793,7 @@ export default function PublicProfileEdit() {
         <UserReviewModal
           visible={showReviewModal}
           onClose={() => setShowReviewModal(false)}
-          targetUserId={userId}
+          targetUserId={params.userId}
           currentUserToken={currentUser?.token}
           // Actualizar la lista local de reseñas si se crea una nueva
           onReviewCreated={(newReview) => {
