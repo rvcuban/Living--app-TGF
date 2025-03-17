@@ -334,7 +334,7 @@ export default function MyBuddies() {
                         Enviar mensaje
                       </Link>
                       <Link 
-                        to={`/public-profile/${buddy.user?._id}`} 
+                        to={`/user/${buddy.user?._id}/public`} 
                         className="flex-1 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-center"
                       >
                         Ver perfil
