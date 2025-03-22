@@ -10,6 +10,7 @@ export default function SearchAutocompleteInput({
   value,
   onChange,
   onSelectPlace,
+  onValidationChange,
   placeholder = 'Buscar dirección en España...',
   inputClassName // Nuevo prop para definir el estilo del input desde afuera
 }) {
@@ -23,7 +24,30 @@ export default function SearchAutocompleteInput({
 
   const [localValue, setLocalValue] = useState(value || '');
   const autocompleteRef = useRef(null);
+  const [inputValue, setInputValue] = useState(value);
+  const [isValidSelection, setIsValidSelection] = useState(false);
+  const inputRef = useRef(null);
 
+  const [userCount, setUserCount] = useState(null);
+  const [fetchingCount, setFetchingCount] = useState(false);
+
+ // Update local value when prop changes
+ useEffect(() => {
+  if (value !== localValue) {
+    setLocalValue(value || '');
+    // Reset validation status when value is set from outside
+    setIsValidSelection(false);
+  }
+}, [value]);
+
+// Notify parent component when validation status changes
+useEffect(() => {
+  if (onValidationChange) {
+    onValidationChange(isValidSelection);
+  }
+}, [isValidSelection, onValidationChange]);
+
+  
   const onLoad = (autocomplete) => {
     autocompleteRef.current = autocomplete;
   };
@@ -34,17 +58,53 @@ export default function SearchAutocompleteInput({
       if (place) {
         const formattedAddress = place.formatted_address || place.name;
         setLocalValue(formattedAddress);
+        setIsValidSelection(true);
         if (onSelectPlace) {
           onSelectPlace(formattedAddress);
         }
+       
       }
+    }
+  };
+
+
+  const fetchUserCountForLocation = async (location) => {
+    try {
+      setFetchingCount(true);
+      
+      // Extract city name from the formatted address
+      // This is a simple extraction - you might need more complex parsing
+      const cityMatch = location.match(/^([^,]+)/);
+      const cityName = cityMatch ? cityMatch[1].trim() : location;
+      
+      const response = await api.get(`/api/user/count-by-location?location=${encodeURIComponent(cityName)}`);
+      
+      if (response.data.success) {
+        setUserCount(response.data.data.userCount);
+      } else {
+        setUserCount(0);
+      }
+    } catch (error) {
+      console.error('Error fetching user count:', error);
+      setUserCount(0);
+    } finally {
+      setFetchingCount(false);
     }
   };
 
   const handleInputChange = (e) => {
     setLocalValue(e.target.value);
+    setIsValidSelection(false);
     if (onChange) {
       onChange(e.target.value);
+    }
+  };
+
+  const handleClear = () => {
+    setLocalValue('');
+    setIsValidSelection(false);
+    if (onChange) {
+      onChange('');
     }
   };
 
@@ -94,8 +154,13 @@ export default function SearchAutocompleteInput({
   if (!isLoaded) {
     return <input type="text" disabled placeholder="Cargando Google..." />;
   }
+  const finalInputClassName = `${inputClassName} ${
+    localValue && !isValidSelection ? 'border-yellow-300' : 
+    isValidSelection ? 'border-green-500' : ''
+  }`;
 
   return (
+    <div className="relative w-full">
     <Autocomplete
       onLoad={onLoad}
       onPlaceChanged={onPlaceChanged}
@@ -104,14 +169,31 @@ export default function SearchAutocompleteInput({
         fields: ['address_components', 'formatted_address', 'geometry', 'name'],
       }}
     >
-      <input
-        type="text"
-        // Usa el prop recibido; si no se pasa, se puede definir un valor por defecto (opcional)
-        className={inputClassName }
-        placeholder={placeholder}
-        value={localValue}
-        onChange={handleInputChange}
-      />
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          className={finalInputClassName}
+          placeholder={placeholder}
+          value={localValue}
+          onChange={handleInputChange}
+          data-valid-selection={isValidSelection}
+        />
+        
+        {localValue && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            <FaTimes />
+          </button>
+        )}
+        
+        
+        
+      </div>
     </Autocomplete>
-  );
+  </div>
+);
 }

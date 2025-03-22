@@ -288,3 +288,38 @@ export const updateUserVideos = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const getUserCountsByLocation = async (req, res, next) => {
+  try {
+    const { location } = req.query;
+    
+    if (!location) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Location parameter is required' 
+      });
+    }
+    
+    // Create a regex for partial location matching (case insensitive)
+    const locationRegex = new RegExp(location, 'i');
+    
+    // Count users with matching location
+    // This uses a simplified match - you might need to adjust based on your data structure
+    const userCount = await User.countDocuments({ 
+      location: { $regex: locationRegex },
+      // Only count users with public profiles
+      isPublic: true
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        location,
+        userCount
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

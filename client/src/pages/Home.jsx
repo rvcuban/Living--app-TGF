@@ -17,6 +17,9 @@ export default function Home() {
   const [operation, setOperation] = useState('share'); // 'rent' o 'share'
   const location = useLocation();
 
+  const [isValidSelection, setIsValidSelection] = useState(false);
+  const [showValidationError, setShowValidationError] = useState(false);
+
 
   const [showCompleteModal, setShowCompleteModal] = useState(false);
 
@@ -28,7 +31,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     users: 124,
-    properties:  45,
+    properties: 45,
     matches: 22
   });
 
@@ -37,7 +40,7 @@ export default function Home() {
 
   const handleRentClick = () => {
     // Show the blocked effect
-     setShowBlockedEffect(true);
+    setShowBlockedEffect(true);
     setShowBlockedMessage(true);
 
     // Reset the effect after animation completes
@@ -48,8 +51,8 @@ export default function Home() {
     // Hide the message after a few seconds
     setTimeout(() => {
       setShowBlockedMessage(false);
-    }, 3000); 
-   // setOperation('rent');
+    }, 3000);
+    // setOperation('rent');
   };
 
 
@@ -117,6 +120,21 @@ export default function Home() {
   // este es codigo replicado de la header (deberia crear una funcion aparte que se use ene los dos sitios para evitar repetir codigo)
   const handleSubmit = (e) => {
     e.preventDefault();//para cque no se haga refreasha  a la pagina
+
+    // Check if we have a valid selection
+    if (!isValidSelection) {
+      // Show validation error message
+      setShowValidationError(true);
+
+      // Hide the message after 3 seconds
+      setTimeout(() => {
+        setShowValidationError(false);
+      }, 3000);
+
+      return; // Don't proceed with search
+    }
+    setShowValidationError(false);
+
     const urlParams = new URLSearchParams(window.location.search); //Este es un metodo de react que mne permite mediante un constructor de java guardar el contenido de la url de la pagina
     // concrettamente me sirve por que ahi es donde va la infomracioin de la busqueda get?share=true...etc
     urlParams.set('searchTerm', searchTerm);
@@ -240,10 +258,20 @@ export default function Home() {
               onSubmit={handleSubmit}
               className="relative bg-white shadow-xl rounded-full p-1.5 w-full max-w-xl flex items-center mx-auto mt-2"
             >
+              {/* Show validation error if needed */}
+              {showValidationError && (
+                <div className="absolute -top-12 left-0 right-0 bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm shadow-md animate-fade-in">
+                  Por favor, selecciona una ubicación de las sugerencias
+                  <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-100 rotate-45"></div>
+                </div>
+              )}
               <SearchAutocompleteInput
                 value={searchTerm}
                 onChange={(value) => setSearchTerm(value)}
-                onSelectPlace={(value) => setSearchTerm(value)}
+                onSelectPlace={(value) => {
+                  setSearchTerm(value);
+                  setIsValidSelection(true); // Set valid when a place is selected
+                }}
                 placeholder={operation === 'rent' ? "¿Dónde quieres alquilar?" : "¿Dónde buscas compi?"}
                 inputClassName="bg-transparent focus:outline-none w-full px-6 py-3.5 text-gray-600 rounded-full"
               />
@@ -252,6 +280,8 @@ export default function Home() {
                 className="absolute right-1.5 bg-pink-500 text-white p-3 rounded-full hover:bg-pink-600 transition duration-200 flex items-center justify-center"
               >
                 <FaSearch />
+
+                
               </button>
             </form>
           </div>
