@@ -206,7 +206,7 @@ export default function Home() {
             {/* Beta indicator */}
             <div className="flex justify-center items-center">
               <span className="text-red-500 font-bold text-sm px-3 py-1 bg-red-50 rounded-full border border-red-200 animate-pulse">
-                BETA
+                BETA-TFG
               </span>
             </div>
 
