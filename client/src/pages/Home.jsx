@@ -39,7 +39,7 @@ export default function Home() {
   const [showBlockedMessage, setShowBlockedMessage] = useState(false);
 
   const handleRentClick = () => {
-    // Show the blocked effect
+    /*// Show the blocked effect
     setShowBlockedEffect(true);
     setShowBlockedMessage(true);
 
@@ -51,8 +51,8 @@ export default function Home() {
     // Hide the message after a few seconds
     setTimeout(() => {
       setShowBlockedMessage(false);
-    }, 3000);
-    // setOperation('rent');
+    }, 3000);*/
+     setOperation('rent');
   };
 
 

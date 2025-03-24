@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useSelector } from 'react-redux';
 
 export default function Aplications() {
+    const { currentUser } = useSelector((state) => state.user);
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -88,7 +89,7 @@ export default function Aplications() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4">
+        <div className="max-w-6xl mx-auto p-4 min-h-[calc(100vh-200px)] flex flex-col">
             <h1 className="text-3xl font-semibold mb-6 text-center">Mis Aplicaciones</h1>
             <ToastContainer /> {/* Contenedor de notificaciones */}
             {applications.length > 0 ? (

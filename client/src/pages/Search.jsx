@@ -51,86 +51,97 @@ export default function Search() {
     const operationFromUrl = urlParams.get('operation') || 'rent';
     const locationFromUrl = urlParams.get('location') || '';
 
-      // Create base state object
-      let newSidebarData = {
-        ...sidebardata,
-        searchTerm: searchTermFromUrl || '',
-        sort: sortFromUrl || 'created_at',
-        order: orderFromUrl || 'desc',
-        location: locationFromUrl || '',
+    // Create base state object
+    let newSidebarData = {
+      ...sidebardata,
+      searchTerm: searchTermFromUrl || '',
+      sort: sortFromUrl || 'created_at',
+      order: orderFromUrl || 'desc',
+      location: locationFromUrl || '',
+    };
+
+    // Add operation-specific parameters
+    if (operationFromUrl === 'rent') {
+      const typeFromUrl = urlParams.get('type');
+      const parkingFromUrl = urlParams.get('parking');
+      const furnishedFromUrl = urlParams.get('furnished');
+      const offerFromUrl = urlParams.get('offer');
+
+      newSidebarData = {
+        ...newSidebarData,
+        type: typeFromUrl || 'all',
+        parking: parkingFromUrl === 'true',
+        furnished: furnishedFromUrl === 'true',
+        offer: offerFromUrl === 'true',
       };
-      
-      // Add operation-specific parameters
-      if (operationFromUrl === 'rent') {
-        const typeFromUrl = urlParams.get('type');
-        const parkingFromUrl = urlParams.get('parking');
-        const furnishedFromUrl = urlParams.get('furnished');
-        const offerFromUrl = urlParams.get('offer');
-        
-        newSidebarData = {
-          ...newSidebarData,
-          type: typeFromUrl || 'all',
-          parking: parkingFromUrl === 'true',
-          furnished: furnishedFromUrl === 'true',
-          offer: offerFromUrl === 'true',
-        };
-      } else {
-        const scheduleFromUrl = urlParams.get('schedule');
-        const smokerFromUrl = urlParams.get('smoker');
-        const petsFromUrl = urlParams.get('pets');
-        const interestsFromUrl = urlParams.get('interests');
-        
-        newSidebarData = {
-          ...newSidebarData,
-          schedule: scheduleFromUrl || 'all',
-          smoker: smokerFromUrl === 'true',
-          pets: petsFromUrl === 'true',
-          interests: interestsFromUrl ? interestsFromUrl.split(',') : [],
-        };
-      }
-      
-      // Update state
-      setSidebardata(newSidebarData);
-      setOperation(operationFromUrl);
-      
-      const fetchData = async () => {
-        setLoading(true);
-        setShowMore(false);
-        const searchQuery = urlParams.toString();
-  
-        try {
-          if (operationFromUrl === 'rent') {
-            const res = await fetch(`/api/listing/get?${searchQuery}`);
-            const data = await res.json();
-            console.log('Listings recibidos:', data);
-            if (data.length > 8) {
-              setShowMore(true);
-            } else {
-              setShowMore(false);
-            }
+    } else {
+      const scheduleFromUrl = urlParams.get('schedule');
+      const smokerFromUrl = urlParams.get('smoker');
+      const petsFromUrl = urlParams.get('pets');
+      const interestsFromUrl = urlParams.get('interests');
+
+      newSidebarData = {
+        ...newSidebarData,
+        schedule: scheduleFromUrl || 'all',
+        smoker: smokerFromUrl === 'true',
+        pets: petsFromUrl === 'true',
+        interests: interestsFromUrl ? interestsFromUrl.split(',') : [],
+      };
+    }
+
+    // Update state
+    setSidebardata(newSidebarData);
+    setOperation(operationFromUrl);
+
+    const fetchData = async () => {
+      setLoading(true);
+      setShowMore(false);
+      const searchQuery = urlParams.toString();
+
+      try {
+        if (operationFromUrl === 'rent') {
+          const res = await fetch(`/api/listing/get?${searchQuery}`);
+          const data = await res.json();
+          console.log('API Response:', data);
+
+          // Check if the response contains a listings array (new backend format)
+          if (data && data.listings) {
+            // New API format with { listings, total, hasMore }
+            setListings(data.listings);
+            setShowMore(data.hasMore);
+          } else if (Array.isArray(data)) {
+            // Old API format (direct array)
             setListings(data);
-            setUsers([]);
-          } else if (operationFromUrl === 'share') {
-            const res = await fetch(`/api/user/get?${searchQuery}`);
-            const data = await res.json();
-            console.log('Usuarios recibidos:', data.data);
-            if (data.data && data.data.length > 8) {
-              setShowMore(true);
-            } else {
-              setShowMore(false);
-            }
-            setUsers(data.data);
+            setShowMore(data.length > 8);
+          } else {
+            // Unexpected format
+            console.error('Unexpected API response format:', data);
             setListings([]);
+            setShowMore(false);
           }
-        } catch (error) {
-          console.error('Error fetching search results:', error);
-          toast.error('Error al obtener los resultados de búsqueda.');
+
+          setUsers([]);
+        } else if (operationFromUrl === 'share') {
+          const res = await fetch(`/api/user/get?${searchQuery}`);
+          const data = await res.json();
+          console.log('Usuarios recibidos:', data.data);
+          if (data.data && data.data.length > 8) {
+            setShowMore(true);
+          } else {
+            setShowMore(false);
+          }
+          setUsers(data.data);
+          setListings([]);
         }
-  
-        setLoading(false);
-      };
-      fetchData();
-    }, [location.search]);
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+        toast.error('Error al obtener los resultados de búsqueda.');
+      }
+
+      setLoading(false);
+    };
+    fetchData();
+  }, [location.search]);
 
   /*const fetchListings = async () => {
     setLoading(true);
@@ -315,9 +326,9 @@ export default function Search() {
         <div className='p-7  border-b-2 md:border-r-2 md:min-h-screen lg:w-1/4 lg:max-w-xs'>
           <form onSubmit={handleSubmit} className='flex flex-col gap-6'>
             {/* Common search term filter */}
-            
+
             {/* Location filter - common for both */}
-           
+
 
             {/* Conditional filters based on operation */}
             {operation === 'rent' ? (

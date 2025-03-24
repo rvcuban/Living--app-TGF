@@ -159,7 +159,7 @@ export default function Header() {
               <li>
                 <Link to='/chat' className="text-slate-700 hover:underline">Mis Chats</Link>
               </li>
-             {/*  <li className='relative' ref={propertyMenuRef}>
+               <li className='relative' ref={propertyMenuRef}>
                 <button
                   className="text-slate-700 hover:underline focus:outline-none"
                   onClick={handlePropertyClick}
@@ -167,7 +167,7 @@ export default function Header() {
                   Mis propiedades
                 </button>
                 {openPropertyMenu && <DropDownProperty />}
-              </li>*/}
+              </li>
             </ul>
           )}
           <div className='relative ml-4' ref={dropdownRef}>

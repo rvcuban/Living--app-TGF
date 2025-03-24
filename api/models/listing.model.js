@@ -14,6 +14,10 @@ const listingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    normalized_address: {
+      type: String,
+      required: true,
+    },
     addressNoAccent: {
       type: String,
     },

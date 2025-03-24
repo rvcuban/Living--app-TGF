@@ -155,60 +155,77 @@ export const getApplicationsByProperty = async (req, res, next) => {
 
 //este va a ser parte del algortimo de search y voy a contruir aqui la paginacion y demas
 export const getListings = async (req, res, next) => {
-
   try {
-    //aqui limitamos el numero visible a 9 en caso de que no se haga una peticion en concreto a la url
+    // Set defaults for pagination
     const limit = parseInt(req.query.limit) || 9;
-    
-
-    //indice de apginacion , si no se proporciona empezamos por 0
     const startIndex = parseInt(req.query.startIndex) || 0;
-    let offer = req.query.offer;
     
+    // Build filter conditions
+    let offer = req.query.offer;
     if (offer === undefined || offer === 'false') {
-      offer = { $in: [false, true] };// aqui indicamos que la busqueda ne la base de datos si offer es false o no esta definido sera de todas, valores true y flase
+      offer = { $in: [false, true] };
     }
 
     let furnished = req.query.furnished;
-
     if (furnished === undefined || furnished === 'false') {
       furnished = { $in: [false, true] };
     }
 
     let parking = req.query.parking;
-
     if (parking === undefined || parking === 'false') {
       parking = { $in: [false, true] };
     }
 
     let type = req.query.type;
-
     if (type === undefined || type === 'all') {
       type = { $in: ['sale', 'rent'] };
     }
 
-   const searchTerm = req.query.searchTerm || '';
-   const normalizedTerm = removeDiacritics(searchTerm.toLowerCase());
-
-    const sort = req.query.sort || 'createdAt';
-
-    const order = req.query.order || 'desc';
-
-    const listings = await Listing.find({ //busqueda
-      address: { $regex:  normalizedTerm, $options: 'i' },//regrex es la funcionalidad de buscar patrones en sitios de la base de datos, la opcion i indica que no le des importancia a las mayusculas y minisculas 
+    // Get the search term from the query
+    const searchTerm = req.query.searchTerm || '';
+    
+    // Create the query object
+    const query = {
       offer,
       furnished,
       parking,
       type,
-
-    })
-      .collation({ locale: 'es', strength: 1 })
-      .sort({ [sort]: order })
+    };
+    
+    // If there's a search term, add it to the query
+    if (searchTerm) {
+      // Normalize the search term (like we do when creating listings)
+      const normalizedSearchTerm = removeDiacritics(searchTerm.toLowerCase());
+      
+      // Search in both the original address and the normalized version
+      query.$or = [
+        { address: { $regex: searchTerm, $options: 'i' } }, // Original term with accents
+        { normalized_address: { $regex: normalizedSearchTerm, $options: 'i' } } // Normalized term
+      ];
+    }
+    
+    // Set up sort options
+    const sort = req.query.sort || 'createdAt';
+    const order = req.query.order || 'desc';
+    const sortOptions = { [sort]: order === 'desc' ? -1 : 1 };
+    
+    // Execute the search
+    const listings = await Listing.find(query)
+      .collation({ locale: 'es', strength: 1 }) // This helps with Spanish accent matching
+      .sort(sortOptions)
       .limit(limit)
-      .skip(startIndex);//si es 0 empezaremos desde el principio pero si es otro nuemro empezaremos desde ahin ,, para eso sirve el skip
-
-    return res.status(200).json(listings);
-
+      .skip(startIndex);
+      
+    // Get total count for pagination
+    const total = await Listing.countDocuments(query);
+      
+    // Return results with pagination info
+    return res.status(200).json({
+      success: true,
+      listings,
+      total,
+      hasMore: startIndex + listings.length < total
+    });
 
   } catch (error) {
     next(error);
