@@ -40,6 +40,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { jwtDecode } from 'jwt-decode';
 import { tokenExpired } from './redux/user/userSlice';
 import { toast } from 'react-toastify';
+import { useGoogleMapsApi } from "./utils/useGoogleMapsApi";
 
 
 export default function App() {

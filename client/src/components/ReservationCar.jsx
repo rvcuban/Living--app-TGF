@@ -1,37 +1,63 @@
-// src/components/ReservationCard.jsx
-
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import ProfileCompletionModal from './ProfileCompletionModal';
 
 export default function ReservationCard({ listingType, listingId, onReserve }) {
     const [rentalDurationMonths, setRentalDurationMonths] = useState(3);
-    const [showPopup, setShowPopup] = useState(false); // Estado para mostrar el popup
-    const [loading, setLoading] = useState(false); // Estado para manejar el loading
+    const [showPopup, setShowPopup] = useState(false); 
+    const [showProfileModal, setShowProfileModal] = useState(false); // New state for profile modal
+    const [loading, setLoading] = useState(false);
 
     const { currentUser } = useSelector((state) => state.user);
     const navigate = useNavigate();
 
-    const handleReservationSubmit = () => {
-        // Mostrar el popup para confirmar el tiempo seleccionado
-        setShowPopup(true);
+    // Check if user profile is complete for contract generation
+    const isProfileComplete = () => {
+        if (!currentUser) return false;
+        
+        const requiredFields = [
+            'username',
+            'address',
+            'numeroIdentificacion',
+            'tipoIdentificacion'
+        ];
+        
+        return requiredFields.every(field => 
+            currentUser[field] && currentUser[field].toString().trim() !== ''
+        );
     };
 
-    const handleAccept = async () => {
+    const handleReservationSubmit = () => {
         if (!currentUser) {
             toast.info("Por favor, inicia sesión para reservar.");
             navigate('/sign-in');
             return;
         }
 
+        // Check if profile is complete before showing confirmation popup
+        if (!isProfileComplete()) {
+            setShowProfileModal(true);
+        } else {
+            // Profile is complete, show confirmation popup
+            setShowPopup(true);
+        }
+    };
+
+    // Handle after profile completion
+    const handleProfileComplete = () => {
+        setShowProfileModal(false);
+        setShowPopup(true); // Show the confirmation popup after profile completion
+    };
+
+    const handleAccept = async () => {
         setLoading(true);
         try {
             const res = await fetch('/api/applications', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Asegúrate de que el backend maneje la autenticación por tokens
                     'Authorization': `Bearer ${currentUser.token}`,
                 },
                 body: JSON.stringify({ listingId: listingId, rentalDurationMonths }),
@@ -42,7 +68,7 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
             if (data.success) {
                 toast.success("Aplicación enviada exitosamente.");
                 setShowPopup(false);
-                if (onReserve) onReserve(); // Función opcional para manejar después de la reserva
+                if (onReserve) onReserve();
             } else {
                 toast.error(data.message || "Error al enviar la aplicación.");
             }
@@ -55,11 +81,7 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
     };
 
     const handleCancel = () => {
-        setShowPopup(false); // Cerrar el popup si cancela
-    };
-
-    const handleDurationChange = (event) => {
-        setRentalDuration(event.target.value);
+        setShowPopup(false);
     };
 
     return (
@@ -78,7 +100,7 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
                   min="1"
                   className="w-full p-3 border border-gray-300 rounded-lg bg-slate-100 text-slate-600"
                   value={rentalDurationMonths}
-                  onChange={(e) => setRentalDurationMonths(e.target.value)}
+                  onChange={(e) => setRentalDurationMonths(Number(e.target.value))}
                 />
               </div>
             )}
@@ -90,11 +112,19 @@ export default function ReservationCard({ listingType, listingId, onReserve }) {
                 {listingType === 'rent' ? 'Reserva Ahora' : 'Contactar para Comprar'}
             </button>
 
-            {/* Popup de confirmación */}
+            {/* Profile Completion Modal */}
+            {showProfileModal && (
+                <ProfileCompletionModal
+                    onComplete={handleProfileComplete}
+                    onCancel={() => setShowProfileModal(false)}
+                />
+            )}
+
+            {/* Confirmation Popup */}
             {showPopup && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
                     <div className="bg-white border border-gray-300 p-6 rounded-lg shadow-lg w-80 text-center">
-                        <p className="text-lg font-semibold text-sah-primary">Confirmar Reserva</p>
+                        <p className="text-lg font-semibold text-blue-600">Confirmar Reserva</p>
                         <p className="text-gray-700 mt-2">
                             Una vez que acepte, se enviará una solicitud de entrada con el tiempo marcado de {rentalDurationMonths} {rentalDurationMonths === 1 ? 'mes' : 'meses'}.
                         </p>

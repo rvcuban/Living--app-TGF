@@ -4,7 +4,6 @@ import { app } from "../firebase";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import SearchAutocompleteInput from "../components/SearchAutocompleteInput";
-import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { FaUpload, FaTrash, FaHome, FaBed, FaBath, FaParking, FaCouch, FaPercentage, FaMapMarkerAlt, FaEuroSign } from "react-icons/fa";
 import { toast } from "react-toastify";
 
