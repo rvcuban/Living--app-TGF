@@ -22,60 +22,63 @@ export function addContractHeader(doc, data) {
 /**
  * Añade la sección "Reunidos".
  */
-export function addReunidosSection(doc, data) {
-  doc.fontSize(14).text('REUNIDOS', { underline: true });
-  doc.moveDown();
-
-  // Propietario
-  doc.fontSize(12).text(
-    `De una parte,\n\n` +
-    `Don/Doña ${data.nombrePropietario}, mayor de edad, con domicilio en ${data.domicilioPropietario} ` +
-    `y DNI/Pasaporte/NIE número ${data.numIdentPropietario}.\n\n` +
-    `Actúa en su propio nombre y representación (en adelante, el/los "Propietario/s").`
-  );
-
-  doc.moveDown();
-
-  // Inquilino(s)
-  doc.fontSize(12).text(
-    `De otra parte,\n\n` +
-    `Don/Doña ${data.nombreInquilino1}, mayor de edad, con domicilio en ${data.domicilioInquilino1} ` +
-    `y DNI/Pasaporte/NIE número ${data.numIdentInquilino1}.\n\n` +
-    `(en adelante, el/los "Inquilino/s").`
-  );
-
-  doc.moveDown();
-
-  // Breve texto 
-  doc.fontSize(12).text(
-    'El Propietario y el Inquilino serán denominadas conjuntamente como las “Partes”.\n\n' +
-    'Ambas partes, en la calidad con la que actúan, se reconocen recíprocamente capacidad jurídica ' +
-    'para contratar y obligarse, y en especial para el otorgamiento del presente CONTRATO DE ARRENDAMIENTO DE VIVIENDA, y'
-  );
+export const addReunidosSection = (doc, data) => {
   doc.moveDown(2);
-}
+  doc.fontSize(12).font('Helvetica-Bold').text('REUNIDOS', { align: 'center' });
+  doc.moveDown();
+  
+  doc.font('Helvetica').text('De una parte, Don/Doña ', { continued: true })
+    .font('Helvetica-Bold').text(`${data.nombrePropietario}`, { continued: true })
+    .font('Helvetica').text(', mayor de edad, con domicilio en ', { continued: true })
+    .font('Helvetica-Bold').text(`${data.domicilioPropietario}`, { continued: true })
+    .text(' y ', { continued: true })
+    .font('Helvetica-Bold').text(`${data.numeroIdentificacionPropietario}`, { continued: true })
+    .font('Helvetica').text('.');
 
-/**
- * Añade la sección EXPONEN con los puntos 1º, 2º, 3º...
- */
-export function addExponenSection(doc, data) {
-  doc.fontSize(14).text('EXPONEN', { underline: true });
+  doc.moveDown();
+  doc.text('Actúa en su propio nombre y representación (en adelante, el/los "Propietario/s").');
+
+  doc.moveDown();
+  doc.font('Helvetica').text('De otra parte, Don/Doña ', { continued: true })
+    .font('Helvetica-Bold').text(`${data.nombreInquilino}`, { continued: true })
+    .font('Helvetica').text(', mayor de edad, con domicilio en ', { continued: true })
+    .font('Helvetica-Bold').text(`${data.domicilioInquilino}`, { continued: true })
+    .text(' y ', { continued: true })
+    .font('Helvetica-Bold').text(`${data.numeroIdentificacionInquilino}`, { continued: true })
+    .font('Helvetica').text('.');
+
+  doc.moveDown();
+  doc.text('(en adelante, el/los "Inquilino/s").');
+
+  doc.moveDown();
+  doc.text('El Propietario y el Inquilino serán denominadas conjuntamente como las "Partes".');
+
+  doc.moveDown();
+  doc.text('Ambas partes, en la calidad con la que actúan, se reconocen recíprocamente capacidad jurídica para contratar y obligarse, y en especial para el otorgamiento del presente CONTRATO DE ARRENDAMIENTO DE VIVIENDA, y');
+};
+
+// Update the addExponenSection function
+export const addExponenSection = (doc, data) => {
+  doc.moveDown(2);
+  doc.fontSize(12).font('Helvetica-Bold').text('EXPONEN', { align: 'center' });
   doc.moveDown();
 
-  doc.fontSize(12)
-    .text(
-      `1º.- Que el Propietario, es propietaria de la vivienda sita en ${data.direccionInmueble}, calle ${data.calleInmueble} (${data.descripcionInmueble}), ` +
-      'El Propietario manifiesta expresamente que el Inmueble cumple con todos los requisitos y condiciones necesarias para ser destinado a satisfacer las necesidades permanentes de vivienda del Inquilino.\n\n' +
-      '(En adelante, la vivienda y sus dependencias descritas, conjuntamente, el "Inmueble").\n\n' +
-      `2º.- Que el Inquilino, manifiesta su interés en tomar en arrendamiento el citado Inmueble descrito en el Expositivo 1º, ` +
-      'para su uso propio (y, en su caso, el de su familia) como vivienda habitual y permanente.\n\n' +
-      `3º.- Ambas partes libremente reconocen entender y aceptar el presente CONTRATO DE ARRENDAMIENTO DE VIVIENDA (el "Contrato"), ` +
-      'conforme a las disposiciones de la Ley 29/1994 de 24 de noviembre de Arrendamientos Urbanos (la "LAU"), reconociéndose mutuamente ' +
-      'capacidad jurídica para suscribirlo, con sujeción a las siguientes:'
-    )
-    .moveDown(2);
+  doc.font('Helvetica-Bold').text('1º.-', { continued: true })
+    .font('Helvetica').text(' Que el Propietario, es propietaria de la vivienda sita en ', { continued: true })
+    .font('Helvetica-Bold').text(`${data.direccionInmueble}`, { continued: true })
+    .font('Helvetica').text(', calle ', { continued: true });
+    
+  // Use property description only if available
+  if (data.descripcionInmueble && data.descripcionInmueble !== 'Sin descripción') {
+    doc.font('Helvetica-Bold').text(`${data.descripcionInmueble}`, { continued: true });
+  } else {
+    doc.font('Helvetica-Bold').text(`(sin datos adicionales)`, { continued: true });
+  }
+  
+  doc.font('Helvetica').text('.');
 
-}
+  
+};
 
 
 /**
@@ -127,7 +130,7 @@ export function addClausulasSection(doc, data) {
   addClausulaDecimaTercera(doc, data);
 
   // DÉCIMO CUARTA: NOTIFICACIONES
-  addClausulaDecimaCuarta(doc, data);
+  //addClausulaDecimaCuarta(doc, data);
 
   // DÉCIMO QUINTA: FIRMA DEL CONTRATO
   addClausulaDecimaQuinta(doc, data);
@@ -140,15 +143,7 @@ export function addFirma(doc, data) {
   doc.addPage(); // por ejemplo, si quieres que la firma esté en una página nueva
 
   doc.fontSize(12).text(
-    `En ${data.lugar}, a fecha de ${data.fecha}.\n\n\n` +
-    'El Propietario:\n\n' +
-    '__________________________\n' +
-    `[${data.nombrePropietario}]\n\n\n` +
-    'El/Los Inquilino/s:\n\n' +
-    '__________________________\n' +
-    `[${data.nombreInquilino1}]\n\n\n` +
-    '__________________________\n' +
-    `[${data.nombreInquilino2}]`
+    `Mediante MyRentalApp, a fecha de ${data.fecha}.\n\n\n`
   );
 }
 
@@ -223,7 +218,7 @@ function addClausulaSegunda(doc, data) {
   doc
     .fontSize(12)
     .text(
-      `2.1. El Contrato entrará en vigor en la fecha ${data.fechaEntradaVigor} con una duración inicial obligatoria de ${data. rentalDurationMonths} mes/meses a partir de la fecha de entrada en vigor del Contrato.\n\n` +
+      `2.1. El Contrato entrará en vigor en la fecha de entarda al inmueble con una duración inicial obligatoria de ${data. rentalDurationMonths} mes/meses a partir de la fecha de entrada en vigor del Contrato.\n\n` +
       `2.2. El Contrato se prorrogará tácitamente (sin necesidad de aviso previo) en cada anualidad hasta un máximo legal de cinco (5) años, salvo que el Inquilino manifieste al Propietario, con treinta (30) días de antelación a la fecha de terminación del Contrato o de cualquiera de sus prórrogas, su voluntad de no renovar el Contrato.\n\n` +
       `2.3. Una vez transcurridos como mínimo cinco (5) años de duración del Contrato, si ninguna de las Partes hubiese notificado a la otra, con al menos cuatro (4) meses de antelación en el caso del Propietario, o con al menos con dos (2) meses de antelación en el caso del Inquilino, a la fecha de finalización su voluntad de no renovar el Contrato, el Contrato se prorrogará obligatoriamente por anualidades hasta un máximo de tres (3) años, salvo que el Inquilino manifieste al arrendador con un mes de antelación a la fecha de terminación de cualquiera de las anualidades, su voluntad de no renovar el Contrato.\n\n` +
       `2.4. El Inquilino podrá desistir del Contrato una vez que hayan transcurrido al menos seis (6) meses a contar desde la fecha de entrada en vigor del Contrato, siempre que notifique por escrito con treinta (30) días de antelación al Propietario. El desistimiento dará lugar a una indemnización equivalente a la parte proporcional de la renta arrendaticia de una mensualidad con relación a los meses que falten por cumplir de un año.\n\n`

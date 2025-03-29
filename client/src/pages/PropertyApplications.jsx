@@ -7,38 +7,113 @@ import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebas
 import ReactModal from 'react-modal';
 
 import { Document, Page, pdfjs } from 'react-pdf';
-
+import SignaturePad from '../components/SignaturePad';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 
-// Configurar el worker
+// Important: Set worker to local file path in public directory
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
-// Configurar el worker de pdfjs
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js`;
-// Configurar el elemento root para el modal
+// Configure the modal root
 ReactModal.setAppElement('#root');
 
 
 // Componente para visualizar el contrato en PDF
 const ContractViewer = ({ contractUrl }) => {
   const [numPages, setNumPages] = useState(null);
+  const [viewerError, setViewerError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Add responsive adjustments
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+      
+      // Adjust scale based on screen size
+      if (window.innerWidth < 480) {
+        setScale(0.8); // Smaller scale for mobile
+      } else if (window.innerWidth < 768) {
+        setScale(0.9); // Medium scale for tablets
+      } else {
+        setScale(1.0); // Full scale for desktop
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial call
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+    setLoading(false);
   };
 
+  const onDocumentLoadError = (error) => {
+    console.error("Error loading PDF:", error);
+    setViewerError(true);
+    setLoading(false);
+  };
+
+  if (!contractUrl) {
+    return <div className="text-center text-red-500 py-4">No hay URL de contrato proporcionada</div>;
+  }
+
   return (
-    <div>
-      <Document
-        file={contractUrl}
-        onLoadSuccess={onDocumentLoadSuccess}
-        loading="Cargando contrato..."
-        error="Error al cargar el contrato."
-      >
-        {Array.from(new Array(numPages), (el, index) => (
-          <Page key={`page_${index + 1}`} pageNumber={index + 1} />
-        ))}
-      </Document>
+    <div className="contract-viewer flex flex-col items-center">
+      {loading && (
+        <div className="text-center py-4 w-full">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-2"></div>
+          <p>Cargando documento...</p>
+        </div>
+      )}
+
+      {/* Fallback viewer shown if react-pdf fails */}
+      {viewerError && (
+        <div className="w-full mb-4">
+          <div className="text-center py-3 mb-4 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-yellow-700 font-medium">El visor de PDF no está disponible</p>
+          </div>
+
+          <iframe
+            src={contractUrl}
+            className="w-full h-[500px] border rounded mb-3"
+            title="Vista previa del contrato"
+          ></iframe>
+
+          <div className="flex justify-center space-x-3 mt-4">
+            <a
+              href={contractUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
+            >
+              Ver en nueva pestaña
+            </a>
+          </div>
+        </div>
+      )}
+
+      {!viewerError && (
+        <Document
+          file={contractUrl}
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={onDocumentLoadError}
+          loading={null}
+          error={null}
+        >
+          {Array.from(new Array(numPages || 0), (el, index) => (
+            <Page
+              key={`page_${index + 1}`}
+              pageNumber={index + 1}
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+              width={450}
+            />
+          ))}
+        </Document>
+      )}
     </div>
   );
 };
@@ -51,7 +126,7 @@ export default function PropertyApplications() {
   const [applications, setApplications] = useState([]);
   const [capacity, setCapacity] = useState(0);
   const navigate = useNavigate(); // Para redirigir al usuario
-   
+
 
   // modal que se abre al generar contrato
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -65,13 +140,97 @@ export default function PropertyApplications() {
   const [contractUrl, setContractUrl] = useState('');
   const [numPages, setNumPages] = useState(null);
 
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false);
+  const [signatureData, setSignatureData] = useState(null);
+  const [signingApplication, setSigningApplication] = useState(null);
+
+  // Add this function to handle signature saving
+  const handleSaveSignature = async (signatureData, signatureType) => {
+    try {
+      if (!signingApplication) return;
+
+      setSignatureModalOpen(false);
+      setSignatureData(signatureData);
+
+      // Show loading indicator
+      toast.info('Firmando contrato, por favor espere...');
+
+      const res = await fetch(`/api/applications/${signingApplication._id}/sign-contract`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`,
+        },
+        body: JSON.stringify({
+          signatureData: signatureData,
+          signatureType: signatureType,
+          signedBy: 'owner', // Since this is the property owner's view
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success('Contrato firmado correctamente');
+
+        // Update application in state
+        setApplications(prevApplications =>
+          prevApplications.map(app =>
+            app._id === signingApplication._id ? data.application : app
+          )
+        );
+
+        // Show signed contract
+        setContractUrl(data.signedContractUrl);
+        setContractPreview(true);
+        openModal(data.application);
+      } else {
+        toast.error(data.message || 'Error al firmar el contrato');
+      }
+    } catch (error) {
+      console.error('Error signing contract:', error);
+      toast.error('Error al firmar el contrato');
+    }
+  };
+
+  // Add this function to open signature modal
+  const openSignatureModal = (application) => {
+    setSigningApplication(application);
+    setSignatureModalOpen(true);
+  };
+
+  // Replace the "Firmar y enviar" button with this new function
+  const handleSignAndSendContract = (applicationId) => {
+    const application = applications.find(app => app._id === applicationId);
+    if (!application) {
+      toast.error('No se encontró la aplicación');
+      return;
+    }
+
+    // Open signature modal
+    openSignatureModal(application);
+  };
+
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
   };
 
 
   const openModal = (application) => {
+    console.log('Opening modal with application:', application);
     setSelectedApplication(application);
+
+    // If this application has a contract, show it
+    if (application?.contract?.url) {
+      setContractUrl(application.contract.url);
+      setContractPreview(true);
+      console.log(`Setting contract URL to: ${application.contract.url}`);
+    } else {
+      setContractPreview(false);
+      setContractUrl('');
+      console.log('No contract URL found for this application');
+    }
+
     setModalIsOpen(true);
   };
 
@@ -93,9 +252,9 @@ export default function PropertyApplications() {
         if (data.success) {
           setApplications(data.applications);
           console.log(data);
-          
-        
-          
+
+
+
         } else {
           toast.error(data.message || 'Error al obtener las solicitudes.');
         }
@@ -130,7 +289,7 @@ export default function PropertyApplications() {
         toast.error('Error al obtener la capacidad.');
       }
     };
-  
+
     if (listingId) {
       fetchListingSummary();
     }
@@ -198,9 +357,11 @@ export default function PropertyApplications() {
       toast.error('Error al rechazar la solicitud.');
     }
   };
-
+  // Replace your handleGenerateContract function with this improved version
   const handleGenerateContract = async (applicationId) => {
     try {
+      console.log(`Generating contract for application: ${applicationId}`);
+
       const res = await fetch(`/api/applications/${applicationId}/generate-contract`, {
         method: 'POST',
         headers: {
@@ -208,22 +369,46 @@ export default function PropertyApplications() {
           'Authorization': `Bearer ${currentUser.token}`,
         },
       });
+
       const data = await res.json();
+      console.log('Contract generation response:', data);
+
       if (data.success) {
         toast.success('Contrato generado correctamente.');
-        // Establecer la URL del contrato y mostrar la vista previa
-        setContractUrl(data.contractUrl);
-        setContractPreview(true);
 
-        const updatedApp = data.application;
-        // Actualizar el estado de la aplicación en el estado local
-        setApplications((prevApplications) =>
-          prevApplications.map((app) =>
+        // Store contract URL immediately
+        const contractUrl = data.contractUrl;
+        setContractUrl(contractUrl);
+
+        console.log(`Contract URL received: ${contractUrl}`);
+
+        // Update application locally with the complete contract data
+        setApplications(prevApplications =>
+          prevApplications.map(app =>
             app._id === applicationId
-              ? updatedApp // <--- aqui sustituyes la entera
+              ? {
+                ...app,
+                status: 'Contrato Generado',
+                contractGenerated: true,
+                contractUploaded: true,
+                contract: {
+                  ...app.contract,
+                  url: contractUrl,
+                  fileName: data.application.contract.fileName,
+                  generatedAt: new Date().toISOString()
+                }
+              }
               : app
           )
         );
+
+        // Then open modal with preview
+        setTimeout(() => {
+          openModal(
+            applications.find(app => app._id === applicationId)
+          );
+          setContractPreview(true);
+        }, 300);
       } else {
         toast.error(data.message || 'Error al generar el contrato.');
       }
@@ -232,7 +417,6 @@ export default function PropertyApplications() {
       toast.error('Error al generar el contrato.');
     }
   };
-
 
   const handleUploadContract = async (applicationId, file) => {
     // ... validaciones
@@ -303,10 +487,11 @@ export default function PropertyApplications() {
 
 
 
-
-
   const handleSendContract = async (applicationId) => {
     try {
+      // Show loading toast
+      const loadingToast = toast.info('Enviando contrato al inquilino...', { autoClose: false });
+      
       const res = await fetch(`/api/applications/${applicationId}/send-contract`, {
         method: 'POST',
         headers: {
@@ -314,9 +499,33 @@ export default function PropertyApplications() {
           'Authorization': `Bearer ${currentUser.token}`,
         },
       });
+      
       const data = await res.json();
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
       if (data.success) {
         toast.success('Contrato enviado al inquilino correctamente.');
+        
+        // Update application state to reflect the new status
+        setApplications(prevApplications =>
+          prevApplications.map(app =>
+            app._id === applicationId
+              ? {
+                  ...app,
+                  status: 'Contrato Notificado',  // Update the status
+                  contractSent: true, // Add a flag to track that the contract was sent
+                }
+              : app
+          )
+        );
+        
+        // Close the modal if it's open
+        if (selectedApplication && selectedApplication._id === applicationId) {
+          closeModal();
+        }
+        
       } else {
         toast.error(data.message || 'Error al enviar el contrato.');
       }
@@ -325,7 +534,6 @@ export default function PropertyApplications() {
       toast.error('Error al enviar el contrato.');
     }
   };
-
 
   // Función para eliminar el contrato
   const handleDeleteContract = async (applicationId) => {
@@ -407,23 +615,34 @@ export default function PropertyApplications() {
     }
   };
 
-
+  console.log("Current Applications State:", applications.map(app => ({
+    id: app._id,
+    status: app.status,
+    contractGenerated: app.contractGenerated,
+    contractUploaded: app.contractUploaded,
+    contractUrl: app.contract?.url,
+    fileName: app.contract?.fileName
+  })));
 
   console.log('listingId:', listingId);
 
-  console.log('listingId:', listingId); // Añade este console.log
+  console.log('listingId:', listingId); // 
+
+  const hasProblematicApplication = applications.some(app =>
+    app.status === 'Contrato Generado' && (!app.contractGenerated || !app.contract?.url)
+  );
 
   // Filtrar cuántas apps tienen el estado 'Firmado' (o 'Aceptada' según tu lógica):
   const acceptedCount = applications.filter(app => app.status === 'Firmado').length;
   return (
     <div className="max-w-6xl mx-auto p-4 min-h-[calc(100vh-200px)] flex flex-col">
-    <h1 className="text-3xl font-semibold mb-6 text-center">
-      Solicitudes para tu Propiedad
-    </h1>
+      <h1 className="text-3xl font-semibold mb-6 text-center">
+        Solicitudes para tu Propiedad
+      </h1>
       {/* Contador de inquilinos */}
       <div className="text-center mb-4 text-gray-700 font-medium">
         {acceptedCount}/{capacity} inquilinos Firmado
-      </div> 
+      </div>
       {applications.length > 0 ? (
         <ul className="space-y-4">
           {applications.map((application) => {
@@ -501,51 +720,61 @@ export default function PropertyApplications() {
                   )}
 
 
-                  {['Aceptada', 'Contrato Generado', 'Contrato Subido', 'Contrato Notificado'].includes(application.status) && (
+{['Aceptada', 'Contrato Generado', 'Contrato Subido', 'Contrato Notificado', 'Firmado por Propietario', 'Firmado por Inquilino'].includes(application.status) && (
                     <>
-                      {/* Si el contrato ha sido subido, mostrar botones Ver, Eliminar, Enviar */}
-                      {/* split / es para que el filename no muestre el nombre de la carpeta que lo contiene */}
-                      {application.contractUploaded ? (
+                      {/* If contract has been uploaded or generated, show view/send/delete buttons */}
+                      {application.contractUploaded || application.contract?.url ? (
                         <div className="flex flex-col">
                           <p className="mb-2">
-                            <strong>Contrato:</strong> {' '} {application.contract.fileName
+                            <strong>Contrato:</strong> {' '} {application.contract?.fileName
                               ? application.contract.fileName.split('/').pop()
-                              : ''}
+                              : 'Contrato'}
                           </p>
                           <div className="flex flex-col md:flex-row">
                             <a
-                              href={application.contract.url}  // la url del storage
+                              href={application.contract?.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                              className="bg-blue-500 text-white px-4 py-2 rounded mr-2 mb-2 md:mb-0"
                             >
                               Ver Contrato
                             </a>
+
                             <button
                               className="flex-none bg-red-600 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0"
                               onClick={() => handleDeleteContract(application._id)}
                             >
                               Eliminar Contrato
                             </button>
-                            <button
-                              className="flex-none bg-green-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0"
-                              onClick={() => handleSendContract(application._id)}
-                            >
-                              Firmar y enviar
-                            </button>
+
+                            {/* Show different buttons depending on signature status */}
+                            {application.status === 'Firmado por Propietario' ? (
+                              <button
+                                className="flex-none bg-green-500 text-white px-4 py-2 rounded"
+                                onClick={() => handleSendContract(application._id)}
+                              >
+                                Enviar al inquilino
+                              </button>
+                            ) : !application.ownerSignature?.verified && (
+                              <button
+                                className="flex-none bg-green-500 text-white px-4 py-2 rounded"
+                                onClick={() => handleSignAndSendContract(application._id)}
+                              >
+                                Firmar y enviar
+                              </button>
+                            )}
                           </div>
                         </div>
                       ) : (
                         <>
-                          {/* Mostrar botones para generar o subir contrato */}
+                          {/* Show buttons for generating or uploading contract */}
                           <div className="flex flex-col">
                             <p className="mb-2">
-                              <strong>Contrato:</strong> {application.contract.fileName}
+                              <strong>Contrato:</strong> {application.contract?.fileName || 'No generado'}
                             </p>
-                            {/* Botón para Generar Contrato */}
+                            {/* Buttons for generating/uploading contract */}
                             {!application.contractGenerated && (
                               <div className='flex flex-col md:flex-row mb-2'>
-
                                 <button
                                   className="flex-none bg-yellow-500 text-white px-4 py-2 rounded mr-0 md:mr-2 mb-2 md:mb-0"
                                   onClick={() => openModal(application)}
@@ -560,21 +789,17 @@ export default function PropertyApplications() {
                                   Subir mi Contrato
                                 </label>
 
-                                {/* Input type="file" oculto, que dispara onChange cuando el usuario seleccione un PDF */}
                                 <input
                                   id={`file-upload-${application._id}`}
                                   type="file"
                                   accept="application/pdf"
                                   style={{ display: 'none' }}
-                                  onChange={(e) =>
-                                    handleUploadContract(application._id, e.target.files[0])
-                                  }
+                                  onChange={(e) => handleUploadContract(application._id, e.target.files[0])}
                                 />
                               </div>
-
                             )}
 
-                            {/* Botón para Subir Contrato */}
+                            {/* If contract is generated but not uploaded, show these buttons */}
                             {application.contractGenerated && !application.contractUploaded && (
                               <div className="flex flex-col md:items-end">
                                 <div className="flex flex-col md:flex-row">
@@ -595,27 +820,17 @@ export default function PropertyApplications() {
                                 </div>
                               </div>
                             )}
-
-                            {/* Barra de progreso */}
-                            {uploadProgress[application._id] > 0 &&
-                              uploadProgress[application._id] < 100 && (
-                                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                                  <div
-                                    className="bg-blue-600 h-2.5 rounded-full"
-                                    style={{ width: `${uploadProgress[application._id]}%` }}
-                                  ></div>
-                                </div>
-                              )}
                           </div>
                         </>
                       )}
                     </>
                   )}
 
+                  {/* For fully signed contracts, just show view button */}
                   {application.status === 'Firmado' && (
                     <div className="flex flex-col md:flex-row">
                       <a
-                        href={application.contract.url}  // la url del storage
+                        href={application.contract?.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
@@ -624,6 +839,7 @@ export default function PropertyApplications() {
                       </a>
                     </div>
                   )}
+
 
                 </div>
               </li>
@@ -639,62 +855,117 @@ export default function PropertyApplications() {
           >
             {selectedApplication && (
               <div className='bg-white p-6 mx-auto rounded-xl shadow-lg w-11/12 max-w-sm sm:max-w-md md:max-w-lg'>
-                {!contractPreview ? (
-                  <>
-                    <h2 className="text-2xl mb-4">Generar Contrato</h2>
-                    <p><strong>Propietario:</strong> {currentUser.username}</p>
-                    <p><strong>Inquilino:</strong> {selectedApplication.userId.username}</p>
-                    <p><strong>Propiedad:</strong> {selectedApplication.listingId.name}</p>
-                    {/* Mostrar más datos si es necesario */}
-                    <div className="mt-4">
+                <h2 className="text-2xl mb-4">
+                  {contractPreview ? 'Vista Previa del Contrato' : 'Generar Contrato'}
+                </h2>
+
+                {contractPreview ? (
+                  <div className="overflow-auto" style={{ maxHeight: '60vh' }}>
+                    {contractUrl ? (
+                      <div>
+                        <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                          <p className="font-medium mb-1">Contrato disponible</p>
+                          <a
+                            href={contractUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline text-sm break-all"
+                          >
+                            Ver documento completo
+                          </a>
+                        </div>
+
+                        {/* Contract viewer component */}
+                        <ContractViewer contractUrl={contractUrl} />
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-yellow-50 p-4 rounded border border-yellow-200">
+                        <p className="font-medium mb-2 text-yellow-700">No se ha podido cargar el PDF.</p>
+                        <p className="text-sm mb-3">El contrato se ha generado correctamente pero no se puede visualizar en este momento.</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p>¿Deseas generar un contrato automático para esta solicitud?</p>
+                    <div className="flex justify-end space-x-2">
                       <button
-                        className="bg-green-500 text-white px-4 py-2 rounded mr-2 mb-2"
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                         onClick={() => handleGenerateContract(selectedApplication._id)}
                       >
-                        Generar automáticamente
+                        Generar Contrato
                       </button>
                       <button
-                        className="bg-gray-500 text-white px-4 py-2 rounded"
+                        className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                         onClick={closeModal}
                       >
                         Cancelar
                       </button>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="text-2xl mb-4">Vista Previa del Contrato</h2>
-                    <div className="overflow-auto" style={{ maxHeight: '60vh' }}>
-                      <Document
-                        file={contractUrl}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                        loading="Cargando contrato..."
-                      >
-                        {Array.from(new Array(numPages), (el, index) => (
-                          <Page key={`page_${index + 1}`} pageNumber={index + 1} />
-                        ))}
-                      </Document>
-                    </div>
-                    <div className="mt-4 flex justify-end">
+                  </div>
+                )}
+
+                {contractPreview && contractUrl && (
+                  <div className="mt-6 flex justify-between">
+                    <button
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                      onClick={() => {
+                        closeModal();
+                        // Update UI to show contract is available
+                        setApplications(prevApps => [...prevApps]);
+                      }}
+                    >
+                      Cerrar
+                    </button>
+                    <div className="space-x-2">
                       <a
                         href={contractUrl}
+                        download="contrato.pdf"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded inline-block"
                       >
-                        Ver Archivo
+                        Descargar PDF
                       </a>
                       <button
-                        className="bg-gray-500 text-white px-4 py-2 rounded"
-                        onClick={closeModal}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                        onClick={() => handleSendContract(selectedApplication._id)}
                       >
-                        Cerrar
+                        Enviar al inquilino
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             )}
+          </ReactModal>
+          <ReactModal
+            isOpen={signatureModalOpen}
+            onRequestClose={() => setSignatureModalOpen(false)}
+            contentLabel="Firmar Contrato"
+            className="modal"
+            overlayClassName="modal-overlay"
+          >
+            <div className='bg-white p-6 mx-auto rounded-xl shadow-lg w-11/12 max-w-xl'>
+              <h2 className="text-2xl mb-6 text-center">Firmar Contrato</h2>
+
+              <div className="mb-6">
+                <p className="text-gray-700 mb-4">
+                  Al firmar este contrato, usted confirma que ha leído, entendido y está de acuerdo con todos los términos y condiciones establecidos en el mismo. Esta firma tendrá el mismo valor legal que una firma manuscrita.
+                </p>
+
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                  <p className="text-sm text-yellow-700">
+                    <strong>Importante:</strong> Una vez firmado el documento, no se podrá modificar. Asegúrese de revisar cuidadosamente el contrato antes de firmarlo.
+                  </p>
+                </div>
+              </div>
+
+              <SignaturePad
+                onSave={handleSaveSignature}
+                onCancel={() => setSignatureModalOpen(false)}
+              />
+            </div>
           </ReactModal>
         </ul>
 
@@ -703,6 +974,15 @@ export default function PropertyApplications() {
           No hay solicitudes para esta propiedad.
         </p>
       )}
+      {hasProblematicApplication && (
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-4">
+          <p className="text-yellow-700">
+            <strong>Aviso:</strong> Algunas solicitudes tienen estado inconsistente.
+            Si tienes problemas con los contratos, por favor refresca la página.
+          </p>
+        </div>
+      )}
     </div>
+
   );
 }

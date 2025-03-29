@@ -629,6 +629,7 @@ function ProfileContent() {
                   <option value="Trabajador">Trabajador</option>
                   <option value="Viajero">Viajero</option>
                   <option value="Sin Rol">Sin Rol</option>
+                 
                 </select>
               </div>
             </div>

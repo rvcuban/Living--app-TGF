@@ -13,6 +13,8 @@ const ApplicationSchema = new mongoose.Schema({
       'Contrato Generado',
       'Contrato Subido',
       'Firmas Pendientes',
+      'Firmado por Propietario', 
+      'Firmado por Inquilino',
       'Firmado',
       'Rechazada',
       'Cancelada'],
@@ -26,6 +28,7 @@ const ApplicationSchema = new mongoose.Schema({
     acceptedByUser: { type: Boolean, default: false },
     acceptedByOwner: { type: Boolean, default: false },
     fileName: {type: String},
+    signedFileName: {type:String},
     generatedAt: { 
       type: Date 
     },
@@ -36,6 +39,14 @@ const ApplicationSchema = new mongoose.Schema({
   contractGenerated: { type: Boolean, default: false },
   contractUploaded: { type: Boolean, default: false },
   contractUrl: { type: String, default: '' },
+  ownerSignature: {
+    verified: Boolean,
+    date: Date
+  },
+  tenantSignature: {
+    verified: Boolean,
+    date: Date
+  },
   history: [{
     status: String,
     timestamp: { type: Date, default: Date.now }

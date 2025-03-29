@@ -11,6 +11,7 @@ import {
   sendContractToTenant,
   generateContract,
   deleteContract,
+  signContract,
   
 } from '../controllers/application.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
@@ -47,7 +48,7 @@ router.delete('/:applicationId/cancel',verifyToken, cancelApplication);
 
 
 router.delete('/:applicationId/delete-contract', verifyToken, deleteContract);
-
+router.post('/:applicationId/sign-contract', verifyToken, signContract);
 
 export default router;
   

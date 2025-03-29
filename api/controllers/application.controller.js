@@ -367,13 +367,13 @@ export const sendContractToTenant = async (req, res, next) => {
     }
 
     // 1. Cambiar el estado de la aplicación a algo más representativo
-    application.status = 'Firmado'; 
+    application.status = 'Firmado';
     // (Puedes llamarlo “Enviado al Inquilino”, “Notificado”, “Entrega de Contrato”, etc.)
 
     // 2. Agregar un entry en el historial
-    application.history.push({ 
-      status: 'Contrato Notificado', 
-      timestamp: new Date() 
+    application.history.push({
+      status: 'Contrato Notificado',
+      timestamp: new Date()
     });
 
     // Guardar los cambios
@@ -395,130 +395,168 @@ export const sendContractToTenant = async (req, res, next) => {
 
 //---------GENERACION AUTOMATIOCA DE CONTRATOS-----------------
 
-
-// Función para cargar una fuente personalizada
 export const generateContract = async (req, res, next) => {
   try {
     const { applicationId } = req.params;
 
     console.log('Iniciando generación de contrato para applicationId:', applicationId);
 
-    // Buscar la aplicación y poblar datos
+    // Buscar la aplicación y poblar datos con todos los campos necesarios
     const application = await Application.findById(applicationId)
-      .populate('listingId')
-      .populate('userId');
+      .populate({
+        path: 'listingId'
+      })
+      .populate('userId', '_id username email address nationality numeroIdentificacion tipoIdentificacion phone fullLegalName occupation');
 
     if (!application) {
       console.error('Aplicación no encontrada.');
       return next(errorHandle(404, 'Aplicación no encontrada.'));
     }
 
-    // Verificar permisos
-    if (application.listingId.userRef.toString() !== req.user.id) {
+    // Get property owner independently since population isn't working as expected
+    const propietario = await User.findById(application.listingId.userRef);
+    if (!propietario) {
+      console.error('Propietario no encontrado.');
+      return next(errorHandle(404, 'Propietario no encontrado.'));
+    }
+
+    console.log('Owner ID comparison:', {
+      listingUserRef: application.listingId.userRef,
+      requestUserId: req.user.id,
+      match: application.listingId.userRef === req.user.id
+    });
+
+    // Verify authorization
+    if (application.listingId.userRef !== req.user.id) {
       console.error('No estás autorizado para generar el contrato.');
       return next(errorHandle(401, 'No autorizado.'));
     }
 
-    // Obtener datos necesarios
-    const propietario = await User.findById(application.listingId.userRef);
     const propiedad = application.listingId;
     const inquilino = application.userId;
+
+    console.log('Datos del propietario completos:', propietario);
+    console.log('Datos del inquilino completos:', inquilino);
 
     // Data para Helpers y generacion de Plantilla
     const data = {
       // Fecha y lugar
-      lugar: 'atravez de DCT',
-      fecha: new Date().toLocaleDateString(),
+      lugar: 'a través de DCT',
+      fecha: new Date().toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }),
 
       // Datos propietario
-      nombrePropietario: propietario.username || 'Propietario',
-      nacionalidadPropietario: propietario.nacionalidad || 'Española',
-      domicilioPropietario: propietario.address || 'Dirección del propietario',
-      numeroIdentificacionPropietario: propietario.numeroIdentificacion || 'DNI/NIE',
-
+      nombrePropietario: propietario.fullLegalName || propietario.username || 'Propietario (sin nombre)',
+      nacionalidadPropietario: propietario.nationality || 'No especificada',
+      domicilioPropietario: propietario.address || 'No especificada',
+      numeroIdentificacionPropietario: propietario.tipoIdentificacion && propietario.numeroIdentificacion ?
+        `${propietario.tipoIdentificacion}: ${propietario.numeroIdentificacion}` :
+        'Identificación no disponible',
+      telefonoPropietario: propietario.phone || 'No disponible',
+      emailPropietario: propietario.email || 'No disponible',
       // Datos inquilino
-      nombreInquilino: inquilino.username || 'Inquilino',
-      nacionalidadInquilino: inquilino.nacionalidad || 'Española',
-      domicilioInquilino: inquilino.address || 'Dirección del inquilino',
-      numeroIdentificacionInquilino: inquilino.numeroIdentificacion || 'DNI/NIE',
-
+      nombreInquilino: inquilino.fullLegalName || inquilino.username || 'Inquilino (sin nombre)',
+      nacionalidadInquilino: inquilino.nationality || 'No especificada',
+      domicilioInquilino: inquilino.address || 'No especificado',
+      numeroIdentificacionInquilino: inquilino.tipoIdentificacion && inquilino.numeroIdentificacion ?
+        `${inquilino.tipoIdentificacion}: ${inquilino.numeroIdentificacion}` :
+        'Identificación no disponible',
+      telefonoInquilino: inquilino.phone || 'No disponible',
+      emailInquilino: inquilino.email || 'No disponible',
+      ocupacionInquilino: inquilino.occupation || 'No especificada',
       // Datos listing
-      direccionInmueble: propiedad.address || 'Dirección de la vivienda',
-      descripcionInmueble: propiedad.description || '',
-      isAmueblado: propiedad.furnished, // boolean
-      rentalDurationMonths: application.rentalDurationMonths,
-      // ...lo que necesites de la property, por ejemplo bathrooms, bedrooms, etc.
-      // refCatastral: propiedad.refCatastral || '',  (si lo tuvieras en listing)
+      direccionInmueble: propiedad.address || 'Dirección no disponible',
+      descripcionInmueble: propiedad.description || 'Sin descripción',
+      isAmueblado: propiedad.furnished ? 'Sí' : 'No',
+      rentalDurationMonths: application.rentalDurationMonths || 12,
+      precioAlquilerMensual: propiedad.regularPrice || 0,
+      fianza: propiedad.deposit || (propiedad.regularPrice ? propiedad.regularPrice : 0),
+      metrosCuadrados: propiedad.squareMeters || 'No especificados',
+      habitaciones: propiedad.bedrooms || 'No especificadas',
+      banos: propiedad.bathrooms || 'No especificados',
+      tipoPropiedad: propiedad.type === 'rent' ? 'Alquiler' : 'Venta',
+      fechaInicio: new Date().toLocaleDateString('es-ES'),
+      fechaFin: (() => {
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + (application.rentalDurationMonths || 12));
+        return endDate.toLocaleDateString('es-ES');
+      })()
     };
 
+    console.log('Generando contrato con datos:', {
+      propietario: data.nombrePropietario,
+      inquilino: data.nombreInquilino,
+      direccion: data.direccionInmueble
+    });
 
+    console.log('Datos completos para el contrato:', JSON.stringify(data, null, 2));
     // Crear doc PDFKit y capturar en memoria
     const doc = new PDFDocument({ size: 'A4', margin: 50 });
     let buffers = [];
-
-
-
-
 
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', async () => {
       const pdfData = Buffer.concat(buffers);
 
-     
-      // Subir a Firebase
-      // Definimos la ruta en Firebase
-      // para que quede en "contracts/contrato_gen_{applicationId}.pdf"
-      const storagePath = `contracts/contrato_gen_${applicationId}_.pdf`;
-      const file = bucket.file(storagePath);
+      try {
+        // Subir a Firebase
+        const storagePath = `contracts/contrato_gen_${applicationId}_${Date.now()}.pdf`;
+        const file = bucket.file(storagePath);
 
-      await file.save(pdfData, {
-        metadata: { contentType: 'application/pdf' },
-      });
+        await file.save(pdfData, {
+          metadata: { contentType: 'application/pdf' },
+        });
 
-      const [url] = await file.getSignedUrl({
-        action: 'read',
-        expires: '03-01-2030',
-      });
+        const [url] = await file.getSignedUrl({
+          action: 'read',
+          expires: '03-01-2030',
+        });
 
-      // Aquí obtienes solo "contrato_gen_{applicationId}.pdf"
-      const fileName = storagePath.split('/').pop();
-      console.log(fileName);
+        const fileName = storagePath.split('/').pop();
+        console.log('Contrato generado:', fileName);
 
-      // Actualizar en la BD
-      application.status = 'Contrato Generado';
-      application.contractGenerated = true;
-      application.contractUploaded = true;
-      application.contract.generatedAt = new Date();
-      application.contract.fileName = storagePath;
-      application.contract.url = url;
-      application.history.push({ status: 'Contrato Generado (PDFKit)', timestamp: new Date() });
-      await application.save();
+        // Actualizar en la BD
+        application.status = 'Contrato Generado';
+        application.contractGenerated = true;
+        application.contractUploaded = true;
+        application.contract = {
+          ...application.contract,
+          generatedAt: new Date(),
+          fileName: storagePath,
+          url: url
+        };
+        application.history.push({ status: 'Contrato Generado (PDFKit)', timestamp: new Date() });
+        await application.save();
 
-      console.log('Contrato PDFKit listo. URL:', url);
-      res.status(200).json({
-        success: true,
-        message: 'Contrato (PDFKit) generado correctamente.',
-        application: application,
-      });
+        console.log('Contrato PDFKit listo. URL:', url);
+        res.status(200).json({
+          success: true,
+          message: 'Contrato (PDFKit) generado correctamente.',
+          application: application,
+          contractUrl: url
+        });
+      } catch (uploadError) {
+        console.error('Error al subir contrato a Firebase:', uploadError);
+        next(errorHandle(500, 'Error al guardar el contrato generado: ' + uploadError.message));
+      }
     });
 
-     // =========== Llamadas a Helpers ==============
+    // =========== Llamadas a Helpers ==============
+    addContractHeader(doc, data);
+    addReunidosSection(doc, data);
+    addExponenSection(doc, data);
+    addClausulasSection(doc, data);
+    addFirma(doc, data);
 
-     addContractHeader(doc, data);
-     addReunidosSection(doc, data);
-     addExponenSection(doc, data);
-     addClausulasSection(doc, data);
-     addFirma(doc, data);
-
-     
-     // Cerrar doc
-     doc.end();
-
-
+    // Cerrar doc
+    doc.end();
 
   } catch (error) {
     console.error('Error generando contrato PDFKit:', error);
-    next(errorHandle(500, 'Error al generar el contrato con PDFKit.'));
+    next(errorHandle(500, 'Error al generar el contrato con PDFKit: ' + error.message));
   }
 };
 
@@ -567,5 +605,236 @@ export const deleteContract = async (req, res, next) => {
   } catch (err) {
     console.error('Error al eliminar el contrato: ', err);
     return next(errorHandle(500, 'Error al eliminar el contrato.'));
+  }
+};
+
+export const signContract = async (req, res, next) => {
+  try {
+    const { applicationId } = req.params;
+    const { signatureData, signatureType, signedBy } = req.body;
+    
+    console.log(`Starting contract signature process for application ${applicationId} by ${signedBy}`);
+
+    // 1. Find the application with full population
+    const application = await Application.findById(applicationId)
+      .populate('listingId')
+      .populate('userId');
+
+    if (!application) {
+      return next(errorHandle(404, 'Aplicación no encontrada.'));
+    }
+
+    // 2. Perform detailed logging of current state to track the issue
+    console.log("BEFORE SIGNING - Current application state:", {
+      id: application._id,
+      status: application.status,
+      contractFileName: application.contract?.fileName,
+      contractSignedFileName: application.contract?.signedFileName,
+      contractUrl: application.contract?.url,
+      ownerSignatureVerified: application.ownerSignature?.verified,
+      tenantSignatureVerified: application.tenantSignature?.verified
+    });
+
+    // 3. Validate basics
+    if (!application.contract?.url) {
+      return next(errorHandle(400, 'No hay contrato disponible para firmar.'));
+    }
+
+    // 4. Authorization check
+    if (
+      application.listingId.userRef !== req.user.id &&
+      application.userId._id.toString() !== req.user.id
+    ) {
+      return next(errorHandle(401, 'No autorizado para firmar este contrato.'));
+    }
+
+    // 5. Process signature data
+    let buffer;
+    try {
+      // Remove the data URL prefix (e.g., "data:image/png;base64,")
+      const base64Data = signatureData.split(',')[1];
+      if (!base64Data) {
+        return next(errorHandle(400, 'Formato de firma inválido.'));
+      }
+      buffer = Buffer.from(base64Data, 'base64');
+    } catch (error) {
+      console.error('Error processing signature data:', error);
+      return next(errorHandle(500, 'Error al procesar los datos de la firma.'));
+    }
+
+    // 6. Setup the file paths and names
+    const timestamp = Date.now();
+    const signedFileName = `signed_${applicationId}_${timestamp}.pdf`;
+    const signedFilePath = `contracts/signed/${signedFileName}`;
+
+    // 7. Get the most recent contract file
+    let sourceContractPath;
+    
+    // IMPORTANT: Determine which contract file to use as source
+    if (application.contract.signedFileName) {
+      sourceContractPath = application.contract.signedFileName;
+      console.log(`Using previously signed contract: ${sourceContractPath}`);
+    } else {
+      sourceContractPath = application.contract.fileName;
+      console.log(`Using original contract: ${sourceContractPath}`);
+    }
+
+    try {
+      // 8. Download the source contract
+      const sourceContract = await bucket.file(sourceContractPath);
+      const [contractBuffer] = await sourceContract.download();
+      
+      // 9. Import PDF library
+      const PDFLib = await import('pdf-lib');
+      const { PDFDocument } = PDFLib;
+      
+      // 10. Load PDF and prepare for editing
+      const pdfDoc = await PDFDocument.load(contractBuffer);
+      const pages = pdfDoc.getPages();
+      const lastPage = pages[pages.length - 1];
+      const { width, height } = lastPage.getSize();
+      
+      // 11. Embed and size signature
+      const signatureImage = await pdfDoc.embedPng(buffer);
+      const signatureWidth = Math.min(200, width * 0.3);
+      const aspectRatio = signatureImage.height / signatureImage.width;
+      const signatureHeight = signatureWidth * aspectRatio;
+      
+      // 12. Place signature based on signer
+      if (signedBy === 'owner') {
+        // Place owner signature on left
+        lastPage.drawImage(signatureImage, {
+          x: 50,
+          y: 120,
+          width: signatureWidth,
+          height: signatureHeight,
+        });
+        
+        lastPage.drawText('Firma del Propietario', {
+          x: 50,
+          y: 110,
+          size: 10,
+        });
+      } else {
+        // Place tenant signature on right
+        lastPage.drawImage(signatureImage, {
+          x: width - signatureWidth - 50,
+          y: 120,
+          width: signatureWidth,
+          height: signatureHeight,
+        });
+        
+        lastPage.drawText('Firma del Inquilino', {
+          x: width - signatureWidth - 50,
+          y: 110,
+          size: 10,
+        });
+      }
+      
+      // 13. Add date
+      const date = new Date().toLocaleDateString('es-ES');
+      lastPage.drawText(`Fecha: ${date}`, {
+        x: signedBy === 'owner' ? 50 : (width - 150),
+        y: 90,
+        size: 10,
+      });
+      
+      // 14. Save changes and upload PDF
+      const signedPdfBytes = await pdfDoc.save();
+      const signedFile = bucket.file(signedFilePath);
+      await signedFile.save(signedPdfBytes, { metadata: { contentType: 'application/pdf' } });
+      
+      // 15. Get new URL
+      const [signedUrl] = await signedFile.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2030',
+      });
+      
+      // 16. CRITICAL PART: Update application with correct values
+      // Store current state as backup before changes
+      const prevOwnerSignatureVerified = application.ownerSignature?.verified;
+      const prevTenantSignatureVerified = application.tenantSignature?.verified;
+      
+      // 17. Prepare updates
+      const updates = {
+        contract: {
+          fileName: application.contract.fileName,  // Keep original file name
+          url: signedUrl,                          // Update URL
+          signedFileName: signedFilePath,          // IMPORTANT: Update signed file path
+          generatedAt: application.contract.generatedAt || new Date()
+        }
+      };
+      
+      // 18. Update signature status based on signer
+      if (signedBy === 'owner') {
+        updates.ownerSignature = {
+          verified: true,
+          date: new Date()
+        };
+        
+        // Preserve tenant signature if exists
+        if (prevTenantSignatureVerified) {
+          updates.tenantSignature = application.tenantSignature;
+        }
+        
+        // Set status
+        updates.status = prevTenantSignatureVerified ? 'Firmado' : 'Firmado por Propietario';
+      } else {
+        updates.tenantSignature = {
+          verified: true,
+          date: new Date()
+        };
+        
+        // CRITICAL: Preserve owner signature
+        if (prevOwnerSignatureVerified) {
+          updates.ownerSignature = application.ownerSignature;
+        }
+        
+        // Set status
+        updates.status = prevOwnerSignatureVerified ? 'Firmado' : 'Firmado por Inquilino';
+      }
+      
+      // 19. Update application history
+      updates.history = [
+        ...application.history || [],
+        {
+          status: updates.status,
+          timestamp: new Date()
+        }
+      ];
+      
+      // 20. CRITICAL: Use findByIdAndUpdate to properly update all fields
+      const updatedApplication = await Application.findByIdAndUpdate(
+        applicationId,
+        { $set: updates },
+        { new: true, runValidators: true }
+      );
+      
+      // 21. Detailed logging after update
+      console.log("AFTER SIGNING - Updated application state:", {
+        id: updatedApplication._id,
+        status: updatedApplication.status,
+        contractFileName: updatedApplication.contract?.fileName,
+        contractSignedFileName: updatedApplication.contract?.signedFileName,
+        contractUrl: updatedApplication.contract?.url,
+        ownerSignatureVerified: updatedApplication.ownerSignature?.verified,
+        tenantSignatureVerified: updatedApplication.tenantSignature?.verified
+      });
+      
+      // 22. Return response
+      return res.status(200).json({
+        success: true,
+        message: 'Contrato firmado con éxito',
+        application: updatedApplication,
+        signedContractUrl: signedUrl
+      });
+      
+    } catch (error) {
+      console.error('Error processing contract signature:', error);
+      return next(errorHandle(500, `Error al firmar el contrato: ${error.message}`));
+    }
+  } catch (error) {
+    console.error('Error in sign contract function:', error);
+    return next(errorHandle(500, 'Error al procesar la firma del contrato.'));
   }
 };
