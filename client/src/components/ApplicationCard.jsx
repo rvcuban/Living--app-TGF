@@ -5,6 +5,9 @@ export default function ApplicationCard({ application, onCancel, onViewContract,
 
     const hasContract = application.contract?.url;
     const needsSignature = needsTenantSignature(application);
+    const isSigned = application.tenantSignature?.verified;
+    const isPendingSignature = hasContract && !isSigned && ['Contrato Notificado', 'Firmado por Propietario'].includes(application.status);
+
 
     // Helper function to determine the REAL signature status
     const getActualContractStatus = () => {
@@ -44,8 +47,9 @@ export default function ApplicationCard({ application, onCancel, onViewContract,
     const actualStatus = getActualContractStatus();
 
     return (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="rounded-lg overflow-hidden border border-gray-200 shadow-sm">
             {/* Show the PropertyCard */}
+            <div className="mb-0">
             <PropertyCard
                 property={application.listingId}
                 applicationStatus={application.status}
@@ -54,13 +58,14 @@ export default function ApplicationCard({ application, onCancel, onViewContract,
                 onCancelApplication={onCancel}
                 rentalDuration={application.rentalDurationMonths}
             />
+            </div>
 
             {/* Only show contract section if there is a contract */}
             {hasContract && (application.status === 'Contrato Notificado' ||
                 application.status === 'Firmado' ||
                 application.status === 'Firmado por Inquilino' ||
                 application.status === 'Firmado por Propietario') && (
-                    <div className="mt-4 pt-3 border-t">
+                    <div className="mt-4 pt-3 m-4 border-t">
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="font-medium">Contrato</h3>
 

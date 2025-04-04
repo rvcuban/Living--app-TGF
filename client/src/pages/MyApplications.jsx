@@ -94,32 +94,40 @@ export default function Applications() {
 
   const { currentUser } = useSelector((state) => state.user);
 
+  useEffect(() => {
+    if (applications.length > 0) {
+      console.log("All applications and their signature status:", 
+        applications.map(app => ({
+          id: app._id,
+          status: app.status,
+          contractUrl: !!app.contract?.url, 
+          ownerSigned: app.ownerSignature?.verified === true,
+          tenantSigned: app.tenantSignature?.verified === true
+        }))
+      );
+    }
+  }, [applications]);
+
   // Helper to check if contract needs tenant signature
   const needsTenantSignature = (application) => {
     if (!application) return false;
 
-    // Add logging to see what we're working with
-    console.log("Checking if contract needs signature:", {
-      contractUrl: application.contract?.url,
-      ownerSignatureVerified: application.ownerSignature?.verified,
-      tenantSignatureVerified: application.tenantSignature?.verified,
-      status: application.status
+    // Add enhanced logging
+    console.log("Contract signing eligibility check:", {
+      applicationId: application._id,
+      status: application.status,
+      contractUrl: !!application.contract?.url,
+      ownerSigned: application.ownerSignature?.verified === true,
+      tenantSigned: application.tenantSignature?.verified === true,
+      contractComplete: application.contract?.completed === true
     });
 
-    // Check if tenant has already signed
-    const tenantSigned = application.tenantSignature?.verified === true;
-    const ownerSigned = application.ownerSignature?.verified === true;
-
-    // Only allow signing if:
-    // 1. Contract has been notified to tenant
-    // 2. Tenant hasn't signed yet
-    // 3. Contract URL exists
-    // 4. Owner has signed
-    return application.contract?.url &&
-      !tenantSigned &&
-      ownerSigned &&
-      (application.status === 'Contrato Notificado' ||
-        application.status === 'Firmado por Propietario');
+    // Simpler check: Contract exists, owner signed, tenant hasn't signed
+    return (
+      application.contract?.url &&
+      application.ownerSignature?.verified === true &&
+      application.tenantSignature?.verified !== true
+    );
   };
   // Open contract modal
   const openContractModal = (application) => {
@@ -511,15 +519,33 @@ export default function Applications() {
 
             <div className="flex gap-2">
               {contractUrl && (
-                <a
-                  href={contractUrl}
-                  download="contrato.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-green-500 text-white px-3 py-1 rounded inline-block"
-                >
-                  Descargar
-                </a>
+                <div className="flex gap-2">
+                  <a
+                    href={contractUrl}
+                    download="contrato.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-green-500 text-white px-3 py-1 rounded inline-block"
+                  >
+                    Descargar
+                  </a>
+
+                  {/* Make this condition more reliable for detecting when tenant needs to sign */}
+                  {selectedApplication &&
+                    selectedApplication.contract?.url &&
+                    selectedApplication.ownerSignature?.verified === true &&
+                    selectedApplication.tenantSignature?.verified !== true && (
+                      <button
+                        className="bg-blue-500 text-white px-3 py-1 rounded"
+                        onClick={() => {
+                          setModalIsOpen(false);
+                          openSignatureModal(selectedApplication);
+                        }}
+                      >
+                        Firmar ahora
+                      </button>
+                    )}
+                </div>
               )}
 
               {selectedApplication && needsTenantSignature(selectedApplication) && (

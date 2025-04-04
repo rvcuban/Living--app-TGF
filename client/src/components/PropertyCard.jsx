@@ -9,7 +9,7 @@ import {
   FaEdit,
   FaHome,
 } from 'react-icons/fa';
-
+import defaultImage from '../assets/default-property.jpg';
 /**
  * Props esperadas:
  * - property: { _id, name, address, imageUrls, regularPrice, discountPrice, type, offer, ... }
@@ -35,6 +35,20 @@ export default function PropertyCard({
   contractUrl,
   fileName,
 }) {
+
+   // Safety check - if property is null/undefined, provide an empty object
+   const safeProperty = property || {};
+  
+   // Safely access property ID with fallback
+   const propertyId = safeProperty._id || 'unknown';
+   
+   // Add debug to help identify issues
+   console.log("PropertyCard rendering:", {
+     propertyExists: !!property,
+     propertyId: safeProperty._id || 'missing',
+     applicationId: applicationId || 'no-app-id'
+   });
+
   // Para cancelar la app
   const handleCancel = () => {
     if (onCancelApplication) {
@@ -118,15 +132,15 @@ export default function PropertyCard({
             </Link>
 
             <p className="text-sm text-gray-600 mt-1 line-clamp-1">
-            {property.type === 'rent' || property.type === 'alquiler' ? (
-              <>
-                {property.regularPrice || property.price}€ / mes
-                {rentalDuration && <span className="text-xs text-gray-500 ml-1">({rentalDuration} meses)</span>}
-              </>
-            ) : (
-              <>{property.regularPrice || property.price}€</>
-            )}
-          </p>
+              {property.type === 'rent' || property.type === 'alquiler' ? (
+                <>
+                  {property.regularPrice || property.price}€ / mes
+                  {rentalDuration && <span className="text-xs text-gray-500 ml-1">({rentalDuration} meses)</span>}
+                </>
+              ) : (
+                <>{property.regularPrice || property.price}€</>
+              )}
+            </p>
 
 
           </div>
@@ -191,9 +205,8 @@ export default function PropertyCard({
                     />
                     <div className="block bg-gray-200 w-10 h-6 rounded-full"></div>
                     <div
-                      className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${
-                        property.visible ? 'transform translate-x-full bg-green-500' : ''
-                      }`}
+                      className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition ${property.visible ? 'transform translate-x-full bg-green-500' : ''
+                        }`}
                     ></div>
                   </div>
                   <span className="ml-2 text-xs text-gray-700">

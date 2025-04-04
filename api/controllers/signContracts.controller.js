@@ -156,11 +156,11 @@ export const signContract = async (req, res, next) => {
       
       // Store the signed contract URL
       application.contract.signedUrl = signedUrl;
-      await application.save();
+      await application.save(); 
   
       res.status(200).json({
         success: true,
-        message: 'Contrato firmado correctamente.',
+        message: 'Contrato firmado correctamente.',    
         application,
         signedContractUrl: signedUrl
       });
