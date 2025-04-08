@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useController } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { FaCloudUploadAlt, FaTrash, FaSpinner } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { app } from '../firebase';
 
 export default function MediaUploader({ 
   name, 
@@ -14,7 +17,9 @@ export default function MediaUploader({
   const [files, setFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
   const initialized = useRef(false);
+  const { currentUser } = useSelector((state) => state.user);
 
   // Initialize files and previews from field value on mount only
   useEffect(() => {
@@ -27,11 +32,51 @@ export default function MediaUploader({
 
   // Update field value when files change, but only if we have actual changes
   useEffect(() => {
-    // Only update the field if files array isn't empty and is different from current field value
     if (files.length > 0 && JSON.stringify(files) !== JSON.stringify(field.value)) {
       field.onChange(files);
+    } else if (files.length === 0 && field.value && field.value.length > 0) {
+      field.onChange([]);
     }
-  }, [files]);
+  }, [files, field]);
+
+  const uploadToFirebase = async (file) => {
+    try {
+      const storage = getStorage(app);
+      const fileName = new Date().getTime() + '_' + file.name;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      return new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            // Update progress
+            const progress = Math.round(
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+            );
+            setUploadProgress(prev => ({
+              ...prev,
+              [fileName]: progress
+            }));
+          },
+          (error) => {
+            console.error("Upload error:", error);
+            reject(error);
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then(downloadURL => {
+                resolve(downloadURL);
+              })
+              .catch(reject);
+          }
+        );
+      });
+    } catch (error) {
+      console.error("Firebase error:", error);
+      throw error;
+    }
+  };
 
   const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files);
@@ -61,7 +106,7 @@ export default function MediaUploader({
 
     if (validFiles.length === 0) return;
 
-    // Create previews and prepare for upload
+    // Create temporary previews with blob URLs
     const newPreviews = [...preview];
     
     validFiles.forEach(file => {
@@ -74,42 +119,78 @@ export default function MediaUploader({
     });
     
     setPreview(newPreviews);
-    
-    // Upload files to server
     setIsUploading(true);
     
     try {
-      // In a real app, this would be an API call to upload files
-      // For now, we'll simulate a successful upload with a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // After successful "upload", get the new URLs
-      const uploadedUrls = [...files]; // Start with existing files
-      
-      // Add the new URLs from our mocked upload
-      validFiles.forEach(file => {
-        // In a real app, this would be the URL returned from your server
-        // For now, we'll use the object URL as a placeholder
-        const uploadedUrl = URL.createObjectURL(file);
-        uploadedUrls.push(uploadedUrl);
+      // Upload files to Firebase one by one
+      const uploadPromises = validFiles.map(async (file) => {
+        const downloadURL = await uploadToFirebase(file);
+        return downloadURL;
       });
       
-      // Update file list with all URLs
-      setFiles(uploadedUrls);
+      // Wait for all uploads to complete
+      const uploadedUrls = await Promise.all(uploadPromises);
       
-      // Update previews to mark all as uploaded
-      setPreview(newPreviews.map(item => ({...item, isUploaded: true})));
+      if (!uploadedUrls || uploadedUrls.length === 0) {
+        throw new Error('No se recibieron URLs de Firebase');
+      }
+      
+      // Add new URLs to files array
+      setFiles(prevFiles => [...prevFiles, ...uploadedUrls]);
+      
+      // Update previews with permanent URLs
+      const tempPreviewCount = preview.filter(item => !item.isUploaded).length;
+      
+      setPreview(prev => {
+        const newPreviews = [...prev];
+        let urlIndex = 0;
+        
+        return newPreviews.map(item => {
+          if (!item.isUploaded) {
+            // Revoke the blob URL to prevent memory leaks
+            if (item.url.startsWith('blob:')) {
+              URL.revokeObjectURL(item.url);
+            }
+            
+            const updatedItem = {
+              url: uploadedUrls[urlIndex],
+              isUploaded: true
+            };
+            
+            urlIndex++;
+            return updatedItem;
+          }
+          return item;
+        });
+      });
       
       toast.success(`${validFiles.length} archivo${validFiles.length > 1 ? 's' : ''} subido${validFiles.length > 1 ? 's' : ''} correctamente`);
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Error al subir archivos');
+      console.error('Error de subida:', error);
+      toast.error('Error al subir archivos. Intente nuevamente más tarde.');
+      
+      // Remove failed uploads from preview
+      setPreview(prev => prev.filter(item => item.isUploaded));
+      
+      // Revoke any blob URLs to prevent memory leaks
+      newPreviews.forEach(item => {
+        if (!item.isUploaded && item.url.startsWith('blob:')) {
+          URL.revokeObjectURL(item.url);
+        }
+      });
     } finally {
       setIsUploading(false);
+      setUploadProgress({});
     }
   };
 
   const handleRemove = (index) => {
+    // Revoke blob URL if it's a blob
+    const item = preview[index];
+    if (item && item.url.startsWith('blob:')) {
+      URL.revokeObjectURL(item.url);
+    }
+    
     // Remove from previews
     const newPreviews = [...preview];
     newPreviews.splice(index, 1);
@@ -120,6 +201,22 @@ export default function MediaUploader({
     newFiles.splice(index, 1);
     setFiles(newFiles);
   };
+
+  // Clean up any blob URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      preview.forEach(item => {
+        if (item.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(item.url);
+        }
+      });
+    };
+  }, [preview]);
+
+  // Calculate overall upload progress
+  const overallProgress = Object.values(uploadProgress).length > 0
+    ? Object.values(uploadProgress).reduce((sum, value) => sum + value, 0) / Object.values(uploadProgress).length
+    : 0;
 
   return (
     <div className="space-y-2">
@@ -152,9 +249,14 @@ export default function MediaUploader({
             <p className="text-xs text-red-500">{fieldState.error.message}</p>
           )}
           {isUploading && (
-            <div className="flex justify-center items-center mt-2">
-              <FaSpinner className="animate-spin mr-2" />
-              <span>Subiendo...</span>
+            <div className="mt-2">
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${overallProgress}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-center mt-1">Subiendo: {Math.round(overallProgress)}%</p>
             </div>
           )}
         </div>
@@ -185,6 +287,11 @@ export default function MediaUploader({
               >
                 <FaTrash size={12} />
               </button>
+              {!item.isUploaded && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                  <FaSpinner className="animate-spin text-white" />
+                </div>
+              )}
             </div>
           ))}
         </div>
