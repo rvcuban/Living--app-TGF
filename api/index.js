@@ -19,6 +19,8 @@ import path from 'path';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 
+import rateLimit from 'express-rate-limit';
+
 // Importar el modelo de Mensaje (opcional)
 import Message from './models/message.model.js'; // Te lo muestro luego
 
@@ -40,11 +42,20 @@ mongoose.
 const __dirname = path.resolve();
 
 const app = express();
-app.use(express.json()); // esto nor permitira envir json al server 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per 15 minutes
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+  }
+});
 
+app.use(express.json()); // esto nor permitira envir json al server 
 
 app.use(cookieParser()); //libreria para tomar informacion de las coockies
 
+app.use(limiter); // Aplicar el limitador de tasa a todas las solicitudes para evitar ataques de denegación de servicio (DoS)
 /*
 //funcionando
 app.listen(5000, () => {
