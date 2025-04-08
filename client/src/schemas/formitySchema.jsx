@@ -13,7 +13,7 @@ import BackButton from "../components/back-button";
 import BubbleSelector from "../components/BubbleSelector";
 import MultiBubbleSelector from "../components/MultiBubbleSelector";
 import GoogleLocationField from "../components/GoogleLocationField";
-
+import MediaUploader from "../components/MediaUploader";
 import { MultiStep } from "../multi-steps/multi-step";
 
 // Este "schema" en Formity es un array con varios pasos (form) y un "return" final
@@ -163,6 +163,60 @@ export const schema = [
     },
   },
 
+  // Paso 3: Galería de medios (fotos y videos)
+{
+  form: {
+    values: () => ({
+      gallery: [[], []],
+      videos: [[], []],
+    }),
+    render: ({ values, onNext, onBack, getState, setState }) => (
+      <MultiStep
+        step="gallery-upload"
+        onNext={onNext}
+        onBack={onBack}
+        getState={getState}
+        setState={setState}
+      >
+        <Step
+          defaultValues={values}
+          resolver={zodResolver(
+            z.object({
+              gallery: z.array(z.string()).optional().default([]),
+              videos: z.array(z.string()).optional().default([]),
+            })
+          )}
+        >
+          <Layout
+            heading="Paso 3: Tus compis Quieren Conocerte"
+            description="Sube algo tuyo, fotos de tu piso, un video de presentacion... cualquier cosa!!!. Tus compis quieren saber qui eresss"
+            fields={[
+              <MediaUploader
+                key="gallery"
+                name="gallery"
+                label="Fotos (máximo 6)"
+                type="image"
+                maxFiles={6}
+                accept="image/*"
+              />,
+              <MediaUploader
+                key="videos"
+                name="videos"
+                label="Videos cortos (máximo 3)"
+                type="video"
+                maxFiles={3}
+                accept="video/mp4,video/quicktime"
+              />,
+            ]}
+            button={<NextButton>Siguiente</NextButton>}
+            back={<BackButton>Atrás</BackButton>}
+          />
+        </Step>
+      </MultiStep>
+    ),
+  },
+},
+
   // Paso 3: Información personal (usuario + descripción)
   {
     form: {
@@ -223,6 +277,8 @@ export const schema = [
       mascotas,
       username,
       bio,
+      gallery,  
+      videos,
     }) => {
       return {
         location,
@@ -232,6 +288,8 @@ export const schema = [
         mascotas,
         username,
         bio,
+        gallery,  
+        videos,
       };
     },
   },

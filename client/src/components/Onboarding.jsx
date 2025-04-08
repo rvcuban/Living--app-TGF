@@ -9,6 +9,8 @@ import { schema } from "../schemas/formitySchema";
 import { updateUserSuccess, updateUserFailure, updateUserStart } from "../redux/user/userSlice";
 import api from "../utils/apiFetch";
 
+
+
 export default function Onboarding() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -36,15 +38,17 @@ export default function Onboarding() {
         // Format data for API
         const payload = {
           ...values,
-          isNewUser: false,  // This is correct - marking user as not new after onboarding
-          bio: processedBio,
+          isNewUser: false,  //Hago al usuario no nuevo al terminar el onboarding
+          shortBio: processedBio,
           preferences: {
             schedule: values.schedule || 'flexible',
             smoker: Boolean(values.fumador),
             pets: Boolean(values.mascotas)
           },
           location: values.location || "",
-          interests: values.interests || []
+          interests: values.interests || [],
+          gallery: values.gallery || [], // Include gallery images
+          videos: values.videos || [] 
         };
         
         console.log("Sending update with payload:", payload);
@@ -66,7 +70,7 @@ export default function Onboarding() {
         
         // Wait for state to persist before navigating
         setTimeout(() => {
-          navigate("/profile");
+          navigate("/home");
         }, 500);
       } catch (error) {
         console.error("Error updating profile:", error);
@@ -81,7 +85,7 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">
-        Onboarding: ¡Completa tu perfil!
+        ¡Completa tu perfil!
       </h1>
       <Formity
         schema={schema}
