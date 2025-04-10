@@ -69,10 +69,9 @@ export default function SignIn() {
 
       console.log(data);
       if (data.isNewUser) {
-        navigate('/onboarding'); 
+        navigate('/onboarding', { replace: true }); // Add replace: true
       } else {
-        
-        navigate('/');
+        navigate('/', { replace: true }); // Add replace: true
       }//usamos esto apra que una vez que se ha creado el usaurio sin errores navegar ahsta la mpapgina de inicio de sesion
       // posiblemente en un futuro lo cambie por navegar directamente dentro del eprfil paara mejorar la experiencia de ususario 
     } catch (error) {

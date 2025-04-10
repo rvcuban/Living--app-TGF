@@ -41,10 +41,14 @@ const userSlice = createSlice({
             state.loading = true;
         },
         signInSuccess: (state, action) => { // action nes la informacion que recibimos de la base de datos 
-            state.currentUser = action.payload;
-            state.loading = false;
-            state.error = null;
-            localStorage.setItem('user', JSON.stringify(action.payload));
+    
+                state.currentUser = action.payload;
+                state.loading = false;
+                state.error = null;
+                
+                // Store authentication in localStorage
+                localStorage.setItem('auth_token', action.payload.token);
+                localStorage.setItem('lastUserId', action.payload._id);
         },
         signInFailure: (state, action) => {
             state.error = action.payload;
