@@ -72,6 +72,7 @@ export default function OAuth() {
     }, 300); // Brief timeout to prevent accidental double-clicks
     
     setClickTimeout(timeout);
+    console.log("Frontend redirect URI:", redirectUri);
   };
   
   return (
