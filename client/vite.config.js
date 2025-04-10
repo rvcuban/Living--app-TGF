@@ -17,6 +17,9 @@ export default defineConfig({
         ws: true,
       },
     },
+    headers: {
+      'Content-Security-Policy': "default-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.com https://*.firebaseauth.com wss://*.firebaseio.com http://localhost:*; script-src 'self' 'unsafe-inline' https://*.firebaseio.com https://*.googleapis.com 'unsafe-eval'; frame-src 'self' https://*.firebaseauth.com https://accounts.google.com; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:;"
+    }
   },
   plugins: [react()],
 });

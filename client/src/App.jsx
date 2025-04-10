@@ -33,6 +33,7 @@ import Onboarding from './components/Onboarding';
 import ChatList from "./pages/ChatList";
 import ChatConversation from './pages/ChatConversation';
 import Footer from "./components/Footer";
+import AuthHandler from "./components/AuthHandler";
 
 
 import { useEffect } from 'react';
@@ -74,8 +75,10 @@ export default function App() {
 
 
 
-  return (<BrowserRouter>
+  return (
+  <BrowserRouter>
     <Header />
+    <AuthHandler />
     <Routes>
       <Route path="/home" element={<Home />} />
       <Route path="/sign-in" element={<SingIn />} />

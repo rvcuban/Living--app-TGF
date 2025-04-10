@@ -19,7 +19,12 @@ export default function SignIn() {
 
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
-
+  useEffect(() => {
+    // If user is already logged in, redirect to home
+    if (currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
  
   const handleModalClose = () => {
     setShowCompleteModal(false);

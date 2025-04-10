@@ -63,6 +63,40 @@ app.listen(5000, () => {
 }
 );
 */
+
+app.use((req, res, next) => {
+  // Set security headers
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'interest-cohort=()');
+  
+  // For authentication flows
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  next();
+});
+
+
+// Add this for proper proxy handling
+app.set('trust proxy', 1);
+
+app.use((req, res, next) => {
+  // Set appropriate headers for API responses
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com https://*.firebaseio.com https://apis.google.com https://accounts.google.com https://www.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com wss://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebase.com data: https:; frame-src 'self' https://accounts.google.com https://*.firebaseauth.com;"
+  );
+  
+  // IMPORTANT: Remove the Content-Security-Policy-Report-Only header if it exists
+  res.removeHeader('Content-Security-Policy-Report-Only');
+  
+  next();
+});
+
 app.use("/api/user", UserRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
@@ -159,8 +193,37 @@ io.on('connection', (socket) => {
   });
 });
 
-// Iniciar el servidor
+function startServerOnAvailablePort(initialPort, maxAttempts = 10) {
+  let currentPort = initialPort;
+  let attempts = 0;
+  
+  function tryPort() {
+    if (attempts >= maxAttempts) {
+      console.error(`Failed to find an available port after ${maxAttempts} attempts.`);
+      process.exit(1);
+      return;
+    }
+    
+    attempts++;
+    
+    server.listen(currentPort, () => {
+      console.log(`Server is running on port ${currentPort}!!!!`);
+    }).on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${currentPort} is busy, trying port ${currentPort + 1}...`);
+        currentPort++;
+        tryPort();
+      } else {
+        console.error('Server error:', err);
+      }
+    });
+  }
+  
+  tryPort();
+}
+
+
+
+// Start with your preferred port
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server is running at port ${PORT}!!!!`);
-});
+startServerOnAvailablePort(PORT);
