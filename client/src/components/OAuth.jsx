@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { signInStart } from '../redux/user/userSlice';
 import { toast } from 'react-toastify';
@@ -8,8 +8,9 @@ export default function OAuth() {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [clickTimeout, setClickTimeout] = useState(null);
+  const redirectUriRef = useRef('');
   
-  // Clear timeout on unmount to prevent memory leaks
+  // Clean up timeout on unmount
   useEffect(() => {
     return () => {
       if (clickTimeout) clearTimeout(clickTimeout);
@@ -17,42 +18,44 @@ export default function OAuth() {
   }, [clickTimeout]);
   
   const handleGoogleSignIn = () => {
-    // Prevent double-click handling
+    // Prevent double-click
     if (isLoading || clickTimeout) return;
     
     setIsLoading(true);
     dispatch(signInStart());
     
-    // Store current path for redirect after auth
+    // Store current path for after auth
     localStorage.setItem('authRedirectPath', window.location.pathname);
     
-    // Set a brief timeout to prevent accidental double-clicks
+    // Set timeout to prevent double-clicks
     const timeout = setTimeout(() => {
-      // Clear the timeout reference
-      setClickTimeout(null);
-      
-      // Open Google OAuth popup directly
+      // Google OAuth URL
       const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
       
-      // IMPORTANT: Get port dynamically from window.location
-      const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+      // Get the full host including port
+      const hostname = window.location.hostname;
+      const port = window.location.port;
       
-      // IMPORTANT: Fix to match EXACTLY what's in Google Cloud Console
+      // Set redirect URI using the same logic as backend
       let redirectUri;
       
-      if (window.location.hostname === 'localhost') {
-        // For local development - Use HTTP instead of HTTPS
+      if (hostname === 'localhost') {
+        // Use HTTP for localhost with the exact port
         redirectUri = `http://localhost:${port}/api/auth/google/callback`;
-      } else if (window.location.hostname === 'livingapp-tgf.onrender.com') {
-        // For render.com deployment
+      } else if (hostname === 'livingapp-tgf.onrender.com') {
+        // For render.com
         redirectUri = 'https://livingapp-tgf.onrender.com/api/auth/google/callback';
       } else {
-        // For production domain
+        // For production
         redirectUri = 'https://compitrueno.com/api/auth/google/callback';
       }
       
-      console.log("Using redirect URI:", redirectUri);
+      // Save to ref for logging
+      redirectUriRef.current = redirectUri;
       
+      console.log("Initiating Google OAuth flow with redirect URI:", redirectUri);
+      
+      // Set OAuth parameters
       const params = {
         client_id: '590776902894-vms5oesvvmemmt9bqvug88gb4prhvbfc.apps.googleusercontent.com',
         redirect_uri: redirectUri,
@@ -63,16 +66,16 @@ export default function OAuth() {
         state: window.location.pathname
       };
       
+      // Build query string
       const queryString = Object.keys(params)
         .map(key => `${key}=${encodeURIComponent(params[key])}`)
         .join('&');
       
-      // Open the Google authentication window
+      // Redirect to Google Auth
       window.location.href = `${googleAuthUrl}?${queryString}`;
-    }, 300); // Brief timeout to prevent accidental double-clicks
+    }, 300);
     
     setClickTimeout(timeout);
-    console.log("Frontend redirect URI:", redirectUri);
   };
   
   return (

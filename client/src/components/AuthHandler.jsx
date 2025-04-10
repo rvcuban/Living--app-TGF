@@ -18,67 +18,94 @@ export default function AuthHandler() {
       const userId = params.get('userId');
       const isNewUser = params.get('isNewUser') === 'true';
       const error = params.get('error');
+      const details = params.get('details');
       
-      // Only process if we have auth params and not already logged in
-      if ((login || error) && !currentUser) {
-        console.log("Processing auth params:", { login, token, userId, isNewUser, error });
-        
-        // Clean URL params
+      // Clean URL parameters regardless
+      if (login || error || token || userId) {
         window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
+      // Handle errors more descriptively
+      if (error) {
+        console.error("Authentication error:", error, details ? `- ${details}` : '');
         
-        if (error) {
-          toast.error(`Error de autenticación: ${error}`);
-          return;
+        let errorMessage = "Error de autenticación";
+        
+        switch(error) {
+          case 'token_exchange':
+            errorMessage = "Error al validar tu identidad con Google. Esto puede deberse a una configuración incorrecta o a que la sesión ha expirado.";
+            if (details) {
+              console.error("Token exchange details:", details);
+            }
+            break;
+          case 'no_code':
+            errorMessage = "No se recibió un código de autorización de Google.";
+            break;
+          case 'user_info':
+            errorMessage = "No se pudo obtener tu información de usuario de Google.";
+            break;
+          case 'user_creation':
+            errorMessage = "Error al crear tu cuenta de usuario.";
+            break;
+          case 'missing_secret':
+            errorMessage = "Error de configuración del servidor. Contacta al administrador.";
+            break;
+          default:
+            errorMessage = `Error de autenticación: ${error}`;
         }
         
-        if (login === 'success' && token && userId) {
-          // Store userId for recovery
-          localStorage.setItem('lastUserId', userId);
-          localStorage.setItem('auth_token', token);
-          
-          // Fetch user data using token
-          fetch(`/api/user/${userId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
+        toast.error(errorMessage);
+        return;
+      }
+      
+      // Handle successful login
+      if (login === 'success' && token && userId) {
+        console.log("Processing successful login, new user:", isNewUser);
+        
+        // Store auth data
+        localStorage.setItem('lastUserId', userId);
+        localStorage.setItem('auth_token', token);
+        
+        // Fetch user data
+        fetch(`/api/user/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+          return res.json();
+        })
+        .then(userData => {
+          if (userData) {
+            // Update Redux store
+            dispatch(signInSuccess({
+              ...userData,
+              token,
+              isNewUser
+            }));
+            
+            toast.success('¡Inicio de sesión exitoso!');
+            
+            // Redirect based on user status
+            if (isNewUser) {
+              window.location.href = '/onboarding';
+            } else {
+              const redirectPath = localStorage.getItem('authRedirectPath') || '/';
+              localStorage.removeItem('authRedirectPath');
+              window.location.href = redirectPath;
             }
-          })
-          .then(res => res.json())
-          .then(userData => {
-            if (userData) {
-              // Update Redux store with user data
-              dispatch(signInSuccess({
-                ...userData,
-                token,
-                isNewUser
-              }));
-              
-              toast.success('¡Inicio de sesión exitoso!');
-              
-              // Redirect based on user status
-              if (isNewUser) {
-                // For new users, redirect to onboarding
-                window.location.href = '/onboarding';
-              } else {
-                // Get stored redirect path or default to home
-                const redirectPath = localStorage.getItem('authRedirectPath') || '/';
-                localStorage.removeItem('authRedirectPath');
-                
-                // Use full page navigation to prevent React Router issues
-                window.location.href = redirectPath;
-              }
-            }
-          })
-          .catch(err => {
-            console.error("Error fetching user data:", err);
-            toast.error("Error al obtener datos del usuario");
-          });
-        }
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching user data:", err);
+          toast.error("Error al obtener tus datos de usuario. Intenta nuevamente más tarde.");
+        });
       }
     };
     
-    // Check for persisted auth without redirect
-    const checkPersistedAuth = () => {
-      // If not logged in but we have a token in localStorage, try to restore session
+    // Try to restore session from localStorage if not logged in
+    const restoreSession = () => {
       if (!currentUser) {
         const token = localStorage.getItem('auth_token');
         const userId = localStorage.getItem('lastUserId');
@@ -92,14 +119,11 @@ export default function AuthHandler() {
             }
           })
           .then(res => {
-            if (!res.ok) {
-              throw new Error('Invalid token');
-            }
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
             return res.json();
           })
           .then(userData => {
             if (userData) {
-              // Update Redux store with user data
               dispatch(signInSuccess({
                 ...userData,
                 token
@@ -116,11 +140,9 @@ export default function AuthHandler() {
       }
     };
     
-    // Run both checks
     processAuthParams();
-    checkPersistedAuth();
+    restoreSession();
   }, [location.search, dispatch, currentUser]);
 
-  // This is a utility component with no UI
-  return null;
+  return null; // No UI
 }

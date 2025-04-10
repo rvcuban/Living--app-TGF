@@ -268,6 +268,8 @@ export const signupAutoLogin = async (req, res, next) => {
     next(error);
   }
 };
+
+
 export const googleCallback = async (req, res, next) => {
   try {
     console.log("Google callback received with query:", req.query);
@@ -279,15 +281,21 @@ export const googleCallback = async (req, res, next) => {
       return res.redirect('/?error=no_code');
     }
     
-    // Calculate the exact same redirect URI format that was used in the frontend
+    // Get hostname and port more reliably
+    const fullHost = req.headers.host;
+    const hostname = fullHost.split(':')[0];
+    const port = fullHost.includes(':') ? fullHost.split(':')[1] : '';
+    
+    console.log("Host information:", { fullHost, hostname, port });
+    
+    // Calculate redirect URI in the exact same way as the frontend
     let redirectUri;
-    const hostname = req.hostname;
-    const port = req.headers.host?.split(':')[1];
     
     if (hostname === 'localhost') {
       // For local development - Use HTTP instead of HTTPS
-      redirectUri = `http://localhost:${port || '5173'}/api/auth/google/callback`;
-    } else if (hostname === 'livingapp-tgf.onrender.com' || req.headers.host === 'livingapp-tgf.onrender.com') {
+      // Use the exact same port that was in the original request
+      redirectUri = `http://localhost:${port}/api/auth/google/callback`;
+    } else if (hostname === 'livingapp-tgf.onrender.com') {
       // For render.com deployment
       redirectUri = 'https://livingapp-tgf.onrender.com/api/auth/google/callback';
     } else {
@@ -297,33 +305,116 @@ export const googleCallback = async (req, res, next) => {
     
     console.log("Using token exchange redirect URI:", redirectUri);
     
-    // Exchange code for tokens
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID || '590776902894-vms5oesvvmemmt9bqvug88gb4prhvbfc.apps.googleusercontent.com',
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-      }),
+    // Ensure client secret is available
+    if (!process.env.GOOGLE_CLIENT_SECRET) {
+      console.error("Missing GOOGLE_CLIENT_SECRET environment variable");
+      return res.redirect('/?error=missing_secret');
+    }
+    
+    // Prepare the exchange request
+    const tokenURL = 'https://oauth2.googleapis.com/token';
+    const params = {
+      code,
+      client_id: '590776902894-vms5oesvvmemmt9bqvug88gb4prhvbfc.apps.googleusercontent.com',
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+    };
+    
+    console.log("Token exchange params (excluding secret):", {
+      ...params,
+      client_secret: '[REDACTED]' 
     });
     
-    // Log the response for debugging
+    // Exchange code for tokens
+    const tokenResponse = await fetch(tokenURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params),
+    });
+    
+    // Log the full response for debugging
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error("Token exchange error:", errorText);
-      return res.redirect('/?error=token_exchange');
+      return res.redirect(`/?error=token_exchange&details=${encodeURIComponent(errorText)}`);
     }
     
-    // Rest of your function remains the same...
-    const { access_token, id_token } = await tokenResponse.json();
+    const tokenData = await tokenResponse.json();
     
-    // Get user info with the access token
-    // ... 
+    if (!tokenData.access_token) {
+      console.error("No access token in response:", tokenData);
+      return res.redirect('/?error=no_access_token');
+    }
+    
+    console.log("Token exchange successful");
+    
+    // Get user info with access token
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+    });
+    
+    if (!userInfoResponse.ok) {
+      const errorText = await userInfoResponse.text();
+      console.error("User info fetch error:", errorText);
+      return res.redirect('/?error=user_info');
+    }
+    
+    const userInfo = await userInfoResponse.json();
+    console.log("Received user info:", {
+      email: userInfo.email,
+      name: userInfo.name,
+      sub: userInfo.sub
+    });
+    
+    // Check if user exists
+    const user = await User.findOne({ email: userInfo.email });
+    let token;
+    
+    if (user) {
+      // User exists, generate token
+      token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+      
+      // Set cookie
+      res.cookie('access_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000
+      });
+      
+      return res.redirect(`/?login=success&token=${token}&userId=${user._id}`);
+    } else {
+      // Create new user
+      const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+      const username = userInfo.name.split(' ').join('').toLowerCase() + Math.random().toString(36).slice(-4);
+      
+      const newUser = new User({
+        username,
+        email: userInfo.email,
+        password: hashedPassword,
+        avatar: userInfo.picture || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
+        isNewUser: true
+      });
+      
+      try {
+        await newUser.save();
+        token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        
+        res.cookie('access_token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          maxAge: 24 * 60 * 60 * 1000
+        });
+        
+        return res.redirect(`/?login=success&token=${token}&userId=${newUser._id}&isNewUser=true`);
+      } catch (saveError) {
+        console.error("Error saving new user:", saveError);
+        return res.redirect('/?error=user_creation');
+      }
+    }
   } catch (error) {
     console.error("Google callback error:", error);
     return res.redirect('/?error=server');
